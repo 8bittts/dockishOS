@@ -82,6 +82,8 @@ The right side of every bar lists windows that are on-screen *on the current Spa
 | Hover chip | Tooltip with the full window title |
 | Scroll vertically over bar | Switch to previous / next Space (250 ms cooldown) |
 
+When **Group windows by app** is enabled in Settings → Appearance, multiple windows of the same app collapse to one chip with a count badge. Click cycles through windows of that app; right-click lists each window by title and offers **Close All Windows**.
+
 > **Note:** Without Screen Recording permission, foreign-app window titles are redacted by macOS to the empty string. The chip falls back to the owning app's name (e.g., "Safari", "Terminal"). With Screen Recording, you get titles like "Inbox - Mail" or "AppDelegate.swift — DockishOS".
 
 ### Pinned apps
@@ -91,10 +93,12 @@ A row of pinned-app chips lives between the Spaces and Windows rows. Each chip s
 | Action | Result |
 |---|---|
 | Click chip | Activate the app if running, otherwise launch it |
-| Right-click → Move Left / Right | Reorder the pin |
+| Drag chip onto another | Reorder pins |
+| Drag a `.app` from Finder onto the bar | Pin that app |
+| Right-click → Move Left / Right | Reorder the pin (chevron alternative) |
 | Right-click → Unpin | Remove the pin |
 
-To add a pin, right-click any window chip on the bar (**Pin App to Bar**) or right-click any result in the launcher (**Pin to Bar**). Order is persisted across launches in `UserDefaults`.
+To add a pin, drag a `.app` from Finder onto any spot on the bar, right-click any window chip on the bar (**Pin App to Bar**), or right-click any result in the launcher (**Pin to Bar**). Order is persisted across launches in `UserDefaults`.
 
 ### Settings
 
@@ -336,14 +340,14 @@ Done:
 - [x] Auto-launch on login via `SMAppService`
 - [x] Per-monitor opt-in / opt-out
 - [x] Customizable launcher hotkey
+- [x] Drag-to-reorder pinned apps
+- [x] Drag `.app` bundles from Finder onto the bar to pin
+- [x] Optional window grouping by app (one chip per app, count badge)
 
 In rough priority order:
 
-- [ ] Drag-to-reorder pinned apps (chevron buttons exist; native drag would be nicer)
-- [ ] Drag apps from Finder onto the bar to pin
 - [ ] Notification badge counts on app icons
 - [ ] Sparkle-based auto-update wired to the GitHub Releases appcast
-- [ ] Optional window grouping by app (one chip per app, count badge)
 - [ ] App switcher (Cmd+Tab replacement) reusing the launcher panel
 
 ---

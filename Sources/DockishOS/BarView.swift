@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 
 struct BarView: View {
     let screen: NSScreen
@@ -24,15 +25,16 @@ struct BarView: View {
                     onPick: { spacesStore.switchTo($0) }
                 )
 
-                if settings.showPinnedRow && !pinnedStore.pins.isEmpty {
+                if settings.showPinnedRow {
                     Divider().frame(height: 24).opacity(0.3)
                     PinnedRow(
                         size: settings.barSize,
                         pins: pinnedStore.pins,
                         runningPIDs: Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier)),
                         onLaunch: { pinnedStore.launch($0) },
-                        onUnpin: { pinnedStore.unpin(bundleID: $0.bundleID) },
-                        onMove: { pinnedStore.move($0, by: $1) }
+                        onUnpin:  { pinnedStore.unpin(bundleID: $0.bundleID) },
+                        onMove:   { pinnedStore.move($0, by: $1) },
+                        onReorder: { src, dst in pinnedStore.move(sourceID: src, onto: dst) }
                     )
                 }
 
@@ -47,6 +49,23 @@ struct BarView: View {
             .padding(.horizontal, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            handleFinderDrop(providers)
+        }
+    }
+
+    private func handleFinderDrop(_ providers: [NSItemProvider]) -> Bool {
+        var accepted = false
+        for provider in providers where provider.canLoadObject(ofClass: URL.self) {
+            accepted = true
+            _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                guard let url else { return }
+                DispatchQueue.main.async {
+                    PinnedAppsStore.shared.pinAppBundle(at: url)
+                }
+            }
+        }
+        return accepted
     }
 }
 
@@ -58,18 +77,29 @@ private struct WindowsRow: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                ForEach(windowStore.windows, id: \.id) { window in
-                    chip(for: window)
-                }
-                if windowStore.windows.isEmpty {
-                    Text("No windows on this Space")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
+                if settings.groupWindowsByApp {
+                    let groups = windowStore.grouped()
+                    ForEach(groups) { group in
+                        groupChip(for: group)
+                    }
+                    if groups.isEmpty { emptyState }
+                } else {
+                    ForEach(windowStore.windows, id: \.id) { window in
+                        chip(for: window)
+                    }
+                    if windowStore.windows.isEmpty { emptyState }
                 }
             }
             .padding(.vertical, 10)
         }
+    }
+
+    @ViewBuilder
+    private var emptyState: some View {
+        Text("No windows on this Space")
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 8)
     }
 
     @ViewBuilder
@@ -88,6 +118,30 @@ private struct WindowsRow: View {
                     pinnedStore.unpin(bundleID: bid)
                 } else {
                     pinnedStore.pin(window: window)
+                }
+            }
+        )
+    }
+
+    @ViewBuilder
+    private func groupChip(for group: WindowGroup) -> some View {
+        let isPinned = pinnedStore.isPinned(bundleID: group.bundleID)
+        let isFrontmost = group.windows.contains(where: { $0.pid == windowStore.frontmostPID })
+        WindowGroupChip(
+            group: group,
+            size: settings.barSize,
+            showTitle: settings.showChipTitles,
+            isFrontmost: isFrontmost,
+            isPinned: isPinned,
+            previewWindow: windowStore.nextWindow(in: group),
+            onActivateNext: { windowStore.activateNext(in: group) },
+            onActivate: { windowStore.activate($0) },
+            onClose: { windowStore.close($0) },
+            onTogglePin: {
+                if let bid = group.bundleID, pinnedStore.isPinned(bundleID: bid) {
+                    pinnedStore.unpin(bundleID: bid)
+                } else if let win = group.windows.first {
+                    pinnedStore.pin(window: win)
                 }
             }
         )
@@ -150,6 +204,7 @@ private struct PinnedRow: View {
     let onLaunch: (PinnedApp) -> Void
     let onUnpin: (PinnedApp) -> Void
     let onMove: (PinnedApp, Int) -> Void
+    let onReorder: (String, String) -> Void
 
     var body: some View {
         HStack(spacing: 4) {
@@ -163,8 +218,35 @@ private struct PinnedRow: View {
                     onMoveLeft: { onMove(app, -1) },
                     onMoveRight: { onMove(app, 1) }
                 )
+                .onDrag {
+                    NSItemProvider(object: app.bundleID as NSString)
+                }
+                .onDrop(
+                    of: [.text],
+                    delegate: PinnedDropDelegate(targetID: app.bundleID, onReorder: onReorder)
+                )
+            }
+            if pins.isEmpty {
+                Text("Drop apps here")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.tertiary)
+                    .padding(.horizontal, 6)
             }
         }
+    }
+}
+
+private struct PinnedDropDelegate: DropDelegate {
+    let targetID: String
+    let onReorder: (String, String) -> Void
+
+    func performDrop(info: DropInfo) -> Bool {
+        guard let provider = info.itemProviders(for: [.text]).first else { return false }
+        provider.loadObject(ofClass: NSString.self) { item, _ in
+            guard let sourceID = item as? String, sourceID != targetID else { return }
+            DispatchQueue.main.async { onReorder(sourceID, targetID) }
+        }
+        return true
     }
 }
 
@@ -201,7 +283,7 @@ private struct PinnedChip: View {
         .contextMenu {
             Button("Activate \(app.name)") { action() }
             Divider()
-            Button("Move Left") { onMoveLeft() }
+            Button("Move Left")  { onMoveLeft()  }
             Button("Move Right") { onMoveRight() }
             Divider()
             Button("Unpin") { onUnpin() }
@@ -259,6 +341,87 @@ private struct WindowChip: View {
         .contextMenu {
             Button("Activate") { onActivate() }
             Button("Close Window") { onClose() }
+            Divider()
+            Button(isPinned ? "Unpin App from Bar" : "Pin App to Bar") { onTogglePin() }
+        }
+    }
+
+    private var chipFill: Color {
+        if isFrontmost { return Color.white.opacity(0.22) }
+        return Color.white.opacity(hover ? 0.18 : 0.08)
+    }
+}
+
+private struct WindowGroupChip: View {
+    let group: WindowGroup
+    let size: BarSize
+    let showTitle: Bool
+    let isFrontmost: Bool
+    let isPinned: Bool
+    let previewWindow: WindowInfo?
+    let onActivateNext: () -> Void
+    let onActivate: (WindowInfo) -> Void
+    let onClose: (WindowInfo) -> Void
+    let onTogglePin: () -> Void
+    @State private var hover = false
+
+    var body: some View {
+        Button(action: onActivateNext) {
+            HStack(spacing: 6) {
+                AppIconView(pid: group.pid)
+                    .frame(width: size.chipIconSize, height: size.chipIconSize)
+                    .overlay(alignment: .topTrailing) {
+                        if group.windows.count > 1 {
+                            Text("\(group.windows.count)")
+                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(Capsule().fill(Color.accentColor))
+                                .offset(x: 6, y: -4)
+                        }
+                    }
+                if showTitle {
+                    Text(group.ownerName)
+                        .font(.system(size: size.chipHeight * 0.40, weight: isFrontmost ? .semibold : .medium))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .foregroundStyle(.primary)
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .frame(height: size.chipHeight)
+            .frame(maxWidth: showTitle ? 220 : nil)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(chipFill)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isFrontmost ? Color.accentColor.opacity(0.85) : .clear, lineWidth: 1.5)
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            hover = hovering
+            if hovering, let preview = previewWindow {
+                ThumbnailController.shared.requestShow(preview, near: NSEvent.mouseLocation)
+            } else {
+                ThumbnailController.shared.cancelShow()
+            }
+        }
+        .help("\(group.ownerName) — \(group.windows.count) window\(group.windows.count == 1 ? "" : "s")")
+        .contextMenu {
+            ForEach(group.windows, id: \.id) { window in
+                Button(window.displayTitle.isEmpty ? "(untitled)" : window.displayTitle) {
+                    onActivate(window)
+                }
+            }
+            Divider()
+            Button("Close All Windows") {
+                for w in group.windows { onClose(w) }
+            }
             Divider()
             Button(isPinned ? "Unpin App from Bar" : "Pin App to Bar") { onTogglePin() }
         }

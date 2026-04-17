@@ -43,6 +43,7 @@ private struct AppearanceTab: View {
 
                 Toggle("Show window titles on chips", isOn: $settings.showChipTitles)
                 Toggle("Show pinned apps row", isOn: $settings.showPinnedRow)
+                Toggle("Group windows by app", isOn: $settings.groupWindowsByApp)
             } header: {
                 Text("Bar")
             } footer: {

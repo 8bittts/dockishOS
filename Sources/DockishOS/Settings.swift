@@ -81,6 +81,7 @@ final class SettingsStore: ObservableObject {
         static let showPinnedRow   = "DockishOS.showPinnedRow"
         static let disabledScreens = "DockishOS.disabledScreens"
         static let launcherHotkey  = "DockishOS.launcherHotkey"
+        static let groupByApp      = "DockishOS.groupByApp"
     }
 
     @Published var barSize: BarSize {
@@ -131,6 +132,13 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    @Published var groupWindowsByApp: Bool {
+        didSet {
+            guard groupWindowsByApp != oldValue else { return }
+            UserDefaults.standard.set(groupWindowsByApp, forKey: Key.groupByApp)
+        }
+    }
+
     func isScreenEnabled(_ screen: NSScreen) -> Bool {
         !disabledScreenUUIDs.contains(SpacesAPI.displayUUID(for: screen))
     }
@@ -150,6 +158,7 @@ final class SettingsStore: ObservableObject {
         } else {
             self.launcherHotkey = .default
         }
+        self.groupWindowsByApp = (UserDefaults.standard.object(forKey: Key.groupByApp) as? Bool) ?? false
     }
 }
 

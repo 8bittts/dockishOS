@@ -72,6 +72,33 @@ final class PinnedAppsStore: ObservableObject {
         save()
     }
 
+    /// Move the pin with `sourceID` to the slot currently occupied by
+    /// `targetID` (used by drag-and-drop reordering).
+    func move(sourceID: String, onto targetID: String) {
+        guard sourceID != targetID,
+              let from = pins.firstIndex(where: { $0.id == sourceID })
+        else { return }
+        let item = pins.remove(at: from)
+        if let to = pins.firstIndex(where: { $0.id == targetID }) {
+            pins.insert(item, at: to)
+        } else {
+            pins.append(item)
+        }
+        save()
+    }
+
+    /// Pin a `.app` URL directly (used when dragging from Finder).
+    func pinAppBundle(at url: URL) {
+        guard url.pathExtension == "app" else { return }
+        let bundle = Bundle(url: url)
+        guard let bid = bundle?.bundleIdentifier, !isPinned(bundleID: bid) else { return }
+        let display = bundle?.infoDictionary?["CFBundleDisplayName"] as? String
+        let plain = bundle?.infoDictionary?["CFBundleName"] as? String
+        let name = display ?? plain ?? url.deletingPathExtension().lastPathComponent
+        pins.append(PinnedApp(bundleID: bid, name: name, path: url.path))
+        save()
+    }
+
     // MARK: Launch
 
     func launch(_ pin: PinnedApp) {
