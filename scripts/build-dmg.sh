@@ -28,7 +28,7 @@ BUNDLE_ID="com.8bittts.dockishos"
 GITHUB_REPO="8bittts/dockishOS"
 BUILD_DIR="build"
 DMG_VOLUME_NAME="DockishOS"
-DMG_ICON_SIZE=128
+DMG_ICON_SIZE=160
 NOTARY_PROFILE="${DOCKISHOS_NOTARY_PROFILE:-YEN-Notarization}"
 SOURCE_PLIST="Resources/Info.plist"
 ENTITLEMENTS="DockishOS.entitlements"
@@ -240,14 +240,15 @@ DMG_STAGING="${BUILD_DIR}/dmg-staging"
 DMG_RW="${BUILD_DIR}/${APP_NAME}-rw.dmg"
 DMG_FINAL="${BUILD_DIR}/${APP_NAME}-${VERSION}.dmg"
 DMG_BG_OPAQUE="${BUILD_DIR}/dmg-background.png"
-# Larger DMG window modeled on the movingpaper project. Aspect (~16:9)
-# matches mario.jpg (1280×721) so the artwork fills the window without
-# letterboxing. Mario upscales ~37 % at Retina (1760 wide) which is
-# acceptable for a static background.
-DMG_WIN_LEFT=200
-DMG_WIN_TOP=200
-DMG_WIN_WIDTH=880
-DMG_WIN_HEIGHT=495
+# Cinematic DMG window: 1200×675 logical (16:9 exact = 1.778, matches
+# mario.jpg's 1280×721 aspect). Retina source becomes 2400×1350 — mario
+# upscales ~87 % via sips bicubic. Soft on close inspection but the
+# landscape style absorbs it well, and mario fills the entire window
+# with no letterboxing or cropping.
+DMG_WIN_LEFT=160
+DMG_WIN_TOP=120
+DMG_WIN_WIDTH=1200
+DMG_WIN_HEIGHT=675
 DMG_WIN_RIGHT=$((DMG_WIN_LEFT + DMG_WIN_WIDTH))
 DMG_WIN_BOTTOM=$((DMG_WIN_TOP + DMG_WIN_HEIGHT))
 DMG_WIN_RIGHT_JIGGLE=$((DMG_WIN_RIGHT - 10))
@@ -323,10 +324,10 @@ tell application "Finder"
         set icon size of theViewOptions to ${DMG_ICON_SIZE}
         set text size of theViewOptions to 13
         ${BG_CMD}
-        -- Icons sit in the upper third of mario.jpg (sky / clouds area)
-        -- so the Mario character and grass at the bottom stay clear.
-        set position of item "${APP_NAME}.app" of container window to {270, 140}
-        set position of item "Applications" of container window to {610, 140}
+        -- Icons sit in the upper-third sky/clouds region of mario.jpg so
+        -- the Mario character + grass at the bottom stay visually clear.
+        set position of item "${APP_NAME}.app" of container window to {380, 200}
+        set position of item "Applications" of container window to {820, 200}
         try
             set position of item ".background" of container window to {330, 900}
         end try
