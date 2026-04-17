@@ -128,7 +128,14 @@ private struct WindowChip: View {
             )
         }
         .buttonStyle(.plain)
-        .onHover { hover = $0 }
+        .onHover { hovering in
+            hover = hovering
+            if hovering {
+                ThumbnailController.shared.requestShow(window, near: NSEvent.mouseLocation)
+            } else {
+                ThumbnailController.shared.cancelShow()
+            }
+        }
         .help(window.displayTitle)
         .contextMenu {
             Button("Activate") { onActivate() }

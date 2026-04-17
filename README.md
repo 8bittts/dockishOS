@@ -64,7 +64,9 @@ The right side of every bar lists windows that are on-screen *on the current Spa
 | Click chip | Activate the owning app **and** raise that specific window via `AXUIElement` + `kAXRaiseAction` |
 | Right-click chip → Activate | Same as click |
 | Right-click chip → Close Window | Press the AX close button on that window |
+| Hover chip (200 ms) | Floating thumbnail preview of the window via ScreenCaptureKit |
 | Hover chip | Tooltip with the full window title |
+| Scroll vertically over bar | Switch to previous / next Space (250 ms cooldown) |
 
 > **Note:** Without Screen Recording permission, foreign-app window titles are redacted by macOS to the empty string. The chip falls back to the owning app's name (e.g., "Safari", "Terminal"). With Screen Recording, you get titles like "Inbox - Mail" or "AppDelegate.swift — DockishOS".
 
@@ -75,7 +77,7 @@ DockishOS requests permissions **lazily**, only when you first use a feature tha
 | Permission | Required for | Prompted when |
 |---|---|---|
 | Accessibility | Per-window raise + close | First click on a window chip |
-| Screen Recording | Window titles + (future) thumbnails | Future, not yet wired |
+| Screen Recording | Window titles + hover thumbnails | First hover that lasts 200 ms over a window chip |
 
 Spaces enumeration and switching require **no** permissions — the CGS SPIs operate without sandbox checks.
 
@@ -121,6 +123,8 @@ Spaces enumeration and switching require **no** permissions — the CGS SPIs ope
 | `WindowEnumerator.swift` | `CGWindowListCopyWindowInfo` wrapper. Public API only. |
 | `WindowControl.swift` | AX-based window raise + close. Bridges CGWindowID ↔ AXUIElement. |
 | `SpacesAPI.swift` | Private `CGS*` Spaces SPI bindings. |
+| `ThumbnailCapture.swift` | One-shot ScreenCaptureKit capture by `CGWindowID`. |
+| `ThumbnailController.swift` | Singleton floating panel that shows a window thumbnail on hover. |
 | `WindowStore.swift` | `ObservableObject` for windows. Refreshes on tick + activation + Space change. |
 | `SpacesStore.swift` | `ObservableObject` for Spaces. Refreshes on Space change + 5 s polling. |
 | `Permissions.swift` | Accessibility check + prompt helpers. |
@@ -190,8 +194,8 @@ Toward boringBar feature parity, in priority order:
 - [x] Per-window AX raise + close
 - [x] Spaces row with click-to-switch
 - [x] Frontmost window indicator
-- [ ] Scroll wheel over bar to switch Spaces
-- [ ] Window thumbnails on hover (ScreenCaptureKit)
+- [x] Scroll wheel over bar to switch Spaces
+- [x] Window thumbnails on hover (ScreenCaptureKit)
 - [ ] App launcher with global hotkey
 - [ ] Pinned apps row
 - [ ] System Dock auto-hide toggle
