@@ -33,6 +33,7 @@ NOTARY_PROFILE="${DOCKISHOS_NOTARY_PROFILE:-YEN-Notarization}"
 SOURCE_PLIST="Resources/Info.plist"
 ENTITLEMENTS="DockishOS.entitlements"
 SPARKLE_SOURCE="tools/sparkle/Sparkle.framework"
+DMG_BG_SOURCE="public/mario.jpg"
 
 BUILD_ONLY=false
 LOCAL_MODE=false
@@ -238,16 +239,40 @@ info "Creating DMG"
 DMG_STAGING="${BUILD_DIR}/dmg-staging"
 DMG_RW="${BUILD_DIR}/${APP_NAME}-rw.dmg"
 DMG_FINAL="${BUILD_DIR}/${APP_NAME}-${VERSION}.dmg"
+DMG_BG_OPAQUE="${BUILD_DIR}/dmg-background.png"
+# Window sized to mario.jpg's ~16:9 aspect (1280×721) so the artwork fits
+# without distortion or letterboxing.
 DMG_WIN_LEFT=200
 DMG_WIN_TOP=200
-DMG_WIN_WIDTH=540
-DMG_WIN_HEIGHT=360
+DMG_WIN_WIDTH=600
+DMG_WIN_HEIGHT=338
 DMG_WIN_RIGHT=$((DMG_WIN_LEFT + DMG_WIN_WIDTH))
 DMG_WIN_BOTTOM=$((DMG_WIN_TOP + DMG_WIN_HEIGHT))
+DMG_WIN_RIGHT_JIGGLE=$((DMG_WIN_RIGHT - 10))
+DMG_WIN_BOTTOM_JIGGLE=$((DMG_WIN_BOTTOM - 10))
 
 mkdir -p "$DMG_STAGING"
 cp -R "$APP_BUNDLE" "$DMG_STAGING/${APP_NAME}.app"
 ln -s /Applications "$DMG_STAGING/Applications"
+
+# Stage a Retina-scale, opaque background image. Finder rejects images
+# with an alpha channel for `set background picture`, so we round-trip
+# PNG → JPEG → PNG to flatten transparency.
+if [ -f "$DMG_BG_SOURCE" ]; then
+    sips -s format png --setProperty formatOptions 100 "$DMG_BG_SOURCE" \
+        --out "$DMG_BG_OPAQUE" \
+        --resampleWidth $((DMG_WIN_WIDTH * 2)) >/dev/null 2>&1
+    sips -s format jpeg "$DMG_BG_OPAQUE" \
+        --out "${DMG_BG_OPAQUE%.png}.jpg" >/dev/null 2>&1
+    sips -s format png "${DMG_BG_OPAQUE%.png}.jpg" \
+        --out "$DMG_BG_OPAQUE" >/dev/null 2>&1
+    /bin/rm -f "${DMG_BG_OPAQUE%.png}.jpg"
+    mkdir -p "$DMG_STAGING/.background"
+    cp "$DMG_BG_OPAQUE" "$DMG_STAGING/.background/background.png"
+    step "Prepared DMG background from ${DMG_BG_SOURCE}"
+else
+    warn "DMG background source not found at ${DMG_BG_SOURCE} — using plain Finder background"
+fi
 
 hdiutil create -srcfolder "$DMG_STAGING" \
     -volname "$DMG_VOLUME_NAME" \
@@ -268,6 +293,16 @@ if [ -n "$DMG_MOUNT" ]; then
     /bin/rm -rf "${DMG_MOUNT}/.fseventsd" 2>/dev/null || true
     /bin/rm -f "${DMG_MOUNT}/.metadata_never_index" 2>/dev/null || true
 
+    if [ -d "${DMG_MOUNT}/.background" ]; then
+        chflags hidden "${DMG_MOUNT}/.background" 2>/dev/null || true
+        SetFile -a V "${DMG_MOUNT}/.background" 2>/dev/null || true
+    fi
+
+    BG_CMD=""
+    if [ -f "${DMG_MOUNT}/.background/background.png" ]; then
+        BG_CMD='set background picture of theViewOptions to file ".background:background.png"'
+    fi
+
     DMG_MOUNT_NAME="$(basename "$DMG_MOUNT")"
     osascript <<EOF >/dev/null 2>&1 || true
 set dmgDiskName to "$DMG_MOUNT_NAME"
@@ -285,10 +320,16 @@ tell application "Finder"
         set arrangement of theViewOptions to not arranged
         set icon size of theViewOptions to ${DMG_ICON_SIZE}
         set text size of theViewOptions to 13
-        set position of item "${APP_NAME}.app" of container window to {140, 170}
-        set position of item "Applications" of container window to {400, 170}
+        ${BG_CMD}
+        -- Icons sit in the upper third of mario.jpg (sky / clouds area)
+        -- so the Mario character and grass at the bottom stay clear.
+        set position of item "${APP_NAME}.app" of container window to {180, 100}
+        set position of item "Applications" of container window to {420, 100}
         try
-            set position of item ".fseventsd" of container window to {500, 600}
+            set position of item ".background" of container window to {330, 900}
+        end try
+        try
+            set position of item ".fseventsd" of container window to {500, 900}
         end try
         try
             set selection to {}
@@ -296,12 +337,20 @@ tell application "Finder"
         close
         delay 1
         open
+        tell container window
+            set statusbar visible to false
+            set bounds to {${DMG_WIN_LEFT}, ${DMG_WIN_TOP}, ${DMG_WIN_RIGHT_JIGGLE}, ${DMG_WIN_BOTTOM_JIGGLE}}
+        end tell
+        delay 1
+        tell container window
+            set bounds to {${DMG_WIN_LEFT}, ${DMG_WIN_TOP}, ${DMG_WIN_RIGHT}, ${DMG_WIN_BOTTOM}}
+        end tell
         delay 1
         close
     end tell
 end tell
 EOF
-    step "Applied DMG layout"
+    step "Applied DMG layout with background"
     hdiutil detach "$DMG_MOUNT" -quiet || hdiutil detach "$DMG_MOUNT" -force -quiet || true
 fi
 
