@@ -150,6 +150,19 @@ Press **⌥ Tab** (default) to open the app switcher: a horizontal grid of icons
 | Activate selected window | Return |
 | Dismiss | Esc / click outside |
 
+### Auto-update
+
+Once installed from the DMG, DockishOS checks for updates hourly via [Sparkle](https://sparkle-project.org). When a new release is available, the standard Sparkle dialog appears.
+
+| Element | Detail |
+|---|---|
+| Feed | `https://github.com/8bittts/dockishOS/releases/latest/download/appcast.xml` |
+| Signature | EdDSA, public key embedded in `Info.plist` |
+| Verification | `SUVerifyUpdateBeforeExtraction` + `SURequireSignedFeed` enforced |
+| Manual check | **Check for Updates…** in the menu bar item |
+
+`swift run` and `build_and_run.sh` builds skip Sparkle wiring entirely — auto-update only takes effect inside a real `.app` bundle.
+
 ### Permissions
 
 DockishOS requests permissions **lazily**, only when you first use a feature that needs them.
@@ -221,6 +234,9 @@ Spaces enumeration and switching require **no** permissions — the CGS SPIs ope
 | `LoginItem.swift` | `SMAppService.mainApp` register / unregister wrapper. |
 | `SwitcherController.swift` | App-switcher panel lifecycle (⌥ Tab). |
 | `SwitcherView.swift` | SwiftUI horizontal-grid window switcher. |
+| `Updater.swift` | `SPUStandardUpdaterController` wrapper, only active in `.app` bundles. |
+| `tools/sparkle/Sparkle.framework` | Vendored Sparkle 2.x binary framework, copied into `Contents/Frameworks/` at build time and signed with the app's identity. |
+| `scripts/generate-appcast.sh` | Sparkle's `generate_appcast` wrapped with release-notes-from-git and signed-feed verification. |
 | `WindowStore.swift` | `ObservableObject` for windows. Refreshes on tick + activation + Space change. |
 | `SpacesStore.swift` | `ObservableObject` for Spaces. Refreshes on Space change + 5 s polling. |
 | `Permissions.swift` | Accessibility check + prompt helpers. |
@@ -322,6 +338,16 @@ xcrun notarytool store-credentials YEN-Notarization \
 ```
 
 Override the profile name per-build with `DOCKISHOS_NOTARY_PROFILE=…`.
+
+### Sparkle EdDSA key (one-time)
+
+The release pipeline signs the appcast with an EdDSA key stored in your macOS keychain. To generate one:
+
+```bash
+./tools/sparkle/bin/generate_keys
+```
+
+This writes a private key to your login keychain (auto-approved if you've used Sparkle before) and prints the public key. Copy that public key into `Resources/Info.plist` under `SUPublicEDKey`. The same private key can sign appcasts for every Sparkle-enabled app you ship — only one key per developer is needed.
 
 ### From a Claude Code session
 

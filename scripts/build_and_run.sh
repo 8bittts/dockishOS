@@ -26,10 +26,12 @@ APP_BUNDLE="${LOCAL_RUN_DIR}/${APP_NAME}.app"
 APP_CONTENTS="${APP_BUNDLE}/Contents"
 APP_MACOS="${APP_CONTENTS}/MacOS"
 APP_RESOURCES="${APP_CONTENTS}/Resources"
+APP_FRAMEWORKS="${APP_CONTENTS}/Frameworks"
 APP_BINARY="${APP_MACOS}/${APP_NAME}"
 INFO_PLIST="${APP_CONTENTS}/Info.plist"
 ICONSET_DIR="${REPO_ROOT}/build/${APP_NAME}.iconset"
 ICNS_FILE="${REPO_ROOT}/build/${APP_NAME}.icns"
+SPARKLE_SOURCE="${REPO_ROOT}/tools/sparkle/Sparkle.framework"
 
 plist_set() {
     local plist="$1" key="$2" type="$3" value="$4"
@@ -61,13 +63,17 @@ if [ -d "$ICONSET_DIR" ]; then
 fi
 
 /bin/rm -rf "$APP_BUNDLE"
-mkdir -p "$APP_MACOS" "$APP_RESOURCES"
+mkdir -p "$APP_MACOS" "$APP_RESOURCES" "$APP_FRAMEWORKS"
 
 cp "$BUILD_BINARY" "$APP_BINARY"
 chmod +x "$APP_BINARY"
 
 if [ -f "$ICNS_FILE" ]; then
     cp "$ICNS_FILE" "$APP_RESOURCES/${APP_NAME}.icns"
+fi
+
+if [ -d "$SPARKLE_SOURCE" ]; then
+    ditto "$SPARKLE_SOURCE" "$APP_FRAMEWORKS/Sparkle.framework"
 fi
 
 cp "$SOURCE_PLIST" "$INFO_PLIST"

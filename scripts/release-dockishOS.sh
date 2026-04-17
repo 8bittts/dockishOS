@@ -95,9 +95,11 @@ step "Pushed commit and tag"
 
 DMG_FILE="build/${APP_NAME}-${NEXT_VERSION}.dmg"
 SHA_FILE="build/${APP_NAME}-${NEXT_VERSION}.sha256"
+APPCAST_FILE="build/appcast.xml"
 
-[ -f "$DMG_FILE" ] || fail "Missing release DMG at ${DMG_FILE}"
-[ -f "$SHA_FILE" ] || fail "Missing checksum at ${SHA_FILE}"
+[ -f "$DMG_FILE" ]     || fail "Missing release DMG at ${DMG_FILE}"
+[ -f "$SHA_FILE" ]     || fail "Missing checksum at ${SHA_FILE}"
+[ -f "$APPCAST_FILE" ] || fail "Missing appcast at ${APPCAST_FILE} — Sparkle pipeline broken"
 
 RELEASE_NOTES="$(mktemp)"
 trap 'rm -f "$RELEASE_NOTES"' EXIT
@@ -118,7 +120,8 @@ gh release create "v${NEXT_VERSION}" \
     --title "${APP_NAME} v${NEXT_VERSION}" \
     --notes-file "$RELEASE_NOTES" \
     "$DMG_FILE" \
-    "$SHA_FILE"
+    "$SHA_FILE" \
+    "$APPCAST_FILE"
 step "Created GitHub release"
 
 DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/v${NEXT_VERSION}/${APP_NAME}-${NEXT_VERSION}.dmg"
@@ -133,6 +136,24 @@ for attempt in 1 2 3 4 5 6 7 8 9 10; do
 done
 [ "$HTTP_CODE" = "200" ] || fail "Download URL returned HTTP ${HTTP_CODE} after 10 attempts"
 step "Verified release download URL"
+
+# Wait for the appcast.xml to be available at the latest-release URL Sparkle reads.
+APPCAST_URL="https://github.com/${GITHUB_REPO}/releases/latest/download/appcast.xml"
+APPCAST_TMP="$(mktemp "${TMPDIR:-/tmp}/dockishOS-live-appcast.XXXXXX.xml")"
+APPCAST_OK=false
+for attempt in 1 2 3 4 5 6 7 8 9 10; do
+    if curl -fsSL -H "Cache-Control: no-cache" "${APPCAST_URL}?t=$(date +%s)" -o "$APPCAST_TMP" \
+        && grep -q "<sparkle:shortVersionString>${NEXT_VERSION}</sparkle:shortVersionString>" "$APPCAST_TMP" \
+        && grep -q "sparkle-signatures:" "$APPCAST_TMP"; then
+        APPCAST_OK=true
+        break
+    fi
+    step "Live appcast not ready — retry ${attempt}/10 in 3s"
+    sleep 3
+done
+rm -f "$APPCAST_TMP"
+[ "$APPCAST_OK" = true ] || fail "Live appcast.xml at ${APPCAST_URL} did not propagate after 10 attempts"
+step "Verified live signed appcast"
 
 echo ""
 info "Release complete"

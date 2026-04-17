@@ -32,6 +32,7 @@ DMG_ICON_SIZE=128
 NOTARY_PROFILE="${DOCKISHOS_NOTARY_PROFILE:-YEN-Notarization}"
 SOURCE_PLIST="Resources/Info.plist"
 ENTITLEMENTS="DockishOS.entitlements"
+SPARKLE_SOURCE="tools/sparkle/Sparkle.framework"
 
 BUILD_ONLY=false
 LOCAL_MODE=false
@@ -173,10 +174,11 @@ APP_BUNDLE="${BUILD_DIR}/${APP_NAME}.app"
 CONTENTS="${APP_BUNDLE}/Contents"
 MACOS_DIR="${CONTENTS}/MacOS"
 RESOURCES_DIR="${CONTENTS}/Resources"
+FRAMEWORKS_DIR="${CONTENTS}/Frameworks"
 INFO_PLIST="${CONTENTS}/Info.plist"
 
 /bin/rm -rf "$APP_BUNDLE"
-mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
+mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$FRAMEWORKS_DIR"
 
 cp "$BINARY_PATH" "$MACOS_DIR/${APP_NAME}"
 step "Copied binary"
@@ -184,6 +186,13 @@ step "Copied binary"
 if [ -f "$ICNS_FILE" ]; then
     cp "$ICNS_FILE" "$RESOURCES_DIR/${APP_NAME}.icns"
     step "Copied app icon"
+fi
+
+if [ -d "$SPARKLE_SOURCE" ]; then
+    ditto "$SPARKLE_SOURCE" "$FRAMEWORKS_DIR/Sparkle.framework"
+    step "Copied Sparkle.framework"
+else
+    warn "Sparkle.framework not found at ${SPARKLE_SOURCE} — auto-update will be disabled"
 fi
 
 cp "$SOURCE_PLIST" "$INFO_PLIST"
@@ -205,6 +214,21 @@ if [ "$BUILD_ONLY" = true ]; then
 fi
 
 info "Signing ${APP_NAME}.app"
+
+SPARKLE_FW="${APP_BUNDLE}/Contents/Frameworks/Sparkle.framework"
+if [ -d "$SPARKLE_FW" ]; then
+    for nested in \
+        "$SPARKLE_FW/Versions/B/XPCServices"/*.xpc \
+        "$SPARKLE_FW/Versions/B/Autoupdate.app" \
+        "$SPARKLE_FW/Versions/B/Autoupdate" \
+        "$SPARKLE_FW/Versions/B/Updater.app"; do
+        [ -e "$nested" ] || continue
+        sign_target "$nested" false >/dev/null
+    done
+    sign_target "$SPARKLE_FW" false >/dev/null
+    step "Signed Sparkle.framework"
+fi
+
 sign_with_retry "$APP_BUNDLE"
 codesign --verify --strict --verbose=2 "$APP_BUNDLE" 2>&1 | head -3
 step "Signature verified"
@@ -325,6 +349,13 @@ info "Generating checksum"
 CHECKSUM="$(shasum -a 256 "$DMG_FINAL" | awk '{print $1}')"
 echo "${CHECKSUM}  $(basename "$DMG_FINAL")" > "${BUILD_DIR}/${APP_NAME}-${VERSION}.sha256"
 step "SHA-256: ${CHECKSUM}"
+
+APPCAST_SCRIPT="$(dirname "$0")/generate-appcast.sh"
+if [ -f "$APPCAST_SCRIPT" ] && [ -d "$SPARKLE_SOURCE" ]; then
+    info "Generating appcast"
+    bash "$APPCAST_SCRIPT"
+    step "Appcast generated: ${BUILD_DIR}/appcast.xml"
+fi
 
 DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/$(basename "$DMG_FINAL")"
 DMG_SIZE="$(du -h "$DMG_FINAL" | awk '{print $1}')"

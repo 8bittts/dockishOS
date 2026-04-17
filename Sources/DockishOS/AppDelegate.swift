@@ -14,6 +14,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         rebuildBars()
         registerLauncherHotkey()
 
+        // Initialize Sparkle on launch so the auto-check timer starts. Only
+        // takes effect when Bundle.main has SUFeedURL — i.e., real `.app`
+        // builds, never `swift run`.
+        if Updater.shared.canUpdate { _ = Updater.shared }
+
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil,

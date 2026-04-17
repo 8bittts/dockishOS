@@ -60,6 +60,17 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.addItem(github)
 
         menu.addItem(.separator())
+
+        if Updater.shared.canUpdate {
+            let updates = NSMenuItem(
+                title: "Check for Updates…",
+                action: #selector(checkForUpdates),
+                keyEquivalent: ""
+            )
+            updates.target = self
+            menu.addItem(updates)
+            menu.addItem(.separator())
+        }
         let quit = NSMenuItem(
             title: "Quit DockishOS",
             action: #selector(quit),
@@ -78,6 +89,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     @objc private func openLauncher()  { LauncherController.shared.toggle() }
     @objc private func openSettings()  { SettingsController.shared.show() }
     @objc private func toggleDockAutoHide() { DockHelper.toggleAutoHide() }
+    @objc private func checkForUpdates()    { Updater.shared.checkForUpdates() }
     @objc private func openRepo() {
         if let url = URL(string: "https://github.com/8bittts/dockishOS") {
             NSWorkspace.shared.open(url)
