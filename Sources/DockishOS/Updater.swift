@@ -4,6 +4,11 @@ import Sparkle
 /// Sparkle-driven auto-update controller. Reads its feed URL + EdDSA
 /// public key from the bundled `Info.plist`, so no extra runtime
 /// configuration is needed.
+///
+/// Held as a singleton because Sparkle requires a long-lived updater
+/// object to run its scheduled check timer (`SUEnableAutomaticChecks`).
+/// Touching `.shared` from `applicationDidFinishLaunching` is enough to
+/// trigger init and start the timer.
 final class Updater: NSObject {
     static let shared = Updater()
 
@@ -18,7 +23,7 @@ final class Updater: NSObject {
         super.init()
     }
 
-    /// User-initiated check ("Check for Updates…").
+    /// User-initiated check ("Check for Updates…" menu item).
     @objc func checkForUpdates() {
         controller.checkForUpdates(nil)
     }

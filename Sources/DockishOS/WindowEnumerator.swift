@@ -21,10 +21,14 @@ enum WindowEnumerator {
             return []
         }
         let myPid = ProcessInfo.processInfo.processIdentifier
+        // `Dictionary(uniqueKeysWithValues:)` traps on duplicate keys.
+        // PIDs are unique in practice but `Dictionary(_:uniquingKeysWith:)`
+        // is the safe equivalent.
         let runningByPid: [pid_t: NSRunningApplication] = Dictionary(
-            uniqueKeysWithValues: NSWorkspace.shared.runningApplications.compactMap {
+            NSWorkspace.shared.runningApplications.compactMap {
                 $0.processIdentifier > 0 ? ($0.processIdentifier, $0) : nil
-            }
+            },
+            uniquingKeysWith: { first, _ in first }
         )
         return raw.compactMap { dict -> WindowInfo? in
             guard

@@ -117,7 +117,12 @@ final class PinnedAppsStore: ObservableObject {
             let data = UserDefaults.standard.data(forKey: storageKey),
             let decoded = try? JSONDecoder().decode([PinnedApp].self, from: data)
         else { return }
-        pins = decoded
+        // Drop pins whose .app no longer exists (uninstalled, moved). We
+        // re-save when entries were filtered so the stale ones don't keep
+        // loading on every launch.
+        let alive = decoded.filter { FileManager.default.fileExists(atPath: $0.path) }
+        pins = alive
+        if alive.count != decoded.count { save() }
     }
 
     private func save() {

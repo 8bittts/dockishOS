@@ -15,6 +15,7 @@ final class ThumbnailController {
     private var currentWindow: WindowInfo?
     private var cache: [CGWindowID: (image: NSImage, at: Date)] = [:]
     private let cacheTTL: TimeInterval = 3.0
+    private let cacheLimit = 32
     private let showDelay: TimeInterval = 0.2
     private let hideDelay: TimeInterval = 0.1
     private let panelSize = NSSize(width: 360, height: 230)
@@ -127,8 +128,18 @@ final class ThumbnailController {
             await MainActor.run {
                 guard let self, self.currentWindow?.id == window.id else { return }
                 self.cache[window.id] = (image, Date())
+                self.evictIfNeeded()
                 self.actuallyShow(window, image: image, near: cursor)
             }
+        }
+    }
+
+    /// Cap the cache at `cacheLimit` entries, dropping the oldest by
+    /// insertion time when full.
+    private func evictIfNeeded() {
+        guard cache.count > cacheLimit else { return }
+        if let oldestKey = cache.min(by: { $0.value.at < $1.value.at })?.key {
+            cache.removeValue(forKey: oldestKey)
         }
     }
 
@@ -141,12 +152,11 @@ final class ThumbnailController {
     }
 
     /// Center horizontally on cursor X, sit just above cursor Y, clamped
-    /// to the screen the cursor is on.
+    /// to the screen the cursor is on. Falls back to the cursor's raw
+    /// position if no screen contains it (impossible in practice).
     private func anchorOrigin(near cursor: NSPoint) -> NSPoint {
-        let screen = NSScreen.screens.first(where: { NSMouseInRect(cursor, $0.frame, false) })
-            ?? NSScreen.main
-            ?? NSScreen.screens.first!
-        let frame = screen.visibleFrame
+        let frame = NSScreen.containing(cursor)?.visibleFrame
+            ?? NSRect(x: cursor.x, y: cursor.y, width: panelSize.width, height: panelSize.height)
         let rawX = cursor.x - panelSize.width / 2
         let rawY = cursor.y + 16
         let x = max(frame.minX + 8, min(frame.maxX - panelSize.width - 8, rawX))

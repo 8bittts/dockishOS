@@ -74,9 +74,7 @@ final class SwitcherController {
     }
 
     private func positionOnActiveScreen() {
-        let screen = NSScreen.screens.first(where: {
-            NSMouseInRect(NSEvent.mouseLocation, $0.frame, false)
-        }) ?? NSScreen.main ?? NSScreen.screens.first!
+        guard let screen = NSScreen.containing(NSEvent.mouseLocation) else { return }
         let visible = screen.visibleFrame
         let size = panel.frame.size
         let x = visible.midX - size.width / 2

@@ -72,27 +72,26 @@ enum DockBadgeReader {
     static func read() -> [String: String] {
         guard let dockApp = NSWorkspace.shared.runningApplications.first(where: {
             $0.bundleIdentifier == "com.apple.dock"
-        }) else { return [:] }
+        }) else {
+            Diagnostics.badges.debug("Dock process not found")
+            return [:]
+        }
 
-        let dockPID = dockApp.processIdentifier
-        let dockAX = AXUIElementCreateApplication(dockPID)
-
+        let dockAX = AXUIElementCreateApplication(dockApp.processIdentifier)
         guard
-            let dockChildren = copy(dockAX, kAXChildrenAttribute) as? [AXUIElement],
+            let dockChildren: [AXUIElement] = AX.value(dockAX, kAXChildrenAttribute as CFString),
             let list = dockChildren.first,
-            let icons = copy(list, kAXChildrenAttribute) as? [AXUIElement]
+            let icons: [AXUIElement] = AX.value(list, kAXChildrenAttribute as CFString)
         else { return [:] }
 
         var result: [String: String] = [:]
         for icon in icons {
-            guard
-                let subrole = copy(icon, kAXSubroleAttribute) as? String,
-                subrole == "AXApplicationDockItem"
-            else { continue }
+            let subrole: String? = AX.value(icon, kAXSubroleAttribute as CFString)
+            guard subrole == "AXApplicationDockItem" else { continue }
 
             guard
                 let bundleID = bundleIdentifier(for: icon),
-                let badge = copy(icon, "AXStatusLabel" as CFString) as? String,
+                let badge: String = AX.value(icon, "AXStatusLabel"),
                 !badge.isEmpty
             else { continue }
 
@@ -102,22 +101,10 @@ enum DockBadgeReader {
     }
 
     private static func bundleIdentifier(for icon: AXUIElement) -> String? {
-        let raw = copy(icon, kAXURLAttribute)
-        let url: URL?
-        if let u = raw as? URL { url = u }
-        else if let n = raw as? NSURL { url = n as URL }
-        else { url = nil }
-        guard let url, url.pathExtension == "app" else { return nil }
+        guard
+            let url = AX.url(icon, kAXURLAttribute as CFString),
+            url.pathExtension == "app"
+        else { return nil }
         return Bundle(url: url)?.bundleIdentifier
-    }
-
-    private static func copy(_ element: AXUIElement, _ attribute: CFString) -> AnyObject? {
-        var value: AnyObject?
-        let err = AXUIElementCopyAttributeValue(element, attribute, &value)
-        return err == .success ? value : nil
-    }
-
-    private static func copy(_ element: AXUIElement, _ attribute: String) -> AnyObject? {
-        copy(element, attribute as CFString)
     }
 }

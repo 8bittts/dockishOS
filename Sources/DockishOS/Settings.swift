@@ -120,6 +120,13 @@ final class SettingsStore: ObservableObject {
     @Published var disabledScreenUUIDs: Set<String> {
         didSet {
             guard disabledScreenUUIDs != oldValue else { return }
+            // Refuse to disable every connected display — the user would
+            // lose access to the bar with no recovery UI.
+            let connected = Set(NSScreen.screens.map { SpacesAPI.displayUUID(for: $0) })
+            if !connected.isEmpty, connected.isSubset(of: disabledScreenUUIDs) {
+                disabledScreenUUIDs = oldValue
+                return
+            }
             UserDefaults.standard.set(Array(disabledScreenUUIDs), forKey: Key.disabledScreens)
             NotificationCenter.default.post(name: .dockishBarLayoutDidChange, object: nil)
         }

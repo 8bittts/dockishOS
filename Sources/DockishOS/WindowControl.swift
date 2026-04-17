@@ -17,30 +17,29 @@ enum WindowControl {
         if let app = NSRunningApplication(processIdentifier: window.pid) {
             app.activate(options: [])
         }
-        guard Permissions.ensureAccessibility(prompt: true) else { return }
-        if let axWin = axWindow(for: window) {
-            AXUIElementPerformAction(axWin, kAXRaiseAction as CFString)
-            AXUIElementSetAttributeValue(axWin, kAXMainAttribute as CFString, kCFBooleanTrue)
+        guard Permissions.ensureAccessibility(prompt: true) else {
+            Diagnostics.permissions.debug("Accessibility denied — falling back to app activation")
+            return
         }
+        guard let axWin = axWindow(for: window) else { return }
+        AXUIElementPerformAction(axWin, kAXRaiseAction as CFString)
+        AXUIElementSetAttributeValue(axWin, kAXMainAttribute as CFString, kCFBooleanTrue)
     }
 
     /// Close a specific window via the AX close button.
     static func close(_ window: WindowInfo) {
         guard Permissions.ensureAccessibility(prompt: true), let axWin = axWindow(for: window) else { return }
-        var closeButton: AnyObject?
-        AXUIElementCopyAttributeValue(axWin, kAXCloseButtonAttribute as CFString, &closeButton)
-        if let button = closeButton {
-            AXUIElementPerformAction(button as! AXUIElement, kAXPressAction as CFString)
-        }
+        guard let button = AX.element(axWin, kAXCloseButtonAttribute as CFString) else { return }
+        AXUIElementPerformAction(button, kAXPressAction as CFString)
     }
 
     /// Walk the AX windows of the owning app and find the one whose
     /// CGWindowID matches our target.
     private static func axWindow(for window: WindowInfo) -> AXUIElement? {
         let axApp = AXUIElementCreateApplication(window.pid)
-        var value: AnyObject?
-        let err = AXUIElementCopyAttributeValue(axApp, kAXWindowsAttribute as CFString, &value)
-        guard err == .success, let axWindows = value as? [AXUIElement] else { return nil }
+        guard let axWindows: [AXUIElement] = AX.value(axApp, kAXWindowsAttribute as CFString) else {
+            return nil
+        }
         for ax in axWindows {
             var id: CGWindowID = 0
             if _AXUIElementGetWindow(ax, &id) == .success, id == window.id {

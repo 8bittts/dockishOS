@@ -30,6 +30,7 @@ final class BarController {
             spacesStore: SpacesStore.shared,
             pinnedStore: PinnedAppsStore.shared,
             badgeStore: BadgeStore.shared,
+            runningApps: RunningAppsStore.shared,
             settings: SettingsStore.shared
         ))
         host.autoresizingMask = [.width, .height]
@@ -54,6 +55,9 @@ final class BarController {
     /// Vertical scroll over the bar switches Spaces. Horizontal scroll is
     /// passed through so the windows row's `ScrollView` still scrolls.
     private func installScrollMonitor() {
+        // Idempotent: avoid stacking multiple monitors if `show()` is
+        // called twice without a matching `close()`.
+        guard scrollMonitor == nil else { return }
         scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
             guard let self, event.window === self.panel else { return event }
             if abs(event.scrollingDeltaY) > abs(event.scrollingDeltaX) {

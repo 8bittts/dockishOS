@@ -49,9 +49,7 @@ final class LauncherController {
     }
 
     private func positionOnActiveScreen() {
-        let screen = NSScreen.screens.first(where: {
-            NSMouseInRect(NSEvent.mouseLocation, $0.frame, false)
-        }) ?? NSScreen.main ?? NSScreen.screens.first!
+        guard let screen = NSScreen.containing(NSEvent.mouseLocation) else { return }
         let visible = screen.visibleFrame
         let size = panel.frame.size
         // Roughly Spotlight position: centered horizontally, ~30% from top.

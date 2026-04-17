@@ -247,7 +247,7 @@ private struct PinnedList: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(pinned.pins.enumerated()), id: \.element.id) { index, app in
-                    PinnedRow(
+                    PinnedAppRow(
                         app: app,
                         isFirst: index == 0,
                         isLast: index == pinned.pins.count - 1,
@@ -272,7 +272,7 @@ private struct PinnedList: View {
     }
 }
 
-private struct PinnedRow: View {
+private struct PinnedAppRow: View {
     let app: PinnedApp
     let isFirst: Bool
     let isLast: Bool

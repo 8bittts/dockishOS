@@ -14,10 +14,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         rebuildBars()
         registerLauncherHotkey()
 
+        let screenCount = NSScreen.screens.count
+        Diagnostics.lifecycle.notice("DockishOS launched (screens=\(screenCount, privacy: .public))")
+        if screenCount == 0 {
+            Diagnostics.lifecycle.fault("No displays detected at launch — bars will appear when one connects.")
+        }
+
         // Initialize Sparkle on launch so the auto-check timer starts. Only
         // takes effect when Bundle.main has SUFeedURL — i.e., real `.app`
-        // builds, never `swift run`.
-        if Updater.shared.canUpdate { _ = Updater.shared }
+        // builds, never `swift run`. Touching the singleton is what triggers
+        // its `init()`; the discarded reference is intentional.
+        if Updater.shared.canUpdate {
+            _ = Updater.shared
+            Diagnostics.updater.info("Sparkle auto-update enabled")
+        } else {
+            Diagnostics.updater.info("Running unbundled (no SUFeedURL); auto-update disabled")
+        }
 
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
