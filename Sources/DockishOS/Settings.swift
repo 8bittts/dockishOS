@@ -79,6 +79,8 @@ final class SettingsStore: ObservableObject {
         static let barPosition     = "DockishOS.barPosition"
         static let showChipTitles  = "DockishOS.showChipTitles"
         static let showPinnedRow   = "DockishOS.showPinnedRow"
+        static let disabledScreens = "DockishOS.disabledScreens"
+        static let launcherHotkey  = "DockishOS.launcherHotkey"
     }
 
     @Published var barSize: BarSize {
@@ -111,6 +113,28 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    @Published var disabledScreenUUIDs: Set<String> {
+        didSet {
+            guard disabledScreenUUIDs != oldValue else { return }
+            UserDefaults.standard.set(Array(disabledScreenUUIDs), forKey: Key.disabledScreens)
+            NotificationCenter.default.post(name: .dockishBarLayoutDidChange, object: nil)
+        }
+    }
+
+    @Published var launcherHotkey: LauncherHotkey {
+        didSet {
+            guard launcherHotkey != oldValue else { return }
+            if let data = try? JSONEncoder().encode(launcherHotkey) {
+                UserDefaults.standard.set(data, forKey: Key.launcherHotkey)
+            }
+            NotificationCenter.default.post(name: .dockishHotkeyDidChange, object: nil)
+        }
+    }
+
+    func isScreenEnabled(_ screen: NSScreen) -> Bool {
+        !disabledScreenUUIDs.contains(SpacesAPI.displayUUID(for: screen))
+    }
+
     private init() {
         let rawSize = UserDefaults.standard.string(forKey: Key.barSize) ?? BarSize.medium.rawValue
         self.barSize = BarSize(rawValue: rawSize) ?? .medium
@@ -118,5 +142,19 @@ final class SettingsStore: ObservableObject {
         self.barPosition = BarPosition(rawValue: rawPos) ?? .bottom
         self.showChipTitles = (UserDefaults.standard.object(forKey: Key.showChipTitles) as? Bool) ?? true
         self.showPinnedRow  = (UserDefaults.standard.object(forKey: Key.showPinnedRow)  as? Bool) ?? true
+        let disabled = UserDefaults.standard.stringArray(forKey: Key.disabledScreens) ?? []
+        self.disabledScreenUUIDs = Set(disabled)
+        if let data = UserDefaults.standard.data(forKey: Key.launcherHotkey),
+           let hk = try? JSONDecoder().decode(LauncherHotkey.self, from: data) {
+            self.launcherHotkey = hk
+        } else {
+            self.launcherHotkey = .default
+        }
     }
+}
+
+extension Notification.Name {
+    /// Posted when the launcher hotkey changes — AppDelegate re-registers
+    /// the global Carbon hotkey.
+    static let dockishHotkeyDidChange = Notification.Name("DockishOS.HotkeyDidChange")
 }

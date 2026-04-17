@@ -57,12 +57,34 @@ private struct AppearanceTab: View {
 }
 
 private struct BehaviorTab: View {
+    @ObservedObject var settings: SettingsStore = SettingsStore.shared
     @State private var dockAutoHide: Bool = DockHelper.isAutoHideEnabled
     @State private var loginItemEnabled: Bool = LoginItem.isEnabled
     @State private var loginItemMessage: String = LoginItem.statusDescription
+    @State private var screens: [ScreenItem] = []
 
     var body: some View {
         Form {
+            Section {
+                HStack {
+                    Text("Launcher hotkey")
+                    Spacer()
+                    HotkeyRecorder(
+                        hotkey: $settings.launcherHotkey,
+                        onReset: { settings.launcherHotkey = .default }
+                    )
+                    .frame(width: 160, height: 26)
+                    Button("Reset") { settings.launcherHotkey = .default }
+                        .controlSize(.small)
+                }
+            } header: {
+                Text("Hotkey")
+            } footer: {
+                Text("Click the field, press the new chord. Press Esc to cancel. Must include at least one non-shift modifier.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+
             Section {
                 Toggle("Auto-hide system Dock", isOn: $dockAutoHide)
                     .onChange(of: dockAutoHide) { _, newValue in
@@ -90,6 +112,23 @@ private struct BehaviorTab: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
+
+            Section {
+                if screens.isEmpty {
+                    Text("Detecting displays…")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(screens) { screen in
+                        Toggle(screen.name, isOn: enabledBinding(for: screen))
+                    }
+                }
+            } header: {
+                Text("Displays")
+            } footer: {
+                Text("Turn off displays where you don't want a bar. Bars rebuild instantly.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
         .padding(.horizontal, 12)
@@ -97,7 +136,53 @@ private struct BehaviorTab: View {
             dockAutoHide = DockHelper.isAutoHideEnabled
             loginItemEnabled = LoginItem.isEnabled
             loginItemMessage = LoginItem.statusDescription
+            reloadScreens()
         }
+    }
+
+    private func reloadScreens() {
+        screens = NSScreen.screens.map { ns in
+            let uuid = SpacesAPI.displayUUID(for: ns)
+            return ScreenItem(
+                id: uuid,
+                name: ns.localizedName,
+                isEnabled: !settings.disabledScreenUUIDs.contains(uuid)
+            )
+        }
+    }
+
+    private func enabledBinding(for screen: ScreenItem) -> Binding<Bool> {
+        Binding(
+            get: { !settings.disabledScreenUUIDs.contains(screen.id) },
+            set: { newValue in
+                var set = settings.disabledScreenUUIDs
+                if newValue { set.remove(screen.id) } else { set.insert(screen.id) }
+                settings.disabledScreenUUIDs = set
+                reloadScreens()
+            }
+        )
+    }
+}
+
+private struct ScreenItem: Identifiable, Hashable {
+    let id: String
+    let name: String
+    let isEnabled: Bool
+}
+
+private struct HotkeyRecorder: NSViewRepresentable {
+    @Binding var hotkey: LauncherHotkey
+    var onReset: () -> Void
+
+    func makeNSView(context: Context) -> HotkeyRecorderView {
+        let v = HotkeyRecorderView()
+        v.hotkey = hotkey
+        v.onChange = { hotkey = $0 }
+        return v
+    }
+
+    func updateNSView(_ nsView: HotkeyRecorderView, context: Context) {
+        nsView.hotkey = hotkey
     }
 }
 

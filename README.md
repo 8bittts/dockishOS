@@ -102,11 +102,12 @@ Press **⌘,** (or pick **Settings…** from the menu-bar item) to open the Sett
 
 | Tab | Controls |
 |---|---|
-| **Appearance** | Bar size (Small / Medium / Large), show window titles toggle, show pinned apps row toggle |
+| **Appearance** | Bar size (S / M / L), bar position (Top / Bottom), show window titles toggle, show pinned apps row toggle |
+| **Behavior** | Customize launcher hotkey, auto-hide system Dock, launch DockishOS at login, per-display opt-in/out |
 | **Pinned** | Reorder or unpin individual apps; manage the pinned list |
 | **About** | Version + build, links to repo, releases, and license |
 
-Bar size changes apply immediately to every connected display — the bars are torn down and rebuilt at the new height.
+Bar size and position changes apply immediately to every connected display — the bars are torn down and rebuilt. Hotkey changes re-register the global Carbon hotkey on the fly.
 
 ### Menu bar
 
@@ -196,10 +197,13 @@ Spaces enumeration and switching require **no** permissions — the CGS SPIs ope
 | `LauncherView.swift` | SwiftUI launcher UI with arrow-key navigation. |
 | `LauncherController.swift` | Show / hide / position; restores prior frontmost on dismiss. |
 | `MenuBarController.swift` | Status-bar `NSStatusItem` with Quit, Open Launcher, Settings, Open Repo. |
-| `Settings.swift` | `BarSize` enum + `SettingsStore` (UserDefaults-backed). |
+| `Settings.swift` | `BarSize` + `BarPosition` enums, `SettingsStore` (UserDefaults-backed). |
 | `PinnedAppsStore.swift` | UserDefaults-backed list of pinned apps + load / save / launch helpers. |
-| `SettingsView.swift` | SwiftUI `TabView`: Appearance / Pinned / About. |
+| `SettingsView.swift` | SwiftUI `TabView`: Appearance / Behavior / Pinned / About. |
 | `SettingsController.swift` | Single-instance Settings `NSWindow`. |
+| `LauncherHotkey.swift` | `LauncherHotkey` model + `HotkeyRecorderView` for in-app rebinding. |
+| `DockHelper.swift` | Read + toggle the system Dock's `autohide` preference (defaults / killall). |
+| `LoginItem.swift` | `SMAppService.mainApp` register / unregister wrapper. |
 | `WindowStore.swift` | `ObservableObject` for windows. Refreshes on tick + activation + Space change. |
 | `SpacesStore.swift` | `ObservableObject` for Spaces. Refreshes on Space change + 5 s polling. |
 | `Permissions.swift` | Accessibility check + prompt helpers. |
@@ -327,17 +331,17 @@ Done:
 - [x] Pinned apps row backed by UserDefaults
 - [x] Settings window with Bar size (S/M/L), chip titles toggle, pinned-row toggle
 - [x] About panel with version + license + acknowledgments
+- [x] Bar position (Top / Bottom)
+- [x] System Dock auto-hide toggle (Settings + menu bar)
+- [x] Auto-launch on login via `SMAppService`
+- [x] Per-monitor opt-in / opt-out
+- [x] Customizable launcher hotkey
 
 In rough priority order:
 
 - [ ] Drag-to-reorder pinned apps (chevron buttons exist; native drag would be nicer)
 - [ ] Drag apps from Finder onto the bar to pin
-- [ ] System Dock auto-hide toggle from the menu-bar item
 - [ ] Notification badge counts on app icons
-- [ ] Bar position (top vs bottom) setting
-- [ ] Customizable launcher hotkey
-- [ ] Per-monitor opt-in / opt-out
-- [ ] Auto-launch on login via `SMAppService`
 - [ ] Sparkle-based auto-update wired to the GitHub Releases appcast
 - [ ] Optional window grouping by app (one chip per app, count badge)
 - [ ] App switcher (Cmd+Tab replacement) reusing the launcher panel
