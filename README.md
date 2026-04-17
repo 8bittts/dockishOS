@@ -4,7 +4,12 @@ A macOS taskbar that organizes windows by Space — a from-scratch take inspired
 
 ## Status
 
-**Foundation only.** A floating, translucent bar appears at the bottom of every connected display. It lists windows on the current Space and activates the owning app on click. No Spaces switcher, thumbnails, app launcher, or pinned apps yet — see roadmap.
+A floating, translucent bar appears at the bottom of every connected display.
+
+- **Spaces row** (left) — numbered chips for every Space on the bar's display, current one highlighted, click to switch.
+- **Windows row** (right) — chips for every window on the current Space. Click to raise the specific window (not just the app). Right-click for Activate / Close. Frontmost window gets an accent ring.
+
+No thumbnails, app launcher, pinned apps, or settings yet — see roadmap.
 
 ## Requirements
 
@@ -23,10 +28,12 @@ The app launches as a menu-bar accessory (no Dock icon). A floating bar appears 
 
 | Permission | Status | Used for |
 |---|---|---|
-| Accessibility | Optional today, required for window-focus + Spaces switching later | `AXUIElement` raise actions, private `CGS*` Spaces SPIs |
-| Screen Recording | Optional today, required for full window titles + thumbnails | `kCGWindowName` of foreign-app windows, ScreenCaptureKit thumbnails |
+| Accessibility | Required for per-window raise + close | `AXUIElement` raise / press close-button |
+| Screen Recording | Optional, required for full window titles + (future) thumbnails | `kCGWindowName` of foreign-app windows, ScreenCaptureKit thumbnails |
 
-Without Screen Recording, chips show the owning app name instead of the window title. Without Accessibility, click-to-activate brings the app forward but doesn't focus a specific window.
+The first time you click a window chip, macOS will prompt for Accessibility. Granting it enables true per-window focus; until then, clicks only bring the owning app forward. Spaces switching uses private CoreGraphics SPIs that don't require any permission grant.
+
+Without Screen Recording, window chips show the app name instead of the window title.
 
 ## Architecture
 
@@ -36,22 +43,35 @@ Without Screen Recording, chips show the owning app name instead of the window t
 | `AppDelegate.swift` | Lifecycle. Observes screen + Space changes, owns one `BarController` per `NSScreen`. |
 | `BarController.swift` | Per-screen bar window controller. Anchors to `screen.visibleFrame` bottom edge. |
 | `BarPanel.swift` | Borderless `NSPanel` at `.statusBar` level with `.canJoinAllSpaces` + `.fullScreenAuxiliary`. |
-| `BarView.swift` | SwiftUI bar UI: chips with app icons + window titles, hover state, scrollable. |
+| `BarView.swift` | SwiftUI bar UI: Spaces chips on the left, windows on the right, hover + frontmost states. |
 | `WindowEnumerator.swift` | `CGWindowListCopyWindowInfo` wrapper. On-screen + layer-0 == current Space. No private SPI. |
-| `WindowStore.swift` | `ObservableObject` model. 1s timer + `activeSpaceDidChange` notification refresh. |
+| `WindowStore.swift` | `ObservableObject` window model. 1s timer + `activeSpaceDidChange` + `didActivateApplication` refresh. |
+| `WindowControl.swift` | AX-based window raise + close. Uses private `_AXUIElementGetWindow` to map CGWindowID → AX element. |
+| `SpacesAPI.swift` | Private `CGS*` Spaces SPI bindings: enumerate, get current, switch. |
+| `SpacesStore.swift` | `ObservableObject` Spaces model. Refreshes on `activeSpaceDidChange` + 5s polling. |
 | `Permissions.swift` | Accessibility check/prompt helper. |
+
+### Private API surface
+
+Two private symbols, both stable for ~10 years across macOS releases and used by every comparable tool:
+
+- `_AXUIElementGetWindow(AXUIElement, CGWindowID*)` — `ApplicationServices.framework`. Maps an AX window element to its CGWindowID so we can match what the user clicked.
+- `CGSMainConnectionID`, `CGSCopyManagedDisplaySpaces`, `CGSManagedDisplayGetCurrentSpace`, `CGSManagedDisplaySetCurrentSpace` — `CoreGraphics.framework`. Spaces enumeration and switching.
+
+Apple tolerates these but reserves the right to break them. Calls are wrapped in graceful fallbacks; SPI failure should never crash the bar.
 
 ## Roadmap (toward boringBar parity)
 
-1. **Per-window focus** — `AXUIElement` + `kAXRaiseAction` instead of just app activation.
-2. **Spaces switcher** — Private `CGSCopyWorkspaces` / `CGSManagedDisplaySetCurrentSpace` for one-click jumps.
-3. **Window thumbnails** — ScreenCaptureKit hover previews.
-4. **App launcher** — Spotlight-style fuzzy search over `/Applications` with global hotkey (`MASShortcut`).
-5. **Pinned apps** — UserDefaults pin list rendered alongside the windows row.
-6. **Dock auto-hide toggle** — `defaults write com.apple.dock` helpers.
-7. **Notification badges** — Badge counts from `NSApplication.dockTile` proxy.
-8. **Settings window** — Bar size (S/M/L), chip titles on/off, monitor selection.
-9. **Bundle as `.app`** — Move from `swift run` to a signed `.app` with proper `Info.plist` usage strings.
+- [x] Per-window focus via `AXUIElement` + `kAXRaiseAction`.
+- [x] Spaces switcher via private `CGS*` SPIs.
+- [ ] Window thumbnails (ScreenCaptureKit hover previews).
+- [ ] App launcher (Spotlight-style fuzzy search over `/Applications`, global hotkey via `MASShortcut`).
+- [ ] Pinned apps row backed by UserDefaults.
+- [ ] Dock auto-hide toggle (`defaults write com.apple.dock`).
+- [ ] Notification badges from `NSApplication.dockTile` proxies.
+- [ ] Settings window (bar size, chip titles, per-monitor opt-in).
+- [ ] Scroll-to-switch Spaces (already a BoringBar feature).
+- [ ] Bundle as signed `.app` with proper `Info.plist` usage strings.
 
 ## Prior art worth studying
 

@@ -2,7 +2,9 @@ import SwiftUI
 import AppKit
 
 struct BarView: View {
-    @ObservedObject var store: WindowStore
+    let screen: NSScreen
+    @ObservedObject var windowStore: WindowStore
+    @ObservedObject var spacesStore: SpacesStore
 
     var body: some View {
         ZStack {
@@ -12,38 +14,103 @@ struct BarView: View {
                 .padding(.vertical, 6)
                 .shadow(color: .black.opacity(0.35), radius: 18, y: 6)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(store.windows) { window in
-                        WindowChip(window: window) { store.activate(window) }
+            HStack(spacing: 8) {
+                SpacesRow(
+                    spaces: spacesStore.spaces(for: screen),
+                    currentID: spacesStore.currentSpaceID(for: screen),
+                    onPick: { spacesStore.switchTo($0) }
+                )
+
+                Divider()
+                    .frame(height: 24)
+                    .opacity(0.3)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(windowStore.windows) { window in
+                            WindowChip(
+                                window: window,
+                                isFrontmost: window.pid == windowStore.frontmostPID,
+                                onActivate: { windowStore.activate(window) },
+                                onClose: { windowStore.close(window) }
+                            )
+                        }
+                        if windowStore.windows.isEmpty {
+                            Text("No windows on this Space")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 8)
+                        }
                     }
-                    if store.windows.isEmpty {
-                        Text("No windows on this Space")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 12)
-                    }
+                    .padding(.vertical, 10)
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 10)
             }
+            .padding(.horizontal, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
-private struct WindowChip: View {
-    let window: WindowInfo
+private struct SpacesRow: View {
+    let spaces: [SpaceInfo]
+    let currentID: CGSSpaceID?
+    let onPick: (SpaceInfo) -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(spaces) { space in
+                SpaceChip(
+                    index: space.index,
+                    isActive: space.id == currentID,
+                    action: { onPick(space) }
+                )
+            }
+            if spaces.isEmpty {
+                Text("—")
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+}
+
+private struct SpaceChip: View {
+    let index: Int
+    let isActive: Bool
     let action: () -> Void
     @State private var hover = false
 
     var body: some View {
         Button(action: action) {
+            Text("\(index)")
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundStyle(isActive ? .black : .primary)
+                .frame(width: 24, height: 24)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(isActive ? Color.white.opacity(0.95) : Color.white.opacity(hover ? 0.18 : 0.08))
+                )
+        }
+        .buttonStyle(.plain)
+        .onHover { hover = $0 }
+        .help(isActive ? "Space \(index) (current)" : "Switch to Space \(index)")
+    }
+}
+
+private struct WindowChip: View {
+    let window: WindowInfo
+    let isFrontmost: Bool
+    let onActivate: () -> Void
+    let onClose: () -> Void
+    @State private var hover = false
+
+    var body: some View {
+        Button(action: onActivate) {
             HStack(spacing: 6) {
                 AppIconView(pid: window.pid)
                     .frame(width: 22, height: 22)
                 Text(window.displayTitle)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 12, weight: isFrontmost ? .semibold : .medium))
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .foregroundStyle(.primary)
@@ -53,12 +120,25 @@ private struct WindowChip: View {
             .frame(maxWidth: 220)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.white.opacity(hover ? 0.18 : 0.08))
+                    .fill(chipFill)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isFrontmost ? Color.accentColor.opacity(0.85) : .clear, lineWidth: 1.5)
             )
         }
         .buttonStyle(.plain)
         .onHover { hover = $0 }
         .help(window.displayTitle)
+        .contextMenu {
+            Button("Activate") { onActivate() }
+            Button("Close Window") { onClose() }
+        }
+    }
+
+    private var chipFill: Color {
+        if isFrontmost { return Color.white.opacity(0.22) }
+        return Color.white.opacity(hover ? 0.18 : 0.08)
     }
 }
 

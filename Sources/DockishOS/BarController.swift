@@ -17,7 +17,11 @@ final class BarController {
             height: height
         )
         self.panel = BarPanel(contentRect: frame)
-        self.host = NSHostingView(rootView: BarView(store: WindowStore.shared))
+        self.host = NSHostingView(rootView: BarView(
+            screen: screen,
+            windowStore: WindowStore.shared,
+            spacesStore: SpacesStore.shared
+        ))
         host.autoresizingMask = [.width, .height]
         panel.contentView = host
         panel.setFrame(frame, display: true)
