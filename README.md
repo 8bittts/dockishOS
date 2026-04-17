@@ -70,6 +70,19 @@ The right side of every bar lists windows that are on-screen *on the current Spa
 
 > **Note:** Without Screen Recording permission, foreign-app window titles are redacted by macOS to the empty string. The chip falls back to the owning app's name (e.g., "Safari", "Terminal"). With Screen Recording, you get titles like "Inbox - Mail" or "AppDelegate.swift — DockishOS".
 
+### Launcher
+
+Press **⌥ Space** (Option+Space) to open the app launcher. Type to fuzzy-search every `.app` in `/Applications`, `/System/Applications`, and `~/Applications`. Arrow keys to navigate, `Return` to launch, `Escape` or click outside to dismiss.
+
+| Action | Key |
+|---|---|
+| Toggle launcher | ⌥ Space |
+| Move selection | ↑ / ↓ |
+| Launch selected app | Return |
+| Dismiss | Esc / click outside |
+
+The hotkey is registered via Carbon's `RegisterEventHotKey`; if another app already owns ⌥ Space (Raycast, Alfred), DockishOS's registration silently fails. A future settings UI will let you remap.
+
 ### Permissions
 
 DockishOS requests permissions **lazily**, only when you first use a feature that needs them.
@@ -125,6 +138,12 @@ Spaces enumeration and switching require **no** permissions — the CGS SPIs ope
 | `SpacesAPI.swift` | Private `CGS*` Spaces SPI bindings. |
 | `ThumbnailCapture.swift` | One-shot ScreenCaptureKit capture by `CGWindowID`. |
 | `ThumbnailController.swift` | Singleton floating panel that shows a window thumbnail on hover. |
+| `HotkeyManager.swift` | Carbon `RegisterEventHotKey` wrapper for one global hotkey. |
+| `AppIndex.swift` | Recursive `.app` scanner + Spotlight-style scoring. |
+| `LauncherStore.swift` | `ObservableObject` for query, results, selection. |
+| `LauncherPanel.swift` | Key-eligible `NSPanel` for the launcher. |
+| `LauncherView.swift` | SwiftUI launcher UI with arrow-key navigation. |
+| `LauncherController.swift` | Show / hide / position; restores prior frontmost on dismiss. |
 | `WindowStore.swift` | `ObservableObject` for windows. Refreshes on tick + activation + Space change. |
 | `SpacesStore.swift` | `ObservableObject` for Spaces. Refreshes on Space change + 5 s polling. |
 | `Permissions.swift` | Accessibility check + prompt helpers. |
@@ -196,7 +215,7 @@ Toward boringBar feature parity, in priority order:
 - [x] Frontmost window indicator
 - [x] Scroll wheel over bar to switch Spaces
 - [x] Window thumbnails on hover (ScreenCaptureKit)
-- [ ] App launcher with global hotkey
+- [x] App launcher with global hotkey (⌥Space)
 - [ ] Pinned apps row
 - [ ] System Dock auto-hide toggle
 - [ ] Notification badge counts
