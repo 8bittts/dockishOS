@@ -239,16 +239,18 @@ info "Creating DMG"
 DMG_STAGING="${BUILD_DIR}/dmg-staging"
 DMG_RW="${BUILD_DIR}/${APP_NAME}-rw.dmg"
 DMG_FINAL="${BUILD_DIR}/${APP_NAME}-${VERSION}.dmg"
-DMG_BG_OPAQUE="${BUILD_DIR}/dmg-background.png"
-# Cinematic DMG window: 1200×675 logical (16:9 exact = 1.778, matches
-# mario.jpg's 1280×721 aspect). Retina source becomes 2400×1350 — mario
-# upscales ~87 % via sips bicubic. Soft on close inspection but the
-# landscape style absorbs it well, and mario fills the entire window
-# with no letterboxing or cropping.
-DMG_WIN_LEFT=160
+DMG_BG_1X="${BUILD_DIR}/dmg-background.png"
+DMG_BG_2X="${BUILD_DIR}/dmg-background@2x.png"
+# Cinematic DMG window: 1280×720 logical (16:9 exact, matches mario.jpg's
+# 1280×721 native aspect). We ship two background images and let Finder
+# pick: background.png (1280×720) for non-Retina, background@2x.png
+# (2560×1440) for Retina — kindred-macOS's pattern. With a single image,
+# Finder treats it as 1x and clips most of mario; with both, mario
+# always fills the window edge-to-edge.
+DMG_WIN_LEFT=120
 DMG_WIN_TOP=120
-DMG_WIN_WIDTH=1200
-DMG_WIN_HEIGHT=675
+DMG_WIN_WIDTH=1280
+DMG_WIN_HEIGHT=720
 DMG_WIN_RIGHT=$((DMG_WIN_LEFT + DMG_WIN_WIDTH))
 DMG_WIN_BOTTOM=$((DMG_WIN_TOP + DMG_WIN_HEIGHT))
 DMG_WIN_RIGHT_JIGGLE=$((DMG_WIN_RIGHT - 10))
@@ -258,21 +260,32 @@ mkdir -p "$DMG_STAGING"
 cp -R "$APP_BUNDLE" "$DMG_STAGING/${APP_NAME}.app"
 ln -s /Applications "$DMG_STAGING/Applications"
 
-# Stage a Retina-scale, opaque background image. Finder rejects images
-# with an alpha channel for `set background picture`, so we round-trip
-# PNG → JPEG → PNG to flatten transparency.
+# Stage two opaque PNGs (1x + @2x) so Finder picks the right pixel
+# density per display. Finder rejects images with an alpha channel for
+# `set background picture`, so we round-trip PNG → JPEG → PNG to flatten
+# transparency. `sips -z H W` forces exact dimensions; mario.jpg is
+# 1280×721 so the 1x size loses 1 px vertically (invisible) and the 2x
+# size upscales 100 % via bicubic (soft but acceptable for landscape art).
+flatten_to_opaque_png() {
+    local in_path="$1"
+    local out_path="$2"
+    local jpeg_temp="${out_path%.png}.tmp.jpg"
+    sips -s format jpeg --setProperty formatOptions 100 "$in_path" --out "$jpeg_temp" >/dev/null 2>&1
+    sips -s format png "$jpeg_temp" --out "$out_path" >/dev/null 2>&1
+    /bin/rm -f "$jpeg_temp"
+}
+
 if [ -f "$DMG_BG_SOURCE" ]; then
-    sips -s format png --setProperty formatOptions 100 "$DMG_BG_SOURCE" \
-        --out "$DMG_BG_OPAQUE" \
-        --resampleWidth $((DMG_WIN_WIDTH * 2)) >/dev/null 2>&1
-    sips -s format jpeg "$DMG_BG_OPAQUE" \
-        --out "${DMG_BG_OPAQUE%.png}.jpg" >/dev/null 2>&1
-    sips -s format png "${DMG_BG_OPAQUE%.png}.jpg" \
-        --out "$DMG_BG_OPAQUE" >/dev/null 2>&1
-    /bin/rm -f "${DMG_BG_OPAQUE%.png}.jpg"
+    sips -z "$DMG_WIN_HEIGHT" "$DMG_WIN_WIDTH" "$DMG_BG_SOURCE" \
+        --out "$DMG_BG_1X" >/dev/null 2>&1
+    flatten_to_opaque_png "$DMG_BG_1X" "$DMG_BG_1X"
+    sips -z $((DMG_WIN_HEIGHT * 2)) $((DMG_WIN_WIDTH * 2)) "$DMG_BG_SOURCE" \
+        --out "$DMG_BG_2X" >/dev/null 2>&1
+    flatten_to_opaque_png "$DMG_BG_2X" "$DMG_BG_2X"
     mkdir -p "$DMG_STAGING/.background"
-    cp "$DMG_BG_OPAQUE" "$DMG_STAGING/.background/background.png"
-    step "Prepared DMG background from ${DMG_BG_SOURCE}"
+    cp "$DMG_BG_1X" "$DMG_STAGING/.background/background.png"
+    cp "$DMG_BG_2X" "$DMG_STAGING/.background/background@2x.png"
+    step "Prepared DMG background (1x + @2x) from ${DMG_BG_SOURCE}"
 else
     warn "DMG background source not found at ${DMG_BG_SOURCE} — using plain Finder background"
 fi
@@ -326,8 +339,8 @@ tell application "Finder"
         ${BG_CMD}
         -- Icons sit in the upper-third sky/clouds region of mario.jpg so
         -- the Mario character + grass at the bottom stay visually clear.
-        set position of item "${APP_NAME}.app" of container window to {380, 200}
-        set position of item "Applications" of container window to {820, 200}
+        set position of item "${APP_NAME}.app" of container window to {410, 220}
+        set position of item "Applications" of container window to {870, 220}
         try
             set position of item ".background" of container window to {330, 900}
         end try
