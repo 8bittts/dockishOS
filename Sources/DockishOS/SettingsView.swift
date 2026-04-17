@@ -9,12 +9,14 @@ struct SettingsView: View {
         TabView {
             AppearanceTab(settings: settings)
                 .tabItem { Label("Appearance", systemImage: "slider.horizontal.3") }
+            BehaviorTab()
+                .tabItem { Label("Behavior", systemImage: "gearshape.2") }
             PinnedTab(pinned: pinned)
                 .tabItem { Label("Pinned", systemImage: "pin") }
             AboutTab()
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
-        .frame(width: 480, height: 440)
+        .frame(width: 480, height: 460)
         .padding(.top, 4)
     }
 }
@@ -32,18 +34,70 @@ private struct AppearanceTab: View {
                 }
                 .pickerStyle(.segmented)
 
+                Picker("Bar position", selection: $settings.barPosition) {
+                    ForEach(BarPosition.allCases) { pos in
+                        Text(pos.displayName).tag(pos)
+                    }
+                }
+                .pickerStyle(.segmented)
+
                 Toggle("Show window titles on chips", isOn: $settings.showChipTitles)
                 Toggle("Show pinned apps row", isOn: $settings.showPinnedRow)
             } header: {
                 Text("Bar")
             } footer: {
-                Text("Bar size changes apply immediately to every connected display.")
+                Text("Size and position changes apply immediately to every connected display.")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
         .padding(.horizontal, 12)
+    }
+}
+
+private struct BehaviorTab: View {
+    @State private var dockAutoHide: Bool = DockHelper.isAutoHideEnabled
+    @State private var loginItemEnabled: Bool = LoginItem.isEnabled
+    @State private var loginItemMessage: String = LoginItem.statusDescription
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Auto-hide system Dock", isOn: $dockAutoHide)
+                    .onChange(of: dockAutoHide) { _, newValue in
+                        DockHelper.setAutoHide(newValue)
+                    }
+            } header: {
+                Text("System Dock")
+            } footer: {
+                Text("Toggling this restarts the macOS Dock to apply.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Toggle("Launch DockishOS at login", isOn: $loginItemEnabled)
+                    .onChange(of: loginItemEnabled) { _, newValue in
+                        _ = LoginItem.setEnabled(newValue)
+                        loginItemEnabled = LoginItem.isEnabled
+                        loginItemMessage = LoginItem.statusDescription
+                    }
+            } header: {
+                Text("Login")
+            } footer: {
+                Text(loginItemMessage)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .padding(.horizontal, 12)
+        .onAppear {
+            dockAutoHide = DockHelper.isAutoHideEnabled
+            loginItemEnabled = LoginItem.isEnabled
+            loginItemMessage = LoginItem.statusDescription
+        }
     }
 }
 

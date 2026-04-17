@@ -11,11 +11,15 @@ final class BarController {
 
     init(screen: NSScreen) {
         self.screen = screen
-        let height = SettingsStore.shared.barSize.height
+        let settings = SettingsStore.shared
+        let height = settings.barSize.height
         let visible = screen.visibleFrame
+        let y: CGFloat = settings.barPosition == .top
+            ? visible.maxY - height
+            : visible.minY
         let frame = NSRect(
             x: visible.minX,
-            y: visible.minY,
+            y: y,
             width: visible.width,
             height: height
         )

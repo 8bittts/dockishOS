@@ -1,19 +1,23 @@
 import AppKit
 
-/// Minimal menu-bar item so users have a way to quit the app and surface
-/// help when no terminal is attached (i.e. when launched from the DMG).
-final class MenuBarController {
+/// Minimal menu-bar item so users have a way to quit the app, open
+/// settings, and toggle quick system actions when no terminal is attached.
+final class MenuBarController: NSObject, NSMenuDelegate {
     private let statusItem: NSStatusItem
     private let menu = NSMenu()
+    private let dockToggleItem: NSMenuItem
 
-    init() {
+    override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        dockToggleItem = NSMenuItem(title: "Auto-hide system Dock", action: nil, keyEquivalent: "")
+        super.init()
         if let button = statusItem.button {
             button.image = NSImage(systemSymbolName: "dock.rectangle", accessibilityDescription: "DockishOS")
             button.image?.isTemplate = true
             button.toolTip = "DockishOS"
         }
         buildMenu()
+        menu.delegate = self
         statusItem.menu = menu
     }
 
@@ -39,6 +43,14 @@ final class MenuBarController {
         settings.target = self
         menu.addItem(settings)
 
+        menu.addItem(.separator())
+
+        dockToggleItem.action = #selector(toggleDockAutoHide)
+        dockToggleItem.target = self
+        menu.addItem(dockToggleItem)
+
+        menu.addItem(.separator())
+
         let github = NSMenuItem(
             title: "Open GitHub Repo",
             action: #selector(openRepo),
@@ -57,21 +69,19 @@ final class MenuBarController {
         menu.addItem(quit)
     }
 
-    @objc private func openLauncher() {
-        LauncherController.shared.toggle()
+    // NSMenuDelegate — refresh the Dock toggle's checkmark each time the
+    // menu opens, since the user may have changed it elsewhere.
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        dockToggleItem.state = DockHelper.isAutoHideEnabled ? .on : .off
     }
 
-    @objc private func openSettings() {
-        SettingsController.shared.show()
-    }
-
+    @objc private func openLauncher()  { LauncherController.shared.toggle() }
+    @objc private func openSettings()  { SettingsController.shared.show() }
+    @objc private func toggleDockAutoHide() { DockHelper.toggleAutoHide() }
     @objc private func openRepo() {
         if let url = URL(string: "https://github.com/8bittts/dockishOS") {
             NSWorkspace.shared.open(url)
         }
     }
-
-    @objc private func quit() {
-        NSApp.terminate(nil)
-    }
+    @objc private func quit() { NSApp.terminate(nil) }
 }

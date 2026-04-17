@@ -3,6 +3,12 @@ import Combine
 
 /// Three discrete bar sizes. Chosen instead of a slider so the layout is
 /// always pixel-honest and easy to test.
+enum BarPosition: String, CaseIterable, Codable, Identifiable {
+    case top, bottom
+    var id: String { rawValue }
+    var displayName: String { self == .top ? "Top" : "Bottom" }
+}
+
 enum BarSize: String, CaseIterable, Codable, Identifiable {
     case small, medium, large
 
@@ -70,6 +76,7 @@ final class SettingsStore: ObservableObject {
 
     private struct Key {
         static let barSize         = "DockishOS.barSize"
+        static let barPosition     = "DockishOS.barPosition"
         static let showChipTitles  = "DockishOS.showChipTitles"
         static let showPinnedRow   = "DockishOS.showPinnedRow"
     }
@@ -78,6 +85,14 @@ final class SettingsStore: ObservableObject {
         didSet {
             guard barSize != oldValue else { return }
             UserDefaults.standard.set(barSize.rawValue, forKey: Key.barSize)
+            NotificationCenter.default.post(name: .dockishBarLayoutDidChange, object: nil)
+        }
+    }
+
+    @Published var barPosition: BarPosition {
+        didSet {
+            guard barPosition != oldValue else { return }
+            UserDefaults.standard.set(barPosition.rawValue, forKey: Key.barPosition)
             NotificationCenter.default.post(name: .dockishBarLayoutDidChange, object: nil)
         }
     }
@@ -97,8 +112,10 @@ final class SettingsStore: ObservableObject {
     }
 
     private init() {
-        let raw = UserDefaults.standard.string(forKey: Key.barSize) ?? BarSize.medium.rawValue
-        self.barSize = BarSize(rawValue: raw) ?? .medium
+        let rawSize = UserDefaults.standard.string(forKey: Key.barSize) ?? BarSize.medium.rawValue
+        self.barSize = BarSize(rawValue: rawSize) ?? .medium
+        let rawPos = UserDefaults.standard.string(forKey: Key.barPosition) ?? BarPosition.bottom.rawValue
+        self.barPosition = BarPosition(rawValue: rawPos) ?? .bottom
         self.showChipTitles = (UserDefaults.standard.object(forKey: Key.showChipTitles) as? Bool) ?? true
         self.showPinnedRow  = (UserDefaults.standard.object(forKey: Key.showPinnedRow)  as? Bool) ?? true
     }
