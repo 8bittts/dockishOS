@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 import Combine
 
 /// Three discrete bar sizes. Chosen instead of a slider so the layout is
@@ -81,6 +82,7 @@ final class SettingsStore: ObservableObject {
         static let showPinnedRow   = "DockishOS.showPinnedRow"
         static let disabledScreens = "DockishOS.disabledScreens"
         static let launcherHotkey  = "DockishOS.launcherHotkey"
+        static let switcherHotkey  = "DockishOS.switcherHotkey"
         static let groupByApp      = "DockishOS.groupByApp"
     }
 
@@ -132,6 +134,16 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    @Published var switcherHotkey: LauncherHotkey {
+        didSet {
+            guard switcherHotkey != oldValue else { return }
+            if let data = try? JSONEncoder().encode(switcherHotkey) {
+                UserDefaults.standard.set(data, forKey: Key.switcherHotkey)
+            }
+            NotificationCenter.default.post(name: .dockishHotkeyDidChange, object: nil)
+        }
+    }
+
     @Published var groupWindowsByApp: Bool {
         didSet {
             guard groupWindowsByApp != oldValue else { return }
@@ -157,6 +169,16 @@ final class SettingsStore: ObservableObject {
             self.launcherHotkey = hk
         } else {
             self.launcherHotkey = .default
+        }
+        if let data = UserDefaults.standard.data(forKey: Key.switcherHotkey),
+           let hk = try? JSONDecoder().decode(LauncherHotkey.self, from: data) {
+            self.switcherHotkey = hk
+        } else {
+            self.switcherHotkey = LauncherHotkey(
+                keyCode: UInt32(kVK_Tab),
+                carbonModifiers: UInt32(optionKey),
+                displayString: "⌥ Tab"
+            )
         }
         self.groupWindowsByApp = (UserDefaults.standard.object(forKey: Key.groupByApp) as? Bool) ?? false
     }

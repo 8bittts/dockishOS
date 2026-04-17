@@ -70,18 +70,28 @@ private struct BehaviorTab: View {
                 HStack {
                     Text("Launcher hotkey")
                     Spacer()
-                    HotkeyRecorder(
-                        hotkey: $settings.launcherHotkey,
-                        onReset: { settings.launcherHotkey = .default }
-                    )
-                    .frame(width: 160, height: 26)
+                    HotkeyRecorder(hotkey: $settings.launcherHotkey)
+                        .frame(width: 160, height: 26)
                     Button("Reset") { settings.launcherHotkey = .default }
                         .controlSize(.small)
                 }
+                HStack {
+                    Text("App switcher hotkey")
+                    Spacer()
+                    HotkeyRecorder(hotkey: $settings.switcherHotkey)
+                        .frame(width: 160, height: 26)
+                    Button("Reset") {
+                        settings.switcherHotkey = LauncherHotkey(
+                            keyCode: 48, carbonModifiers: 2048,
+                            displayString: "⌥ Tab"
+                        )
+                    }
+                    .controlSize(.small)
+                }
             } header: {
-                Text("Hotkey")
+                Text("Hotkeys")
             } footer: {
-                Text("Click the field, press the new chord. Press Esc to cancel. Must include at least one non-shift modifier.")
+                Text("Click a field, press the new chord. Esc cancels. Each chord must include at least one non-shift modifier.")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
@@ -173,7 +183,6 @@ private struct ScreenItem: Identifiable, Hashable {
 
 private struct HotkeyRecorder: NSViewRepresentable {
     @Binding var hotkey: LauncherHotkey
-    var onReset: () -> Void
 
     func makeNSView(context: Context) -> HotkeyRecorderView {
         let v = HotkeyRecorderView()

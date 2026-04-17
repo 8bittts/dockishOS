@@ -132,12 +132,23 @@ Press **⌥ Space** (Option+Space) to open the app launcher. Type to fuzzy-searc
 
 | Action | Key |
 |---|---|
-| Toggle launcher | ⌥ Space |
+| Toggle launcher | ⌥ Space (configurable) |
 | Move selection | ↑ / ↓ |
 | Launch selected app | Return |
 | Dismiss | Esc / click outside |
 
-The hotkey is registered via Carbon's `RegisterEventHotKey`; if another app already owns ⌥ Space (Raycast, Alfred), DockishOS's registration silently fails. A future settings UI will let you remap.
+Both the launcher and switcher hotkeys are user-configurable in Settings → Behavior → Hotkeys.
+
+### App switcher
+
+Press **⌥ Tab** (default) to open the app switcher: a horizontal grid of icons for every window on the current Space. Useful as a Cmd+Tab replacement that respects Spaces.
+
+| Action | Key |
+|---|---|
+| Toggle switcher | ⌥ Tab (configurable) |
+| Cycle selection | Tab, →, ← |
+| Activate selected window | Return |
+| Dismiss | Esc / click outside |
 
 ### Permissions
 
@@ -208,6 +219,8 @@ Spaces enumeration and switching require **no** permissions — the CGS SPIs ope
 | `LauncherHotkey.swift` | `LauncherHotkey` model + `HotkeyRecorderView` for in-app rebinding. |
 | `DockHelper.swift` | Read + toggle the system Dock's `autohide` preference (defaults / killall). |
 | `LoginItem.swift` | `SMAppService.mainApp` register / unregister wrapper. |
+| `SwitcherController.swift` | App-switcher panel lifecycle (⌥ Tab). |
+| `SwitcherView.swift` | SwiftUI horizontal-grid window switcher. |
 | `WindowStore.swift` | `ObservableObject` for windows. Refreshes on tick + activation + Space change. |
 | `SpacesStore.swift` | `ObservableObject` for Spaces. Refreshes on Space change + 5 s polling. |
 | `Permissions.swift` | Accessibility check + prompt helpers. |
@@ -343,12 +356,12 @@ Done:
 - [x] Drag-to-reorder pinned apps
 - [x] Drag `.app` bundles from Finder onto the bar to pin
 - [x] Optional window grouping by app (one chip per app, count badge)
+- [x] App switcher (⌥ Tab replacement for Cmd+Tab, scoped to current Space)
 
 In rough priority order:
 
-- [ ] Notification badge counts on app icons
+- [ ] Notification badge counts on app icons (no public API for foreign-app badges — likely deferred)
 - [ ] Sparkle-based auto-update wired to the GitHub Releases appcast
-- [ ] App switcher (Cmd+Tab replacement) reusing the launcher panel
 
 ---
 

@@ -1,0 +1,109 @@
+import AppKit
+import SwiftUI
+
+/// Modal-ish app/window switcher panel triggered by a global hotkey
+/// (default: ⌥ Tab). Lists windows on the current Space; Tab/arrows
+/// cycle, Return activates, Esc dismisses, click-outside dismisses.
+final class SwitcherController {
+    static let shared = SwitcherController()
+
+    private let panel: SwitcherPanel
+    private var hostingView: NSHostingView<SwitcherView>?
+    private var resignObserver: NSObjectProtocol?
+    private var previousActiveApp: NSRunningApplication?
+    private var selectedIndex: Int = 0
+
+    private init() {
+        let size = NSSize(width: 720, height: 200)
+        panel = SwitcherPanel(size: size)
+        resignObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didResignKeyNotification,
+            object: panel,
+            queue: .main
+        ) { _ in
+            DispatchQueue.main.async { SwitcherController.shared.hide() }
+        }
+    }
+
+    func toggle() {
+        panel.isVisible ? hide() : show()
+    }
+
+    func show() {
+        previousActiveApp = NSWorkspace.shared.frontmostApplication
+        WindowStore.shared.refresh()
+        let count = WindowStore.shared.windows.count
+        // Default to "next" window so a quick ⌥Tab tap mirrors the macOS
+        // built-in switcher behavior of jumping to the previous app.
+        selectedIndex = count > 1 ? 1 : 0
+        rebuildView()
+        positionOnActiveScreen()
+        NSApp.activate(ignoringOtherApps: true)
+        panel.makeKeyAndOrderFront(nil)
+    }
+
+    func hide() {
+        guard panel.isVisible else { return }
+        panel.orderOut(nil)
+        previousActiveApp?.activate(options: [])
+        previousActiveApp = nil
+    }
+
+    private func activate(_ window: WindowInfo) {
+        // Don't restore previousActiveApp — the switcher's whole job is to
+        // change the frontmost window.
+        previousActiveApp = nil
+        panel.orderOut(nil)
+        WindowStore.shared.activate(window)
+    }
+
+    private func rebuildView() {
+        let view = SwitcherView(
+            store: WindowStore.shared,
+            selectedIndex: Binding(
+                get: { self.selectedIndex },
+                set: { self.selectedIndex = $0 }
+            ),
+            onActivate: { [weak self] in self?.activate($0) },
+            onDismiss: { [weak self] in self?.hide() }
+        )
+        let host = NSHostingView(rootView: view)
+        host.autoresizingMask = [.width, .height]
+        panel.contentView = host
+        hostingView = host
+    }
+
+    private func positionOnActiveScreen() {
+        let screen = NSScreen.screens.first(where: {
+            NSMouseInRect(NSEvent.mouseLocation, $0.frame, false)
+        }) ?? NSScreen.main ?? NSScreen.screens.first!
+        let visible = screen.visibleFrame
+        let size = panel.frame.size
+        let x = visible.midX - size.width / 2
+        let y = visible.midY - size.height / 2
+        panel.setFrame(NSRect(origin: NSPoint(x: x, y: y), size: size), display: true)
+    }
+}
+
+final class SwitcherPanel: NSPanel {
+    init(size: NSSize) {
+        super.init(
+            contentRect: NSRect(origin: .zero, size: size),
+            styleMask: [.borderless, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        isFloatingPanel = true
+        level = .floating
+        collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
+        backgroundColor = .clear
+        isOpaque = false
+        hasShadow = true
+        isMovable = false
+        hidesOnDeactivate = false
+        isReleasedWhenClosed = false
+    }
+
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
+}

@@ -55,9 +55,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func registerLauncherHotkey() {
-        let hk = SettingsStore.shared.launcherHotkey
-        HotkeyManager.shared.register(keyCode: hk.keyCode, modifiers: hk.carbonModifiers) {
-            LauncherController.shared.toggle()
-        }
+        let launcher = SettingsStore.shared.launcherHotkey
+        HotkeyManager.shared.register(
+            name: "launcher",
+            keyCode: launcher.keyCode,
+            modifiers: launcher.carbonModifiers
+        ) { LauncherController.shared.toggle() }
+
+        let switcher = SettingsStore.shared.switcherHotkey
+        HotkeyManager.shared.register(
+            name: "switcher",
+            keyCode: switcher.keyCode,
+            modifiers: switcher.carbonModifiers
+        ) { SwitcherController.shared.toggle() }
     }
 }
