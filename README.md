@@ -383,11 +383,11 @@ Done:
 - [x] Drag `.app` bundles from Finder onto the bar to pin
 - [x] Optional window grouping by app (one chip per app, count badge)
 - [x] App switcher (⌥ Tab replacement for Cmd+Tab, scoped to current Space)
+- [x] Sparkle auto-update wired to the GitHub Releases appcast (signed feed)
 
-In rough priority order:
+Open:
 
 - [ ] Notification badge counts on app icons (no public API for foreign-app badges — likely deferred)
-- [ ] Sparkle-based auto-update wired to the GitHub Releases appcast
 
 ---
 
