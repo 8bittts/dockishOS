@@ -2,11 +2,13 @@ import AppKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var bars: [BarController] = []
+    private var menuBar: MenuBarController?
     private var screenObserver: NSObjectProtocol?
     private var spaceObserver: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Permissions.warmup()
+        menuBar = MenuBarController()
         rebuildBars()
         registerLauncherHotkey()
 

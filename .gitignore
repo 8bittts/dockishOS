@@ -12,6 +12,10 @@ Icon[]
 .swiftpm/
 Package.resolved
 
+# Local build / packaging artifacts (icons, DMGs, staging)
+build/
+dist/
+
 # Xcode
 *.xcodeproj/
 *.xcworkspace/

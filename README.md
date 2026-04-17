@@ -2,25 +2,37 @@
 
 **A native macOS taskbar that organizes windows by Space.**
 
-A free, open-source Dock alternative inspired by [boringBar](https://boringbar.app). Built from scratch with AppKit + SwiftUI, no third-party dependencies, no analytics, no telemetry.
+A free, open-source Dock alternative for people who actually use macOS Spaces. Built from scratch with AppKit + SwiftUI, no third-party dependencies, no analytics, no telemetry.
+
+<!-- version-badge -->v0.001<!-- /version-badge --> · macOS 14+ · Swift 5.10+ · MIT
 
 [![macOS](https://img.shields.io/badge/macOS-14%2B-000?logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5.10%2B-F05138?logo=swift&logoColor=white)](https://swift.org)
 [![SwiftPM](https://img.shields.io/badge/SwiftPM-compatible-brightgreen)](https://swift.org/package-manager/)
 [![License](https://img.shields.io/github/license/8bittts/dockishOS)](LICENSE)
 
-> **Status:** Early. Functional foundation: per-monitor floating bar, Spaces switcher, per-window raise. See [Roadmap](#roadmap).
+> **Status:** Early. Functional foundation: per-monitor floating bar, Spaces switcher, per-window raise, hover thumbnails, app launcher. See [Roadmap](#roadmap).
+
+---
+
+## Download
+
+<!-- download-link -->
+No release yet. Build from source (`./scripts/build-dmg.sh --local`) until the first tagged release ships.
+<!-- /download-link -->
+
+When releases are published they will be code-signed with a Developer ID and notarized by Apple. Open the `.dmg`, drag **DockishOS** to `/Applications`, launch it. Look for the floating bar at the bottom of every display and the dock-shaped icon in the menu bar.
 
 ---
 
 ## Overview
 
-DockishOS replaces the macOS Dock with a translucent floating bar at the bottom of every display. Each bar shows:
+DockishOS adds a translucent floating bar at the bottom of every display. Each bar shows:
 
 - **Spaces row** — numbered chips for every virtual desktop on that display, current one highlighted, click to switch.
 - **Windows row** — chips for every window on the *current* Space (not every running app), with the frontmost window outlined in your accent color. Click to raise the specific window.
 
-It is designed for people who use macOS Spaces heavily and find the default Dock unhelpful at telling them what's actually open right now.
+It is designed for people who use macOS Spaces heavily and find the default Dock unhelpful at telling them what is actually open right now.
 
 > **Note:** DockishOS does not hide the system Dock. Set System Settings → Desktop & Dock → "Automatically hide and show the Dock" yourself if you want it gone.
 
@@ -31,12 +43,14 @@ It is designed for people who use macOS Spaces heavily and find the default Dock
 ```bash
 git clone https://github.com/8bittts/dockishOS.git
 cd dockishOS
+./scripts/build_and_run.sh        # stages a real .app bundle and launches it
+# or, for a quick non-bundled run:
 swift run DockishOS
 ```
 
-The app launches as a menu-bar accessory (no Dock icon, no `Cmd+Tab` entry). A bar appears at the bottom of every connected display. Quit with `Ctrl+C` in the terminal.
+The app launches as a menu-bar accessory (no Dock icon, no `Cmd+Tab` entry). A bar appears at the bottom of every connected display. Quit from the menu bar item (the dock-shaped icon) → **Quit DockishOS**.
 
-> **Tip:** First click on a window chip will trigger the macOS Accessibility prompt. Grant it in System Settings → Privacy & Security → Accessibility, then re-launch DockishOS.
+> **Tip:** First click on a window chip will trigger the macOS Accessibility prompt. First hover that lasts 200 ms will trigger the Screen Recording prompt. Grant both in System Settings → Privacy & Security, then re-launch.
 
 ---
 
@@ -69,6 +83,18 @@ The right side of every bar lists windows that are on-screen *on the current Spa
 | Scroll vertically over bar | Switch to previous / next Space (250 ms cooldown) |
 
 > **Note:** Without Screen Recording permission, foreign-app window titles are redacted by macOS to the empty string. The chip falls back to the owning app's name (e.g., "Safari", "Terminal"). With Screen Recording, you get titles like "Inbox - Mail" or "AppDelegate.swift — DockishOS".
+
+### Menu bar
+
+A small dock-shaped icon appears in the system menu bar:
+
+| Item | |
+|---|---|
+| Open Launcher | Same as ⌥ Space |
+| Open GitHub Repo | Open the project page in your browser |
+| Quit DockishOS | Cleanly exit the app |
+
+The menu-bar item is the only built-in way to quit when DockishOS was launched from the `.app` bundle (no terminal attached).
 
 ### Launcher
 
@@ -144,6 +170,7 @@ Spaces enumeration and switching require **no** permissions — the CGS SPIs ope
 | `LauncherPanel.swift` | Key-eligible `NSPanel` for the launcher. |
 | `LauncherView.swift` | SwiftUI launcher UI with arrow-key navigation. |
 | `LauncherController.swift` | Show / hide / position; restores prior frontmost on dismiss. |
+| `MenuBarController.swift` | Status-bar `NSStatusItem` with Quit, Open Launcher, Open Repo. |
 | `WindowStore.swift` | `ObservableObject` for windows. Refreshes on tick + activation + Space change. |
 | `SpacesStore.swift` | `ObservableObject` for Spaces. Refreshes on Space change + 5 s polling. |
 | `Permissions.swift` | Accessibility check + prompt helpers. |
@@ -184,29 +211,77 @@ Enumerate Spaces grouped by display, read current Space, switch Spaces. Live in 
 - macOS 14 (Sonoma) or later
 - Xcode 16 or later (Command Line Tools sufficient)
 - Swift 5.10+
+- For DMG packaging: nothing extra
+- For notarization: an Apple Developer ID and a configured notary keychain profile (see [Release pipeline](#release-pipeline))
 
-### Commands
-
-```bash
-swift build                # Debug build → .build/debug/DockishOS
-swift build -c release     # Release build → .build/release/DockishOS
-swift run DockishOS        # Build + run
-swift package clean        # Reset build artifacts
-```
-
-### Open in Xcode
+### Day-to-day
 
 ```bash
-open Package.swift
+swift build                       # Debug build → .build/debug/DockishOS
+swift run DockishOS               # Build + run (no real .app bundle)
+./scripts/build_and_run.sh        # Stage a real .app bundle in build/local-run/ and launch it
+./scripts/build_and_run.sh --logs # Same, with `log stream` attached
+open Package.swift                # Open in Xcode (SwiftPM manifest is the project)
 ```
 
-Xcode will read the SwiftPM manifest directly. There is no `.xcodeproj` checked in.
+Use `swift run` for trivial code paths. Use `build_and_run.sh` whenever you need real `Info.plist` behaviors (`LSUIElement`, permission usage strings, the menu bar item) or you're testing anything that reads from the bundled `Info.plist`.
+
+### Release pipeline
+
+Three scripts live in `scripts/`. They mirror the pattern used by the [movingpaper](https://github.com/8bittts/movingpaper) project:
+
+| Script | Purpose |
+|---|---|
+| `scripts/build_and_run.sh` | Dev runner. Stages and launches a real `.app` bundle. |
+| `scripts/build-dmg.sh` | Build, sign, package, optionally notarize. Produces `build/DockishOS-<version>.dmg`. |
+| `scripts/release-dockishOS.sh` | End-to-end: bump `Resources/Info.plist` version, build, tag, push, draft GitHub release. |
+
+**Quick local DMG (no Developer ID required):**
+
+```bash
+./scripts/build-dmg.sh --unsigned   # Ad-hoc sign, draggable .dmg
+```
+
+**Signed but not notarized (faster than full release):**
+
+```bash
+./scripts/build-dmg.sh --local
+```
+
+**Full notarized release (requires keychain profile):**
+
+```bash
+./scripts/build-dmg.sh
+```
+
+**Cut a new tagged GitHub release:**
+
+```bash
+./scripts/release-dockishOS.sh
+```
+
+The release script bumps the `0.001` → `0.002` style version in `Resources/Info.plist`, runs `build-dmg.sh`, commits the bump, tags `v<version>`, pushes, and uses `gh release create` to publish the DMG + checksum.
+
+### Notarization setup (one-time)
+
+```bash
+xcrun notarytool store-credentials YEN-Notarization \
+    --apple-id YOUR_APPLE_ID \
+    --team-id YOUR_TEAM_ID \
+    --password YOUR_APP_SPECIFIC_PASSWORD
+```
+
+Override the profile name per-build with `DOCKISHOS_NOTARY_PROFILE=…`.
+
+### From a Claude Code session
+
+The global `/build-dockishOS` slash command wraps the scripts above. Run it from any directory; it `cd`s into the repo automatically.
 
 ---
 
 ## Roadmap
 
-Toward boringBar feature parity, in priority order:
+Done:
 
 - [x] Per-monitor floating bar
 - [x] Current-Space window enumeration
@@ -215,27 +290,23 @@ Toward boringBar feature parity, in priority order:
 - [x] Frontmost window indicator
 - [x] Scroll wheel over bar to switch Spaces
 - [x] Window thumbnails on hover (ScreenCaptureKit)
-- [x] App launcher with global hotkey (⌥Space)
-- [ ] Pinned apps row
-- [ ] System Dock auto-hide toggle
-- [ ] Notification badge counts
-- [ ] Settings window (size, chip titles, per-monitor opt-in)
-- [ ] Bundle as signed `.app` with proper `Info.plist`
+- [x] App launcher with global hotkey (⌥ Space)
+- [x] Menu-bar item with Quit / Open Launcher / Open Repo
+- [x] Bundle as `.app` with proper `Info.plist` + permission usage strings
+- [x] DMG build + notarization pipeline modeled on movingpaper
 
----
+In rough priority order:
 
-## How DockishOS compares
-
-| | DockishOS | macOS Dock | boringBar | Übersicht |
-|---|---|---|---|---|
-| Free / open source | ✓ | – | – ($30) | ✓ |
-| Per-monitor bars | ✓ | – (one per primary) | ✓ | ✓ |
-| Window list per Space | ✓ | – | ✓ | – |
-| Spaces switcher in-bar | ✓ | – | ✓ | – |
-| Window thumbnails | planned | ✓ (Mission Control) | ✓ | – |
-| App launcher | planned | ✓ (apps only) | ✓ | – |
-
-DockishOS is not trying to replace boringBar — boringBar is more polished, ships as a signed `.app`, has a paid support model. DockishOS exists to let people who want the same shape of UI do it for free, in source they can read and modify.
+- [ ] First tagged GitHub release with notarized `.dmg` download
+- [ ] Pinned apps row backed by UserDefaults (drag to reorder)
+- [ ] System Dock auto-hide toggle from the menu-bar item
+- [ ] Notification badge counts on app icons
+- [ ] Settings window: bar size (S/M/L), bar position (top/bottom), chip titles on/off, per-monitor opt-in/out, customizable launcher hotkey
+- [ ] Auto-launch on login via `SMAppService`
+- [ ] Sparkle-based auto-update wired to the GitHub Releases appcast
+- [ ] Optional window grouping by app (one chip per app, count badge)
+- [ ] About window with version + license + acknowledgments
+- [ ] App switcher (Cmd+Tab replacement) reusing the launcher panel
 
 ---
 
@@ -260,6 +331,6 @@ If you're adding a new feature that requires a permission, prompt for it lazily 
 
 ## Acknowledgments
 
-- [boringBar](https://boringbar.app) — the reference design and feature spec.
-- [yabai](https://github.com/koekeishiya/yabai), [AltTab](https://github.com/lwouis/alt-tab-macos), [Spaceman](https://github.com/Jaysce/Spaceman) — prior art for SPI usage patterns.
+- [yabai](https://github.com/koekeishiya/yabai), [AltTab](https://github.com/lwouis/alt-tab-macos), [Spaceman](https://github.com/Jaysce/Spaceman) — prior art for window-management and Spaces SPI usage patterns.
+- [movingpaper](https://github.com/8bittts/movingpaper) — pattern for the DMG build + notarization pipeline.
 - Apple, for tolerating these private symbols on the platform for a very long time.
