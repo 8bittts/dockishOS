@@ -1,9 +1,46 @@
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon[]
+._*
+.Spotlight-V100
+.Trashes
+
+# Swift Package Manager
 .build/
 .swiftpm/
+Package.resolved
+
+# Xcode
 *.xcodeproj/
 *.xcworkspace/
 xcuserdata/
+*.hmap
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+DerivedData/
+
+# App packaging
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.app
+
+# Editor / tooling
 .vscode/
+.idea/
 *.swp
-Package.resolved
+*.swo
+
+# Local Claude Code agent rules (not part of the project)
+CLAUDE.md
+.claude/
+
+# Local environment / secrets
+.env
+.env.local
+*.pem
+*.p8
+*.p12
