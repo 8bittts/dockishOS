@@ -150,6 +150,17 @@ Press **⌥ Tab** (default) to open the app switcher: a horizontal grid of icons
 | Activate selected window | Return |
 | Dismiss | Esc / click outside |
 
+### Notification badges
+
+When **Show notification badges** is enabled in Settings → Appearance, DockishOS reads each app's badge string from the macOS Dock's accessibility tree every 2.5 s and overlays a small red badge on the matching window/group/pinned chip.
+
+| | |
+|---|---|
+| Source | The Dock's `AXApplicationDockItem` elements expose the badge as `AXStatusLabel` (an undocumented Dock attribute used by every comparable tool). |
+| Permission | Accessibility — already granted for window raise. |
+| Risk | Apple may restructure the Dock's AX hierarchy in any future macOS release. The badge code fails closed (no badges, no crash) if that happens. |
+| Default | Off. |
+
 ### Auto-update
 
 Once installed from the DMG, DockishOS checks for updates hourly via [Sparkle](https://sparkle-project.org). When a new release is available, the standard Sparkle dialog appears.
@@ -235,6 +246,7 @@ Spaces enumeration and switching require **no** permissions — the CGS SPIs ope
 | `SwitcherController.swift` | App-switcher panel lifecycle (⌥ Tab). |
 | `SwitcherView.swift` | SwiftUI horizontal-grid window switcher. |
 | `Updater.swift` | `SPUStandardUpdaterController` wrapper, only active in `.app` bundles. |
+| `BadgeStore.swift` | Polls the Dock's AX tree for notification badges, republishes by bundle ID. Defensive: any AX failure → empty dict. |
 | `tools/sparkle/Sparkle.framework` | Vendored Sparkle 2.x binary framework, copied into `Contents/Frameworks/` at build time and signed with the app's identity. |
 | `scripts/generate-appcast.sh` | Sparkle's `generate_appcast` wrapped with release-notes-from-git and signed-feed verification. |
 | `WindowStore.swift` | `ObservableObject` for windows. Refreshes on tick + activation + Space change. |
@@ -254,6 +266,14 @@ AXError _AXUIElementGetWindow(AXUIElement element, CGWindowID *windowID);
 ```
 
 Maps an `AXUIElement` (Accessibility window) back to its `CGWindowID`. Used to find *which* AX window corresponds to the chip the user clicked. Lives in `ApplicationServices.framework`. Bound in `WindowControl.swift`.
+
+### Dock `AXStatusLabel` attribute
+
+```c
+AXUIElementCopyAttributeValue(dockIcon, "AXStatusLabel" as CFString, &value);
+```
+
+The macOS Dock exposes an app icon's notification badge as an `AXStatusLabel` string attribute. Public AX functions (`AXUIElementCopyAttributeValue` etc.) are documented; the *attribute name* is a Dock convention not declared in `AXAttributeConstants.h`. Used by `BadgeStore` only when **Show notification badges** is enabled.
 
 ### CGS Spaces functions
 
@@ -384,10 +404,9 @@ Done:
 - [x] Optional window grouping by app (one chip per app, count badge)
 - [x] App switcher (⌥ Tab replacement for Cmd+Tab, scoped to current Space)
 - [x] Sparkle auto-update wired to the GitHub Releases appcast (signed feed)
+- [x] Notification badge counts on app icons (Dock-AX path, opt-in)
 
-Open:
-
-- [ ] Notification badge counts on app icons (no public API for foreign-app badges — likely deferred)
+The original roadmap is complete. Future ideas live in GitHub issues.
 
 ---
 

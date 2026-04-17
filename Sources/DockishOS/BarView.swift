@@ -7,6 +7,7 @@ struct BarView: View {
     @ObservedObject var windowStore: WindowStore
     @ObservedObject var spacesStore: SpacesStore
     @ObservedObject var pinnedStore: PinnedAppsStore
+    @ObservedObject var badgeStore: BadgeStore
     @ObservedObject var settings: SettingsStore
 
     var body: some View {
@@ -31,6 +32,7 @@ struct BarView: View {
                         size: settings.barSize,
                         pins: pinnedStore.pins,
                         runningPIDs: Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier)),
+                        badgeStore: badgeStore,
                         onLaunch: { pinnedStore.launch($0) },
                         onUnpin:  { pinnedStore.unpin(bundleID: $0.bundleID) },
                         onMove:   { pinnedStore.move($0, by: $1) },
@@ -43,6 +45,7 @@ struct BarView: View {
                 WindowsRow(
                     windowStore: windowStore,
                     pinnedStore: pinnedStore,
+                    badgeStore: badgeStore,
                     settings: settings
                 )
             }
@@ -72,6 +75,7 @@ struct BarView: View {
 private struct WindowsRow: View {
     @ObservedObject var windowStore: WindowStore
     @ObservedObject var pinnedStore: PinnedAppsStore
+    @ObservedObject var badgeStore: BadgeStore
     @ObservedObject var settings: SettingsStore
 
     var body: some View {
@@ -105,12 +109,14 @@ private struct WindowsRow: View {
     @ViewBuilder
     private func chip(for window: WindowInfo) -> some View {
         let isPinned = pinnedStore.isPinned(bundleID: window.bundleID)
+        let badge = badgeStore.badge(for: window.bundleID)
         WindowChip(
             window: window,
             size: settings.barSize,
             showTitle: settings.showChipTitles,
             isFrontmost: window.pid == windowStore.frontmostPID,
             isPinned: isPinned,
+            badge: badge,
             onActivate: { windowStore.activate(window) },
             onClose: { windowStore.close(window) },
             onTogglePin: {
@@ -127,12 +133,14 @@ private struct WindowsRow: View {
     private func groupChip(for group: WindowGroup) -> some View {
         let isPinned = pinnedStore.isPinned(bundleID: group.bundleID)
         let isFrontmost = group.windows.contains(where: { $0.pid == windowStore.frontmostPID })
+        let badge = badgeStore.badge(for: group.bundleID)
         WindowGroupChip(
             group: group,
             size: settings.barSize,
             showTitle: settings.showChipTitles,
             isFrontmost: isFrontmost,
             isPinned: isPinned,
+            badge: badge,
             previewWindow: windowStore.nextWindow(in: group),
             onActivateNext: { windowStore.activateNext(in: group) },
             onActivate: { windowStore.activate($0) },
@@ -201,6 +209,7 @@ private struct PinnedRow: View {
     let size: BarSize
     let pins: [PinnedApp]
     let runningPIDs: Set<String>
+    @ObservedObject var badgeStore: BadgeStore
     let onLaunch: (PinnedApp) -> Void
     let onUnpin: (PinnedApp) -> Void
     let onMove: (PinnedApp, Int) -> Void
@@ -213,6 +222,7 @@ private struct PinnedRow: View {
                     app: app,
                     size: size,
                     isRunning: runningPIDs.contains(app.bundleID),
+                    badge: badgeStore.badge(for: app.bundleID),
                     action: { onLaunch(app) },
                     onUnpin: { onUnpin(app) },
                     onMoveLeft: { onMove(app, -1) },
@@ -254,6 +264,7 @@ private struct PinnedChip: View {
     let app: PinnedApp
     let size: BarSize
     let isRunning: Bool
+    let badge: String?
     let action: () -> Void
     let onUnpin: () -> Void
     let onMoveLeft: () -> Void
@@ -266,6 +277,9 @@ private struct PinnedChip: View {
                 Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
                     .resizable()
                     .frame(width: size.pinnedChipSize - 6, height: size.pinnedChipSize - 6)
+                    .overlay(alignment: .topTrailing) {
+                        if let badge { NotificationBadge(text: badge).offset(x: 4, y: -4) }
+                    }
                 Circle()
                     .fill(isRunning ? Color.white.opacity(0.85) : Color.clear)
                     .frame(width: 4, height: 4)
@@ -297,6 +311,7 @@ private struct WindowChip: View {
     let showTitle: Bool
     let isFrontmost: Bool
     let isPinned: Bool
+    let badge: String?
     let onActivate: () -> Void
     let onClose: () -> Void
     let onTogglePin: () -> Void
@@ -307,6 +322,9 @@ private struct WindowChip: View {
             HStack(spacing: 6) {
                 AppIconView(pid: window.pid)
                     .frame(width: size.chipIconSize, height: size.chipIconSize)
+                    .overlay(alignment: .topTrailing) {
+                        if let badge { NotificationBadge(text: badge).offset(x: 4, y: -4) }
+                    }
                 if showTitle {
                     Text(window.displayTitle)
                         .font(.system(size: size.chipHeight * 0.40, weight: isFrontmost ? .semibold : .medium))
@@ -358,6 +376,7 @@ private struct WindowGroupChip: View {
     let showTitle: Bool
     let isFrontmost: Bool
     let isPinned: Bool
+    let badge: String?
     let previewWindow: WindowInfo?
     let onActivateNext: () -> Void
     let onActivate: (WindowInfo) -> Void
@@ -371,7 +390,10 @@ private struct WindowGroupChip: View {
                 AppIconView(pid: group.pid)
                     .frame(width: size.chipIconSize, height: size.chipIconSize)
                     .overlay(alignment: .topTrailing) {
-                        if group.windows.count > 1 {
+                        // Notification badge wins over window count when both apply.
+                        if let badge {
+                            NotificationBadge(text: badge).offset(x: 6, y: -4)
+                        } else if group.windows.count > 1 {
                             Text("\(group.windows.count)")
                                 .font(.system(size: 9, weight: .bold, design: .monospaced))
                                 .foregroundStyle(.white)
@@ -430,6 +452,21 @@ private struct WindowGroupChip: View {
     private var chipFill: Color {
         if isFrontmost { return Color.white.opacity(0.22) }
         return Color.white.opacity(hover ? 0.18 : 0.08)
+    }
+}
+
+private struct NotificationBadge: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 9, weight: .bold, design: .rounded))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 1)
+            .background(Capsule().fill(Color.red))
+            .overlay(Capsule().stroke(Color.white.opacity(0.45), lineWidth: 0.5))
+            .accessibilityLabel("\(text) notifications")
     }
 }
 

@@ -51,6 +51,16 @@ private struct AppearanceTab: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
+
+            Section {
+                Toggle("Show notification badges", isOn: $settings.showNotificationBadges)
+            } header: {
+                Text("Notifications")
+            } footer: {
+                Text("Reads badge counts from the macOS Dock's accessibility tree (every 2.5 s). Uses an undocumented Dock attribute that may break in future macOS releases — disable here if it misbehaves.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
         .padding(.horizontal, 12)

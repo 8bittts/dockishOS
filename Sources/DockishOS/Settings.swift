@@ -84,6 +84,7 @@ final class SettingsStore: ObservableObject {
         static let launcherHotkey  = "DockishOS.launcherHotkey"
         static let switcherHotkey  = "DockishOS.switcherHotkey"
         static let groupByApp      = "DockishOS.groupByApp"
+        static let notifBadges     = "DockishOS.showNotificationBadges"
     }
 
     @Published var barSize: BarSize {
@@ -151,6 +152,13 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    @Published var showNotificationBadges: Bool {
+        didSet {
+            guard showNotificationBadges != oldValue else { return }
+            UserDefaults.standard.set(showNotificationBadges, forKey: Key.notifBadges)
+        }
+    }
+
     func isScreenEnabled(_ screen: NSScreen) -> Bool {
         !disabledScreenUUIDs.contains(SpacesAPI.displayUUID(for: screen))
     }
@@ -181,6 +189,7 @@ final class SettingsStore: ObservableObject {
             )
         }
         self.groupWindowsByApp = (UserDefaults.standard.object(forKey: Key.groupByApp) as? Bool) ?? false
+        self.showNotificationBadges = (UserDefaults.standard.object(forKey: Key.notifBadges) as? Bool) ?? false
     }
 }
 

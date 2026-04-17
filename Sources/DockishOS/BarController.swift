@@ -29,6 +29,7 @@ final class BarController {
             windowStore: WindowStore.shared,
             spacesStore: SpacesStore.shared,
             pinnedStore: PinnedAppsStore.shared,
+            badgeStore: BadgeStore.shared,
             settings: SettingsStore.shared
         ))
         host.autoresizingMask = [.width, .height]
