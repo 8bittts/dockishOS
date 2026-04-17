@@ -11,8 +11,6 @@ A free, open-source Dock alternative for people who actually use macOS Spaces. B
 [![SwiftPM](https://img.shields.io/badge/SwiftPM-compatible-brightgreen)](https://swift.org/package-manager/)
 [![License](https://img.shields.io/github/license/8bittts/dockishOS)](LICENSE)
 
-> **Status:** Early. Functional foundation: per-monitor floating bar, Spaces switcher, per-window raise, hover thumbnails, app launcher. See [Roadmap](#roadmap).
-
 ---
 
 ## Download
@@ -21,20 +19,21 @@ A free, open-source Dock alternative for people who actually use macOS Spaces. B
 [**Download DockishOS v0.008**](https://github.com/8bittts/dockishOS/releases/download/v0.008/DockishOS-0.008.dmg)
 <!-- /download-link -->
 
-When releases are published they will be code-signed with a Developer ID and notarized by Apple. Open the `.dmg`, drag **DockishOS** to `/Applications`, launch it. Look for the floating bar at the bottom of every display and the dock-shaped icon in the menu bar.
+Open the `.dmg`, drag **DockishOS** to `/Applications`, launch it. Look for the floating bar at the bottom of every display and the dock-shaped icon in the menu bar. Releases are code-signed with a Developer ID and notarized by Apple.
 
 ---
 
-## Overview
+## What it does
 
-DockishOS adds a translucent floating bar at the bottom of every display. Each bar shows:
+DockishOS adds a translucent floating bar to every display. Each bar shows three rows side-by-side:
 
-- **Spaces row** — numbered chips for every virtual desktop on that display, current one highlighted, click to switch.
-- **Windows row** — chips for every window on the *current* Space (not every running app), with the frontmost window outlined in your accent color. Click to raise the specific window.
+1. **Spaces** — numbered chips for the virtual desktops on this display, current one highlighted, click to switch.
+2. **Pinned apps** *(optional)* — your favorites, drag-to-reorder, click to launch / activate.
+3. **Windows** — every window on the *current* Space (not every running app), with the frontmost outlined in your accent color.
 
-It is designed for people who use macOS Spaces heavily and find the default Dock unhelpful at telling them what is actually open right now.
+It is designed for people who use macOS Spaces heavily and find the default Dock unhelpful at telling them what's actually open right now.
 
-> **Note:** DockishOS does not hide the system Dock. Set System Settings → Desktop & Dock → "Automatically hide and show the Dock" yourself if you want it gone.
+> **Note:** DockishOS does not hide the system Dock. Toggle System Settings → Desktop & Dock → "Automatically hide and show the Dock" yourself, or use the menu-bar item's **Auto-hide system Dock** entry.
 
 ---
 
@@ -43,14 +42,14 @@ It is designed for people who use macOS Spaces heavily and find the default Dock
 ```bash
 git clone https://github.com/8bittts/dockishOS.git
 cd dockishOS
-./scripts/build_and_run.sh        # stages a real .app bundle and launches it
-# or, for a quick non-bundled run:
-swift run DockishOS
+./scripts/build_and_run.sh
 ```
 
-The app launches as a menu-bar accessory (no Dock icon, no `Cmd+Tab` entry). A bar appears at the bottom of every connected display. Quit from the menu bar item (the dock-shaped icon) → **Quit DockishOS**.
+The app launches as a menu-bar accessory (no Dock icon, no `Cmd+Tab` entry). Quit from the menu bar item → **Quit DockishOS**.
 
-> **Tip:** First click on a window chip will trigger the macOS Accessibility prompt. First hover that lasts 200 ms will trigger the Screen Recording prompt. Grant both in System Settings → Privacy & Security, then re-launch.
+> **Tip:** First click on a window chip prompts for Accessibility. First 200 ms hover prompts for Screen Recording. Grant both in System Settings → Privacy & Security, then re-launch.
+
+For the full build pipeline (signed DMG, notarization, Sparkle release), see the developer notes in `CLAUDE.md`.
 
 ---
 
@@ -58,368 +57,130 @@ The app launches as a menu-bar accessory (no Dock icon, no `Cmd+Tab` entry). A b
 
 ### Spaces
 
-The leftmost section of every bar shows the Spaces (virtual desktops) that exist on the bar's display. The current Space is rendered as a solid white chip; the others are translucent.
+The leftmost section of every bar shows the Spaces (virtual desktops) on the bar's display. Current Space is solid white; others are translucent.
 
 | Action | Result |
 |---|---|
 | Click chip `N` | Switch to Space N on this display |
-| Add / remove a Space in Mission Control | Bar refreshes within 5 s (or immediately on next Space switch) |
+| Scroll vertically over the bar | Switch to previous / next Space (250 ms cooldown) |
 
-DockishOS reads Spaces via the private `CGSCopyManagedDisplaySpaces` SPI and switches via `CGSManagedDisplaySetCurrentSpace`. See [Private API surface](#private-api-surface). No permission grant is required.
-
-> **Important:** macOS has a "Displays have separate Spaces" toggle (System Settings → Desktop & Dock → Mission Control). DockishOS handles both modes — when off, every display shows the same Space list.
+DockishOS handles macOS's "Displays have separate Spaces" toggle in both states.
 
 ### Windows
 
-The right side of every bar lists windows that are on-screen *on the current Space*. The list updates every second and immediately on `activeSpaceDidChange` and `didActivateApplication` notifications.
+Every window on the *current* Space is listed. Updates immediately on Space switch and app activation; backstop poll every second for newly-opened windows.
 
 | Action | Result |
 |---|---|
-| Click chip | Activate the owning app **and** raise that specific window via `AXUIElement` + `kAXRaiseAction` |
-| Right-click chip → Activate | Same as click |
-| Right-click chip → Close Window | Press the AX close button on that window |
-| Hover chip (200 ms) | Floating thumbnail preview of the window via ScreenCaptureKit |
-| Hover chip | Tooltip with the full window title |
-| Scroll vertically over bar | Switch to previous / next Space (250 ms cooldown) |
+| Click chip | Activate the app **and** raise that specific window |
+| Right-click → Activate / Close Window | Same as click / press the AX close button |
+| Hover (200 ms) | Floating thumbnail preview via ScreenCaptureKit |
+| Hover (instant) | Tooltip with the full window title |
 
-When **Group windows by app** is enabled in Settings → Appearance, multiple windows of the same app collapse to one chip with a count badge. Click cycles through windows of that app; right-click lists each window by title and offers **Close All Windows**.
+**Group windows by app** (Settings → Appearance) collapses multiple windows of the same app to one chip with a count badge. Click cycles through them; right-click lists each window by title.
 
-> **Note:** Without Screen Recording permission, foreign-app window titles are redacted by macOS to the empty string. The chip falls back to the owning app's name (e.g., "Safari", "Terminal"). With Screen Recording, you get titles like "Inbox - Mail" or "AppDelegate.swift — DockishOS".
+> Without Screen Recording permission, foreign-app titles redact to the empty string and the chip falls back to the owning app's name (e.g., "Safari", "Terminal").
 
 ### Pinned apps
 
-A row of pinned-app chips lives between the Spaces and Windows rows. Each chip shows the app's icon plus a small running-state dot.
+A row of pinned-app chips lives between Spaces and Windows. Each chip shows the app's icon and a small running-state dot.
 
 | Action | Result |
 |---|---|
 | Click chip | Activate the app if running, otherwise launch it |
 | Drag chip onto another | Reorder pins |
 | Drag a `.app` from Finder onto the bar | Pin that app |
-| Right-click → Move Left / Right | Reorder the pin (chevron alternative) |
-| Right-click → Unpin | Remove the pin |
+| Right-click → Move Left / Right / Unpin | Reorder or remove |
 
-To add a pin, drag a `.app` from Finder onto any spot on the bar, right-click any window chip on the bar (**Pin App to Bar**), or right-click any result in the launcher (**Pin to Bar**). Order is persisted across launches in `UserDefaults`.
+Pin a running app from the right-click menu of any window chip, or from the right-click menu of any launcher result.
 
 ### Settings
 
-Press **⌘,** (or pick **Settings…** from the menu-bar item) to open the Settings window:
+Open with **⌘,** or **Settings…** in the menu bar item.
 
 | Tab | Controls |
 |---|---|
-| **Appearance** | Bar size (S / M / L), bar position (Top / Bottom), show window titles toggle, show pinned apps row toggle |
-| **Behavior** | Customize launcher hotkey, auto-hide system Dock, launch DockishOS at login, per-display opt-in/out |
-| **Pinned** | Reorder or unpin individual apps; manage the pinned list |
-| **About** | Version + build, links to repo, releases, and license |
-
-Bar size and position changes apply immediately to every connected display — the bars are torn down and rebuilt. Hotkey changes re-register the global Carbon hotkey on the fly.
+| **Appearance** | Bar size (S / M / L), bar position (Top / Bottom), show window titles, show pinned row, group windows by app, show notification badges |
+| **Behavior** | Customize launcher + switcher hotkeys, auto-hide system Dock, launch at login, per-display opt-in/out |
+| **Pinned** | Reorder or unpin individual apps |
+| **About** | Version, build, links |
 
 ### Menu bar
 
-A small dock-shaped icon appears in the system menu bar:
+A small dock-shaped icon in the menu bar exposes:
 
 | Item | |
 |---|---|
-| Open Launcher | Same as ⌥ Space |
-| Settings… | ⌘, — open the Settings window |
-| Open GitHub Repo | Open the project page in your browser |
-| Quit DockishOS | ⌘Q — cleanly exit the app |
-
-The menu-bar item is the only built-in way to quit when DockishOS was launched from the `.app` bundle (no terminal attached).
+| Open Launcher | Same as the launcher hotkey |
+| Settings… | ⌘, |
+| Auto-hide system Dock | Toggle macOS Dock auto-hide (state shown by checkmark) |
+| Open GitHub Repo | Opens the project page |
+| Quit DockishOS | ⌘Q |
 
 ### Launcher
 
-Press **⌥ Space** (Option+Space) to open the app launcher. Type to fuzzy-search every `.app` in `/Applications`, `/System/Applications`, and `~/Applications`. Arrow keys to navigate, `Return` to launch, `Escape` or click outside to dismiss.
+**⌥ Space** by default. Type to fuzzy-search every `.app` in `/Applications`, `/System/Applications`, and `~/Applications`.
 
 | Action | Key |
 |---|---|
-| Toggle launcher | ⌥ Space (configurable) |
+| Toggle | ⌥ Space *(configurable)* |
 | Move selection | ↑ / ↓ |
-| Launch selected app | Return |
+| Launch | Return |
 | Dismiss | Esc / click outside |
-
-Both the launcher and switcher hotkeys are user-configurable in Settings → Behavior → Hotkeys.
 
 ### App switcher
 
-Press **⌥ Tab** (default) to open the app switcher: a horizontal grid of icons for every window on the current Space. Useful as a Cmd+Tab replacement that respects Spaces.
+**⌥ Tab** by default. Horizontal grid of every window on the current Space — a Cmd+Tab replacement that respects Spaces.
 
 | Action | Key |
 |---|---|
-| Toggle switcher | ⌥ Tab (configurable) |
+| Toggle | ⌥ Tab *(configurable)* |
 | Cycle selection | Tab, →, ← |
-| Activate selected window | Return |
+| Activate | Return |
 | Dismiss | Esc / click outside |
 
-### Notification badges
+### Notification badges *(opt-in)*
 
-When **Show notification badges** is enabled in Settings → Appearance, DockishOS reads each app's badge string from the macOS Dock's accessibility tree every 2.5 s and overlays a small red badge on the matching window/group/pinned chip.
-
-| | |
-|---|---|
-| Source | The Dock's `AXApplicationDockItem` elements expose the badge as `AXStatusLabel` (an undocumented Dock attribute used by every comparable tool). |
-| Permission | Accessibility — already granted for window raise. |
-| Risk | Apple may restructure the Dock's AX hierarchy in any future macOS release. The badge code fails closed (no badges, no crash) if that happens. |
-| Default | Off. |
+Settings → Appearance → **Show notification badges** reads each app's badge string from the macOS Dock's accessibility tree every 2.5 s and overlays a small red badge on the matching chip. Default off because it relies on an undocumented Dock attribute (`AXStatusLabel`) that may break in future macOS releases — see `CLAUDE.md` for details.
 
 ### Auto-update
 
-Once installed from the DMG, DockishOS checks for updates hourly via [Sparkle](https://sparkle-project.org). When a new release is available, the standard Sparkle dialog appears.
+DockishOS checks for updates hourly via [Sparkle](https://sparkle-project.org) once installed from the DMG. The standard Sparkle dialog appears when a new release is available. Manual check via **Check for Updates…** in the menu bar item. The appcast and updates are EdDSA-signed; verification is enforced (`SUVerifyUpdateBeforeExtraction`, `SURequireSignedFeed`).
 
-| Element | Detail |
-|---|---|
-| Feed | `https://github.com/8bittts/dockishOS/releases/latest/download/appcast.xml` |
-| Signature | EdDSA, public key embedded in `Info.plist` |
-| Verification | `SUVerifyUpdateBeforeExtraction` + `SURequireSignedFeed` enforced |
-| Manual check | **Check for Updates…** in the menu bar item |
-
-`swift run` and `build_and_run.sh` builds skip Sparkle wiring entirely — auto-update only takes effect inside a real `.app` bundle.
+`swift run` builds skip Sparkle entirely — auto-update only takes effect inside a real `.app` bundle.
 
 ### Permissions
 
-DockishOS requests permissions **lazily**, only when you first use a feature that needs them.
+DockishOS requests permissions **lazily**, only on first use of a feature that needs them.
 
-| Permission | Required for | Prompted when |
+| Permission | Required for | Prompted on |
 |---|---|---|
-| Accessibility | Per-window raise + close | First click on a window chip |
-| Screen Recording | Window titles + hover thumbnails | First hover that lasts 200 ms over a window chip |
+| Accessibility | Per-window raise + close, notification badges | First click on a window chip |
+| Screen Recording | Window titles + hover thumbnails | First 200 ms hover on a window chip |
 
-Spaces enumeration and switching require **no** permissions — the CGS SPIs operate without sandbox checks.
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      NSApplication (.accessory)             │
-│                              │                              │
-│                       AppDelegate                           │
-│           ┌──────────────────┼──────────────────┐           │
-│           ▼                  ▼                  ▼           │
-│    BarController       BarController       BarController    │
-│      (screen 1)          (screen 2)          (screen 3)     │
-│           │                  │                  │           │
-│           ▼                  ▼                  ▼           │
-│       BarPanel           BarPanel           BarPanel        │
-│      (NSPanel)          (NSPanel)          (NSPanel)        │
-│           │                  │                  │           │
-│           └──────────┬───────┴────────┬─────────┘           │
-│                      ▼                ▼                     │
-│               WindowStore       SpacesStore                 │
-│                      │                │                     │
-│                      ▼                ▼                     │
-│            WindowEnumerator      SpacesAPI                  │
-│            (CGWindowList)        (private CGS)              │
-│                      │                                      │
-│                      ▼                                      │
-│              WindowControl                                  │
-│              (AX + private)                                 │
-└─────────────────────────────────────────────────────────────┘
-```
-
-| File | Responsibility |
-|---|---|
-| `main.swift` | Entry point. Sets `.accessory` activation policy, runs the app. |
-| `AppDelegate.swift` | Owns one `BarController` per `NSScreen`. Observes screen + Space changes. |
-| `BarController.swift` | Builds and shows one bar window for one screen. |
-| `BarPanel.swift` | Borderless `NSPanel` at `.statusBar` level, joins all Spaces, full-screen aux. |
-| `BarView.swift` | SwiftUI bar UI: Spaces chips on the left, windows on the right. |
-| `WindowEnumerator.swift` | `CGWindowListCopyWindowInfo` wrapper. Public API only. |
-| `WindowControl.swift` | AX-based window raise + close. Bridges CGWindowID ↔ AXUIElement. |
-| `SpacesAPI.swift` | Private `CGS*` Spaces SPI bindings. |
-| `ThumbnailCapture.swift` | One-shot ScreenCaptureKit capture by `CGWindowID`. |
-| `ThumbnailController.swift` | Singleton floating panel that shows a window thumbnail on hover. |
-| `HotkeyManager.swift` | Carbon `RegisterEventHotKey` wrapper for one global hotkey. |
-| `AppIndex.swift` | Recursive `.app` scanner + Spotlight-style scoring. |
-| `LauncherStore.swift` | `ObservableObject` for query, results, selection. |
-| `LauncherPanel.swift` | Key-eligible `NSPanel` for the launcher. |
-| `LauncherView.swift` | SwiftUI launcher UI with arrow-key navigation. |
-| `LauncherController.swift` | Show / hide / position; restores prior frontmost on dismiss. |
-| `MenuBarController.swift` | Status-bar `NSStatusItem` with Quit, Open Launcher, Settings, Open Repo. |
-| `Settings.swift` | `BarSize` + `BarPosition` enums, `SettingsStore` (UserDefaults-backed). |
-| `PinnedAppsStore.swift` | UserDefaults-backed list of pinned apps + load / save / launch helpers. |
-| `SettingsView.swift` | SwiftUI `TabView`: Appearance / Behavior / Pinned / About. |
-| `SettingsController.swift` | Single-instance Settings `NSWindow`. |
-| `LauncherHotkey.swift` | `LauncherHotkey` model + `HotkeyRecorderView` for in-app rebinding. |
-| `DockHelper.swift` | Read + toggle the system Dock's `autohide` preference (defaults / killall). |
-| `LoginItem.swift` | `SMAppService.mainApp` register / unregister wrapper. |
-| `SwitcherController.swift` | App-switcher panel lifecycle (⌥ Tab). |
-| `SwitcherView.swift` | SwiftUI horizontal-grid window switcher. |
-| `Updater.swift` | `SPUStandardUpdaterController` wrapper, only active in `.app` bundles. |
-| `BadgeStore.swift` | Polls the Dock's AX tree for notification badges, republishes by bundle ID. Defensive: any AX failure → empty dict. |
-| `tools/sparkle/Sparkle.framework` | Vendored Sparkle 2.x binary framework, copied into `Contents/Frameworks/` at build time and signed with the app's identity. |
-| `scripts/generate-appcast.sh` | Sparkle's `generate_appcast` wrapped with release-notes-from-git and signed-feed verification. |
-| `WindowStore.swift` | `ObservableObject` for windows. Refreshes on tick + activation + Space change. |
-| `SpacesStore.swift` | `ObservableObject` for Spaces. Refreshes on Space change + 5 s polling. |
-| `Permissions.swift` | Accessibility check + prompt helpers. |
-
----
-
-## Private API surface
-
-DockishOS uses two private symbol surfaces. Both have been stable across roughly a decade of macOS releases and are used by every comparable tool (yabai, Rectangle, AltTab, Spaceman, Mission Control Plus). Apple tolerates this usage but reserves the right to break it; calls are wrapped in graceful fallbacks.
-
-### `_AXUIElementGetWindow`
-
-```c
-AXError _AXUIElementGetWindow(AXUIElement element, CGWindowID *windowID);
-```
-
-Maps an `AXUIElement` (Accessibility window) back to its `CGWindowID`. Used to find *which* AX window corresponds to the chip the user clicked. Lives in `ApplicationServices.framework`. Bound in `WindowControl.swift`.
-
-### Dock `AXStatusLabel` attribute
-
-```c
-AXUIElementCopyAttributeValue(dockIcon, "AXStatusLabel" as CFString, &value);
-```
-
-The macOS Dock exposes an app icon's notification badge as an `AXStatusLabel` string attribute. Public AX functions (`AXUIElementCopyAttributeValue` etc.) are documented; the *attribute name* is a Dock convention not declared in `AXAttributeConstants.h`. Used by `BadgeStore` only when **Show notification badges** is enabled.
-
-### CGS Spaces functions
-
-```c
-CGSConnectionID CGSMainConnectionID(void);
-CFArrayRef      CGSCopyManagedDisplaySpaces(CGSConnectionID cid);
-CGSSpaceID      CGSManagedDisplayGetCurrentSpace(CGSConnectionID cid, CFStringRef display);
-void            CGSManagedDisplaySetCurrentSpace(CGSConnectionID cid, CFStringRef display, CGSSpaceID space);
-```
-
-Enumerate Spaces grouped by display, read current Space, switch Spaces. Live in `CoreGraphics.framework`. Bound in `SpacesAPI.swift`.
-
-> **Warning:** If Apple ever ships a public Spaces API, DockishOS will migrate eagerly and delete these bindings. Until then, this is the only way.
-
----
-
-## Build from source
-
-### Prerequisites
-
-- macOS 14 (Sonoma) or later
-- Xcode 16 or later (Command Line Tools sufficient)
-- Swift 5.10+
-- For DMG packaging: nothing extra
-- For notarization: an Apple Developer ID and a configured notary keychain profile (see [Release pipeline](#release-pipeline))
-
-### Day-to-day
-
-```bash
-swift build                       # Debug build → .build/debug/DockishOS
-swift run DockishOS               # Build + run (no real .app bundle)
-./scripts/build_and_run.sh        # Stage a real .app bundle in build/local-run/ and launch it
-./scripts/build_and_run.sh --logs # Same, with `log stream` attached
-open Package.swift                # Open in Xcode (SwiftPM manifest is the project)
-```
-
-Use `swift run` for trivial code paths. Use `build_and_run.sh` whenever you need real `Info.plist` behaviors (`LSUIElement`, permission usage strings, the menu bar item) or you're testing anything that reads from the bundled `Info.plist`.
-
-### Release pipeline
-
-Three scripts live in `scripts/`. They mirror the pattern used by the [movingpaper](https://github.com/8bittts/movingpaper) project:
-
-| Script | Purpose |
-|---|---|
-| `scripts/build_and_run.sh` | Dev runner. Stages and launches a real `.app` bundle. |
-| `scripts/build-dmg.sh` | Build, sign, package, optionally notarize. Produces `build/DockishOS-<version>.dmg`. |
-| `scripts/release-dockishOS.sh` | End-to-end: bump `Resources/Info.plist` version, build, tag, push, draft GitHub release. |
-
-**Quick local DMG (no Developer ID required):**
-
-```bash
-./scripts/build-dmg.sh --unsigned   # Ad-hoc sign, draggable .dmg
-```
-
-**Signed but not notarized (faster than full release):**
-
-```bash
-./scripts/build-dmg.sh --local
-```
-
-**Full notarized release (requires keychain profile):**
-
-```bash
-./scripts/build-dmg.sh
-```
-
-**Cut a new tagged GitHub release:**
-
-```bash
-./scripts/release-dockishOS.sh
-```
-
-The release script bumps the `0.001` → `0.002` style version in `Resources/Info.plist`, runs `build-dmg.sh`, commits the bump, tags `v<version>`, pushes, and uses `gh release create` to publish the DMG + checksum.
-
-### Notarization setup (one-time)
-
-```bash
-xcrun notarytool store-credentials YEN-Notarization \
-    --apple-id YOUR_APPLE_ID \
-    --team-id YOUR_TEAM_ID \
-    --password YOUR_APP_SPECIFIC_PASSWORD
-```
-
-Override the profile name per-build with `DOCKISHOS_NOTARY_PROFILE=…`.
-
-### Sparkle EdDSA key (one-time)
-
-The release pipeline signs the appcast with an EdDSA key stored in your macOS keychain. To generate one:
-
-```bash
-./tools/sparkle/bin/generate_keys
-```
-
-This writes a private key to your login keychain (auto-approved if you've used Sparkle before) and prints the public key. Copy that public key into `Resources/Info.plist` under `SUPublicEDKey`. The same private key can sign appcasts for every Sparkle-enabled app you ship — only one key per developer is needed.
-
-### From a Claude Code session
-
-The global `/build-dockishOS` slash command wraps the scripts above. Run it from any directory; it `cd`s into the repo automatically.
+Spaces enumeration and switching require **no** permissions.
 
 ---
 
 ## Roadmap
 
-Done:
+The original 25-item roadmap is complete. Everything DockishOS set out to do — per-monitor bars, per-window AX raise, Spaces switcher, hover thumbnails, app launcher, app switcher, settings, pinned apps, drag/drop, customizable hotkeys, login item, signed-DMG release pipeline, signed-feed Sparkle auto-update, opt-in notification badges — ships in the current release.
 
-- [x] Per-monitor floating bar
-- [x] Current-Space window enumeration
-- [x] Per-window AX raise + close
-- [x] Spaces row with click-to-switch
-- [x] Frontmost window indicator
-- [x] Scroll wheel over bar to switch Spaces
-- [x] Window thumbnails on hover (ScreenCaptureKit)
-- [x] App launcher with global hotkey (⌥ Space)
-- [x] Menu-bar item with Quit / Open Launcher / Open Repo
-- [x] Bundle as `.app` with proper `Info.plist` + permission usage strings
-- [x] DMG build + notarization pipeline modeled on movingpaper
-- [x] First tagged GitHub release with notarized `.dmg` download (v0.002)
-- [x] Pinned apps row backed by UserDefaults
-- [x] Settings window with Bar size (S/M/L), chip titles toggle, pinned-row toggle
-- [x] About panel with version + license + acknowledgments
-- [x] Bar position (Top / Bottom)
-- [x] System Dock auto-hide toggle (Settings + menu bar)
-- [x] Auto-launch on login via `SMAppService`
-- [x] Per-monitor opt-in / opt-out
-- [x] Customizable launcher hotkey
-- [x] Drag-to-reorder pinned apps
-- [x] Drag `.app` bundles from Finder onto the bar to pin
-- [x] Optional window grouping by app (one chip per app, count badge)
-- [x] App switcher (⌥ Tab replacement for Cmd+Tab, scoped to current Space)
-- [x] Sparkle auto-update wired to the GitHub Releases appcast (signed feed)
-- [x] Notification badge counts on app icons (Dock-AX path, opt-in)
-
-The original roadmap is complete. Future ideas live in GitHub issues.
+Future ideas live in [GitHub issues](https://github.com/8bittts/dockishOS/issues).
 
 ---
 
 ## Contributing
 
-Issues and pull requests welcome. A few ground rules:
+Issues and pull requests welcome. Ground rules:
 
-- **Native APIs first.** Reach for `AXUIElement` / `CGS*` before pulling in dependencies.
+- **Native APIs first.** Reach for `AXUIElement` / `CGS*` / Carbon `RegisterEventHotKey` before pulling in dependencies.
 - **Main thread for UI + AX + CGS.** No background queues touching SwiftUI, AppKit, Accessibility, or Core Graphics Services.
 - **No telemetry.** Not now, not ever.
-- **Run `swift build` clean before opening a PR.** No warnings, no broken SPIs.
+- **Lazy permission prompts.** New features that need a TCC permission must prompt on first use, not at launch.
+- **Run `swift build` clean.** No warnings, no broken SPI calls.
 
-If you're adding a new feature that requires a permission, prompt for it lazily on first use — not at launch.
+Architecture, file ownership, build scripts, the private-SPI inventory, and project-local engineering rules live in [`CLAUDE.md`](CLAUDE.md). Read it before opening a PR that touches the bar, the build pipeline, or any of the SPI bindings.
 
 ---
 
@@ -431,6 +192,6 @@ If you're adding a new feature that requires a permission, prompt for it lazily 
 
 ## Acknowledgments
 
-- [yabai](https://github.com/koekeishiya/yabai), [AltTab](https://github.com/lwouis/alt-tab-macos), [Spaceman](https://github.com/Jaysce/Spaceman) — prior art for window-management and Spaces SPI usage patterns.
-- [movingpaper](https://github.com/8bittts/movingpaper) — pattern for the DMG build + notarization pipeline.
+- [yabai](https://github.com/koekeishiya/yabai), [AltTab](https://github.com/lwouis/alt-tab-macos), [Spaceman](https://github.com/Jaysce/Spaceman) — prior art for window-management and Spaces SPI usage.
+- [movingpaper](https://github.com/8bittts/movingpaper) — pattern for the DMG build, notarization, and Sparkle release pipeline.
 - Apple, for tolerating these private symbols on the platform for a very long time.

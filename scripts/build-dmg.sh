@@ -240,12 +240,14 @@ DMG_STAGING="${BUILD_DIR}/dmg-staging"
 DMG_RW="${BUILD_DIR}/${APP_NAME}-rw.dmg"
 DMG_FINAL="${BUILD_DIR}/${APP_NAME}-${VERSION}.dmg"
 DMG_BG_OPAQUE="${BUILD_DIR}/dmg-background.png"
-# Window sized to mario.jpg's ~16:9 aspect (1280×721) so the artwork fits
-# without distortion or letterboxing.
+# Larger DMG window modeled on the movingpaper project. Aspect (~16:9)
+# matches mario.jpg (1280×721) so the artwork fills the window without
+# letterboxing. Mario upscales ~37 % at Retina (1760 wide) which is
+# acceptable for a static background.
 DMG_WIN_LEFT=200
 DMG_WIN_TOP=200
-DMG_WIN_WIDTH=600
-DMG_WIN_HEIGHT=338
+DMG_WIN_WIDTH=880
+DMG_WIN_HEIGHT=495
 DMG_WIN_RIGHT=$((DMG_WIN_LEFT + DMG_WIN_WIDTH))
 DMG_WIN_BOTTOM=$((DMG_WIN_TOP + DMG_WIN_HEIGHT))
 DMG_WIN_RIGHT_JIGGLE=$((DMG_WIN_RIGHT - 10))
@@ -323,8 +325,8 @@ tell application "Finder"
         ${BG_CMD}
         -- Icons sit in the upper third of mario.jpg (sky / clouds area)
         -- so the Mario character and grass at the bottom stay clear.
-        set position of item "${APP_NAME}.app" of container window to {180, 100}
-        set position of item "Applications" of container window to {420, 100}
+        set position of item "${APP_NAME}.app" of container window to {270, 140}
+        set position of item "Applications" of container window to {610, 140}
         try
             set position of item ".background" of container window to {330, 900}
         end try
