@@ -4,7 +4,7 @@
 
 A free, open-source Dock alternative for people who actually use macOS Spaces. Built from scratch with AppKit + SwiftUI, no third-party dependencies, no analytics, no telemetry.
 
-<!-- version-badge -->v0.010<!-- /version-badge --> · macOS 14+ · Swift 5.10+ · MIT
+<!-- version-badge -->v0.011<!-- /version-badge --> · macOS 14+ · Swift 5.10+ · MIT
 
 [![macOS](https://img.shields.io/badge/macOS-14%2B-000?logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5.10%2B-F05138?logo=swift&logoColor=white)](https://swift.org)
@@ -16,7 +16,7 @@ A free, open-source Dock alternative for people who actually use macOS Spaces. B
 ## Download
 
 <!-- download-link -->
-[**Download DockishOS v0.010**](https://github.com/8bittts/dockishOS/releases/download/v0.010/DockishOS-0.010.dmg)
+[**Download DockishOS v0.011**](https://github.com/8bittts/dockishOS/releases/download/v0.011/DockishOS-0.011.dmg)
 <!-- /download-link -->
 
 Open the `.dmg`, drag **DockishOS** to `/Applications`, launch it. Look for the floating bar at the bottom of every display and the dock-shaped icon in the menu bar. Releases are code-signed with a Developer ID and notarized by Apple.
