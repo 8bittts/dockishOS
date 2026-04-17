@@ -31,6 +31,14 @@ final class MenuBarController {
         launcher.target = self
         menu.addItem(launcher)
 
+        let settings = NSMenuItem(
+            title: "Settings…",
+            action: #selector(openSettings),
+            keyEquivalent: ","
+        )
+        settings.target = self
+        menu.addItem(settings)
+
         let github = NSMenuItem(
             title: "Open GitHub Repo",
             action: #selector(openRepo),
@@ -51,6 +59,10 @@ final class MenuBarController {
 
     @objc private func openLauncher() {
         LauncherController.shared.toggle()
+    }
+
+    @objc private func openSettings() {
+        SettingsController.shared.show()
     }
 
     @objc private func openRepo() {

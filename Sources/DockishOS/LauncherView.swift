@@ -65,6 +65,19 @@ private struct ResultsList: View {
                                 store.selectedIndex = index
                                 store.activateSelected()
                             }
+                            .contextMenu {
+                                if PinnedAppsStore.shared.isPinned(bundleID: app.bundleID) {
+                                    Button("Unpin from Bar") {
+                                        if let bid = app.bundleID {
+                                            PinnedAppsStore.shared.unpin(bundleID: bid)
+                                        }
+                                    }
+                                } else {
+                                    Button("Pin to Bar") {
+                                        PinnedAppsStore.shared.pin(app)
+                                    }
+                                }
+                            }
                     }
                 }
                 .padding(.vertical, 6)

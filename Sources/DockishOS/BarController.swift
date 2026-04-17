@@ -11,7 +11,7 @@ final class BarController {
 
     init(screen: NSScreen) {
         self.screen = screen
-        let height: CGFloat = 56
+        let height = SettingsStore.shared.barSize.height
         let visible = screen.visibleFrame
         let frame = NSRect(
             x: visible.minX,
@@ -23,7 +23,9 @@ final class BarController {
         self.host = NSHostingView(rootView: BarView(
             screen: screen,
             windowStore: WindowStore.shared,
-            spacesStore: SpacesStore.shared
+            spacesStore: SpacesStore.shared,
+            pinnedStore: PinnedAppsStore.shared,
+            settings: SettingsStore.shared
         ))
         host.autoresizingMask = [.width, .height]
         panel.contentView = host
@@ -60,7 +62,6 @@ final class BarController {
     private func handleVerticalScroll(deltaY: CGFloat) {
         let now = ProcessInfo.processInfo.systemUptime
         guard now - lastSpaceSwitchAt > scrollCooldown else { return }
-        // Scroll up → previous Space; scroll down → next Space.
         let direction = deltaY > 0 ? -1 : 1
         let store = SpacesStore.shared
         let spaces = store.spaces(for: screen)

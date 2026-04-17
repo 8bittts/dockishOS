@@ -6,7 +6,7 @@ struct WindowInfo: Identifiable, Hashable {
     let pid: pid_t
     let ownerName: String
     let title: String
-    let bundleId: String?
+    let bundleID: String?
 
     var displayTitle: String { title.isEmpty ? ownerName : title }
 }
@@ -35,8 +35,8 @@ enum WindowEnumerator {
                 pid != myPid
             else { return nil }
             let title = dict[kCGWindowName as String] as? String ?? ""
-            let bundleId = runningByPid[pid]?.bundleIdentifier
-            return WindowInfo(id: id, pid: pid, ownerName: owner, title: title, bundleId: bundleId)
+            let bundleID = runningByPid[pid]?.bundleIdentifier
+            return WindowInfo(id: id, pid: pid, ownerName: owner, title: title, bundleID: bundleID)
         }
     }
 }

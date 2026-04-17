@@ -5,6 +5,8 @@ struct BarView: View {
     let screen: NSScreen
     @ObservedObject var windowStore: WindowStore
     @ObservedObject var spacesStore: SpacesStore
+    @ObservedObject var pinnedStore: PinnedAppsStore
+    @ObservedObject var settings: SettingsStore
 
     var body: some View {
         ZStack {
@@ -16,34 +18,31 @@ struct BarView: View {
 
             HStack(spacing: 8) {
                 SpacesRow(
+                    size: settings.barSize,
                     spaces: spacesStore.spaces(for: screen),
                     currentID: spacesStore.currentSpaceID(for: screen),
                     onPick: { spacesStore.switchTo($0) }
                 )
 
-                Divider()
-                    .frame(height: 24)
-                    .opacity(0.3)
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(windowStore.windows) { window in
-                            WindowChip(
-                                window: window,
-                                isFrontmost: window.pid == windowStore.frontmostPID,
-                                onActivate: { windowStore.activate(window) },
-                                onClose: { windowStore.close(window) }
-                            )
-                        }
-                        if windowStore.windows.isEmpty {
-                            Text("No windows on this Space")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal, 8)
-                        }
-                    }
-                    .padding(.vertical, 10)
+                if settings.showPinnedRow && !pinnedStore.pins.isEmpty {
+                    Divider().frame(height: 24).opacity(0.3)
+                    PinnedRow(
+                        size: settings.barSize,
+                        pins: pinnedStore.pins,
+                        runningPIDs: Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier)),
+                        onLaunch: { pinnedStore.launch($0) },
+                        onUnpin: { pinnedStore.unpin(bundleID: $0.bundleID) },
+                        onMove: { pinnedStore.move($0, by: $1) }
+                    )
                 }
+
+                Divider().frame(height: 24).opacity(0.3)
+
+                WindowsRow(
+                    windowStore: windowStore,
+                    pinnedStore: pinnedStore,
+                    settings: settings
+                )
             }
             .padding(.horizontal, 24)
         }
@@ -51,7 +50,52 @@ struct BarView: View {
     }
 }
 
+private struct WindowsRow: View {
+    @ObservedObject var windowStore: WindowStore
+    @ObservedObject var pinnedStore: PinnedAppsStore
+    @ObservedObject var settings: SettingsStore
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(windowStore.windows, id: \.id) { window in
+                    chip(for: window)
+                }
+                if windowStore.windows.isEmpty {
+                    Text("No windows on this Space")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                }
+            }
+            .padding(.vertical, 10)
+        }
+    }
+
+    @ViewBuilder
+    private func chip(for window: WindowInfo) -> some View {
+        let isPinned = pinnedStore.isPinned(bundleID: window.bundleID)
+        WindowChip(
+            window: window,
+            size: settings.barSize,
+            showTitle: settings.showChipTitles,
+            isFrontmost: window.pid == windowStore.frontmostPID,
+            isPinned: isPinned,
+            onActivate: { windowStore.activate(window) },
+            onClose: { windowStore.close(window) },
+            onTogglePin: {
+                if let bid = window.bundleID, pinnedStore.isPinned(bundleID: bid) {
+                    pinnedStore.unpin(bundleID: bid)
+                } else {
+                    pinnedStore.pin(window: window)
+                }
+            }
+        )
+    }
+}
+
 private struct SpacesRow: View {
+    let size: BarSize
     let spaces: [SpaceInfo]
     let currentID: CGSSpaceID?
     let onPick: (SpaceInfo) -> Void
@@ -60,6 +104,7 @@ private struct SpacesRow: View {
         HStack(spacing: 4) {
             ForEach(spaces) { space in
                 SpaceChip(
+                    size: size,
                     index: space.index,
                     isActive: space.id == currentID,
                     action: { onPick(space) }
@@ -75,6 +120,7 @@ private struct SpacesRow: View {
 }
 
 private struct SpaceChip: View {
+    let size: BarSize
     let index: Int
     let isActive: Bool
     let action: () -> Void
@@ -83,9 +129,9 @@ private struct SpaceChip: View {
     var body: some View {
         Button(action: action) {
             Text("\(index)")
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .font(.system(size: size.spaceChipSize * 0.45, weight: .bold, design: .monospaced))
                 .foregroundStyle(isActive ? .black : .primary)
-                .frame(width: 24, height: 24)
+                .frame(width: size.spaceChipSize, height: size.spaceChipSize)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
                         .fill(isActive ? Color.white.opacity(0.95) : Color.white.opacity(hover ? 0.18 : 0.08))
@@ -97,27 +143,100 @@ private struct SpaceChip: View {
     }
 }
 
+private struct PinnedRow: View {
+    let size: BarSize
+    let pins: [PinnedApp]
+    let runningPIDs: Set<String>
+    let onLaunch: (PinnedApp) -> Void
+    let onUnpin: (PinnedApp) -> Void
+    let onMove: (PinnedApp, Int) -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(pins) { app in
+                PinnedChip(
+                    app: app,
+                    size: size,
+                    isRunning: runningPIDs.contains(app.bundleID),
+                    action: { onLaunch(app) },
+                    onUnpin: { onUnpin(app) },
+                    onMoveLeft: { onMove(app, -1) },
+                    onMoveRight: { onMove(app, 1) }
+                )
+            }
+        }
+    }
+}
+
+private struct PinnedChip: View {
+    let app: PinnedApp
+    let size: BarSize
+    let isRunning: Bool
+    let action: () -> Void
+    let onUnpin: () -> Void
+    let onMoveLeft: () -> Void
+    let onMoveRight: () -> Void
+    @State private var hover = false
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 2) {
+                Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
+                    .resizable()
+                    .frame(width: size.pinnedChipSize - 6, height: size.pinnedChipSize - 6)
+                Circle()
+                    .fill(isRunning ? Color.white.opacity(0.85) : Color.clear)
+                    .frame(width: 4, height: 4)
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.white.opacity(hover ? 0.18 : 0.0))
+            )
+        }
+        .buttonStyle(.plain)
+        .onHover { hover = $0 }
+        .help(app.name)
+        .contextMenu {
+            Button("Activate \(app.name)") { action() }
+            Divider()
+            Button("Move Left") { onMoveLeft() }
+            Button("Move Right") { onMoveRight() }
+            Divider()
+            Button("Unpin") { onUnpin() }
+        }
+    }
+}
+
 private struct WindowChip: View {
     let window: WindowInfo
+    let size: BarSize
+    let showTitle: Bool
     let isFrontmost: Bool
+    let isPinned: Bool
     let onActivate: () -> Void
     let onClose: () -> Void
+    let onTogglePin: () -> Void
     @State private var hover = false
 
     var body: some View {
         Button(action: onActivate) {
             HStack(spacing: 6) {
                 AppIconView(pid: window.pid)
-                    .frame(width: 22, height: 22)
-                Text(window.displayTitle)
-                    .font(.system(size: 12, weight: isFrontmost ? .semibold : .medium))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .foregroundStyle(.primary)
+                    .frame(width: size.chipIconSize, height: size.chipIconSize)
+                if showTitle {
+                    Text(window.displayTitle)
+                        .font(.system(size: size.chipHeight * 0.40, weight: isFrontmost ? .semibold : .medium))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .foregroundStyle(.primary)
+                }
             }
             .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .frame(maxWidth: 220)
+            .padding(.vertical, 4)
+            .frame(height: size.chipHeight)
+            .frame(maxWidth: showTitle ? 220 : nil)
             .background(
                 RoundedRectangle(cornerRadius: 8)
                     .fill(chipFill)
@@ -140,6 +259,8 @@ private struct WindowChip: View {
         .contextMenu {
             Button("Activate") { onActivate() }
             Button("Close Window") { onClose() }
+            Divider()
+            Button(isPinned ? "Unpin App from Bar" : "Pin App to Bar") { onTogglePin() }
         }
     }
 

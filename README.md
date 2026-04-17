@@ -84,6 +84,30 @@ The right side of every bar lists windows that are on-screen *on the current Spa
 
 > **Note:** Without Screen Recording permission, foreign-app window titles are redacted by macOS to the empty string. The chip falls back to the owning app's name (e.g., "Safari", "Terminal"). With Screen Recording, you get titles like "Inbox - Mail" or "AppDelegate.swift — DockishOS".
 
+### Pinned apps
+
+A row of pinned-app chips lives between the Spaces and Windows rows. Each chip shows the app's icon plus a small running-state dot.
+
+| Action | Result |
+|---|---|
+| Click chip | Activate the app if running, otherwise launch it |
+| Right-click → Move Left / Right | Reorder the pin |
+| Right-click → Unpin | Remove the pin |
+
+To add a pin, right-click any window chip on the bar (**Pin App to Bar**) or right-click any result in the launcher (**Pin to Bar**). Order is persisted across launches in `UserDefaults`.
+
+### Settings
+
+Press **⌘,** (or pick **Settings…** from the menu-bar item) to open the Settings window:
+
+| Tab | Controls |
+|---|---|
+| **Appearance** | Bar size (Small / Medium / Large), show window titles toggle, show pinned apps row toggle |
+| **Pinned** | Reorder or unpin individual apps; manage the pinned list |
+| **About** | Version + build, links to repo, releases, and license |
+
+Bar size changes apply immediately to every connected display — the bars are torn down and rebuilt at the new height.
+
 ### Menu bar
 
 A small dock-shaped icon appears in the system menu bar:
@@ -91,8 +115,9 @@ A small dock-shaped icon appears in the system menu bar:
 | Item | |
 |---|---|
 | Open Launcher | Same as ⌥ Space |
+| Settings… | ⌘, — open the Settings window |
 | Open GitHub Repo | Open the project page in your browser |
-| Quit DockishOS | Cleanly exit the app |
+| Quit DockishOS | ⌘Q — cleanly exit the app |
 
 The menu-bar item is the only built-in way to quit when DockishOS was launched from the `.app` bundle (no terminal attached).
 
@@ -170,7 +195,11 @@ Spaces enumeration and switching require **no** permissions — the CGS SPIs ope
 | `LauncherPanel.swift` | Key-eligible `NSPanel` for the launcher. |
 | `LauncherView.swift` | SwiftUI launcher UI with arrow-key navigation. |
 | `LauncherController.swift` | Show / hide / position; restores prior frontmost on dismiss. |
-| `MenuBarController.swift` | Status-bar `NSStatusItem` with Quit, Open Launcher, Open Repo. |
+| `MenuBarController.swift` | Status-bar `NSStatusItem` with Quit, Open Launcher, Settings, Open Repo. |
+| `Settings.swift` | `BarSize` enum + `SettingsStore` (UserDefaults-backed). |
+| `PinnedAppsStore.swift` | UserDefaults-backed list of pinned apps + load / save / launch helpers. |
+| `SettingsView.swift` | SwiftUI `TabView`: Appearance / Pinned / About. |
+| `SettingsController.swift` | Single-instance Settings `NSWindow`. |
 | `WindowStore.swift` | `ObservableObject` for windows. Refreshes on tick + activation + Space change. |
 | `SpacesStore.swift` | `ObservableObject` for Spaces. Refreshes on Space change + 5 s polling. |
 | `Permissions.swift` | Accessibility check + prompt helpers. |
@@ -294,18 +323,23 @@ Done:
 - [x] Menu-bar item with Quit / Open Launcher / Open Repo
 - [x] Bundle as `.app` with proper `Info.plist` + permission usage strings
 - [x] DMG build + notarization pipeline modeled on movingpaper
+- [x] First tagged GitHub release with notarized `.dmg` download (v0.002)
+- [x] Pinned apps row backed by UserDefaults
+- [x] Settings window with Bar size (S/M/L), chip titles toggle, pinned-row toggle
+- [x] About panel with version + license + acknowledgments
 
 In rough priority order:
 
-- [ ] First tagged GitHub release with notarized `.dmg` download
-- [ ] Pinned apps row backed by UserDefaults (drag to reorder)
+- [ ] Drag-to-reorder pinned apps (chevron buttons exist; native drag would be nicer)
+- [ ] Drag apps from Finder onto the bar to pin
 - [ ] System Dock auto-hide toggle from the menu-bar item
 - [ ] Notification badge counts on app icons
-- [ ] Settings window: bar size (S/M/L), bar position (top/bottom), chip titles on/off, per-monitor opt-in/out, customizable launcher hotkey
+- [ ] Bar position (top vs bottom) setting
+- [ ] Customizable launcher hotkey
+- [ ] Per-monitor opt-in / opt-out
 - [ ] Auto-launch on login via `SMAppService`
 - [ ] Sparkle-based auto-update wired to the GitHub Releases appcast
 - [ ] Optional window grouping by app (one chip per app, count badge)
-- [ ] About window with version + license + acknowledgments
 - [ ] App switcher (Cmd+Tab replacement) reusing the launcher panel
 
 ---
