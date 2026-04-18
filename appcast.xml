@@ -4,10 +4,10 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>DockishOS</title>
         <item>
-            <title>0.012</title>
-            <pubDate>Fri, 17 Apr 2026 21:09:49 -0700</pubDate>
-            <sparkle:version>12</sparkle:version>
-            <sparkle:shortVersionString>0.012</sparkle:shortVersionString>
+            <title>0.013</title>
+            <pubDate>Fri, 17 Apr 2026 21:18:53 -0700</pubDate>
+            <sparkle:version>13</sparkle:version>
+            <sparkle:shortVersionString>0.013</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description><![CDATA[<style>
@@ -23,15 +23,13 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </style>
 <h2>What's New</h2>
 <ul>
-    <li>Harden bar hover geometry, AX prompt, menu versioning, DMG mount reuse</li>
-    <li>Refactor bar UI and harden release packaging</li>
-    <li>Add README logo header</li></ul>
-<p class="footer">DockishOS 0.012</p>
+    <li>Add SF Symbol icons to menu bar items</li></ul>
+<p class="footer">DockishOS 0.013</p>
 ]]></description>
-            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.012/DockishOS-0.012.dmg" length="6352944" type="application/octet-stream" sparkle:edSignature="WIx9eq9GcY4Oji9QLQKAc0cExgrNrbpDKbMwOxy1bens1OpZSNoO5jPrsfJsRU1mYpxfwBVlEy8B7wFSXOuRBQ=="></enclosure>
+            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.013/DockishOS-0.013.dmg" length="6353769" type="application/octet-stream" sparkle:edSignature="L5ba1rZfojPXi3dWuMAQ2+OAfFF8cdlEwUi69hpvN8gYGEGBO2KDcFyTTn2p9HNFo3SOJrT2FYY6Vb7LeE31Bg=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: HhwAPPSBdMZ+dSgg0AZsv9GGrk98Dp9I5zn/9BF0wMXRITrF7smTcUl9lRbtcGJZhCxIRRFlfnfP1LfskwfpAQ==
-length: 1917
+edSignature: sIvxNsd2xjpoC5K0T3U3WgmH4NPrjwldrE8SSq16KEDlXvghqKo1kit3aMU3chnWOczrUYOEg10nbQncROW8Dw==
+length: 1790
 -->
