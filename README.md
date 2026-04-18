@@ -40,19 +40,32 @@ It is designed for people who use macOS Spaces heavily and find the default Dock
 
 ---
 
-## Quick start
+## Build from source
 
 ```bash
 git clone https://github.com/8bittts/dockishOS.git
 cd dockishOS
+swift test
 ./scripts/build_and_run.sh
 ```
 
-The app launches as a menu-bar accessory (no Dock icon, no `Cmd+Tab` entry). Quit from the menu bar item → **Quit DockishOS**.
+`build_and_run.sh` stages and launches a real `.app` bundle at `build/DockishOS.app`. That path matters: macOS privacy permissions, login item registration, `LSUIElement`, the app icon, and Sparkle all behave differently in a real bundle than they do under plain `swift run`.
+
+Useful local commands:
+
+```bash
+./scripts/build_and_run.sh --verify   # launch and confirm the process stays alive
+./scripts/build_and_run.sh --logs     # launch and stream unified logs
+./scripts/build_and_run.sh --debug    # launch under lldb
+./scripts/build-dmg.sh --build-only   # assemble build/DockishOS.app without a DMG
+./scripts/build-dmg.sh --local        # build, sign, and package a local DMG
+```
+
+The app launches as a menu-bar accessory: no Dock icon and no `Cmd+Tab` entry. Quit from the menu bar item → **Quit DockishOS**.
 
 > **Tip:** DockishOS only prompts for Accessibility, and only on first window action. That prompt is intentionally one-shot across launches until access is granted or the user resets TCC. There is no Screen Recording prompt in the current build.
 
-For the full build pipeline (signed DMG, notarization, Sparkle release), see the developer notes in `CLAUDE.md`.
+The release path is tracked in this repo: `scripts/release-dockishOS.sh` bumps the version, builds a signed and notarized DMG, regenerates the signed Sparkle appcast, tags the release, pushes to GitHub, and creates the GitHub release.
 
 ---
 
@@ -147,7 +160,9 @@ A small dock-shaped icon in the menu bar exposes:
 
 ### Notification badges *(opt-in)*
 
-Settings → Appearance → **Show notification badges** reads each app's badge string from the macOS Dock's accessibility tree every 2.5 s and overlays a small red badge on the matching chip. Default off because it relies on an undocumented Dock attribute (`AXStatusLabel`) that may break in future macOS releases — see `CLAUDE.md` for details.
+Settings → Appearance → **Show notification badges** reads each app's badge string from the macOS Dock's accessibility tree every 2.5 s and overlays a small red badge on the matching chip. Default off because it relies on an undocumented Dock attribute (`AXStatusLabel`) that may break in future macOS releases.
+
+Badges require Accessibility access, but enabling badges does not trigger the system prompt by itself. DockishOS only prompts for Accessibility on the first window action; until access is granted, badge reads fail closed and show nothing.
 
 ### Auto-update
 
@@ -161,7 +176,7 @@ DockishOS requests permissions **lazily**, only on first use of a feature that n
 
 | Permission | Required for | Prompted on |
 |---|---|---|
-| Accessibility | Per-window raise + close, notification badges | First click on a window chip |
+| Accessibility | Per-window raise + close, notification badges | First window activation or close action |
 
 Spaces enumeration and switching require **no** permissions.
 
@@ -185,7 +200,7 @@ Issues and pull requests welcome. Ground rules:
 - **Lazy permission prompts.** New features that need a TCC permission must prompt on first use, not at launch.
 - **Run `swift build` clean.** No warnings, no broken SPI calls.
 
-Architecture, file ownership, build scripts, the private-SPI inventory, and project-local engineering rules live in [`CLAUDE.md`](CLAUDE.md). Read it before opening a PR that touches the bar, the build pipeline, or any of the SPI bindings.
+Before opening a PR that touches the bar, Spaces switching, window activation, signing, notarization, Sparkle, or any private SPI binding, read the relevant source and scripts in this repo and keep the behavior covered by `swift test` plus `swift build`.
 
 ---
 
