@@ -69,106 +69,162 @@ private struct AppearanceTab: View {
 
 private struct BehaviorTab: View {
     @ObservedObject var settings: SettingsStore = SettingsStore.shared
-    @State private var dockAutoHide: Bool = DockHelper.isAutoHideEnabled
     @State private var loginItemEnabled: Bool = LoginItem.isEnabled
     @State private var loginItemMessage: String = LoginItem.statusDescription
     @State private var screens: [ScreenItem] = []
 
     var body: some View {
         Form {
-            Section {
-                HStack {
-                    Text("Launcher hotkey")
-                    Spacer()
-                    HotkeyRecorder(hotkey: $settings.launcherHotkey)
-                        .frame(width: 160, height: 26)
-                    Button("Reset") { settings.launcherHotkey = .default }
-                        .controlSize(.small)
-                }
-                HStack {
-                    Text("App switcher hotkey")
-                    Spacer()
-                    HotkeyRecorder(hotkey: $settings.switcherHotkey)
-                        .frame(width: 160, height: 26)
-                    Button("Reset") {
-                        settings.switcherHotkey = LauncherHotkey(
-                            keyCode: 48, carbonModifiers: 2048,
-                            displayString: "⌥ Tab"
-                        )
-                    }
-                    .controlSize(.small)
-                }
-            } header: {
-                Text("Hotkeys")
-            } footer: {
-                Text("Click a field, press the new chord. Esc cancels. Each chord must include at least one non-shift modifier.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-            }
-
-            Section {
-                Toggle("Auto-hide system Dock", isOn: $dockAutoHide)
-                    .onChange(of: dockAutoHide) { _, newValue in
-                        DockHelper.setAutoHide(newValue)
-                    }
-            } header: {
-                Text("System Dock")
-            } footer: {
-                Text("Toggling this restarts the macOS Dock to apply.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-            }
-
-            Section {
-                Toggle("Launch DockishOS at login", isOn: $loginItemEnabled)
-                    .onChange(of: loginItemEnabled) { _, newValue in
-                        _ = LoginItem.setEnabled(newValue)
-                        loginItemEnabled = LoginItem.isEnabled
-                        loginItemMessage = LoginItem.statusDescription
-                    }
-            } header: {
-                Text("Login")
-            } footer: {
-                Text(loginItemMessage)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-            }
-
-            Section {
-                if screens.isEmpty {
-                    Text("Detecting displays…")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(screens) { screen in
-                        Toggle(screen.name, isOn: enabledBinding(for: screen))
-                    }
-                }
-            } header: {
-                Text("Displays")
-            } footer: {
-                Text("Turn off displays where you don't want a bar. Bars rebuild instantly.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-            }
+            HotkeySettingsSection(settings: settings)
+            UtilitySettingsSection(settings: settings)
+            LoginSettingsSection(
+                loginItemEnabled: $loginItemEnabled,
+                loginItemMessage: $loginItemMessage
+            )
+            DisplaySettingsSection(settings: settings, screens: screens)
         }
         .formStyle(.grouped)
         .padding(.horizontal, 12)
-        .onAppear {
-            dockAutoHide = DockHelper.isAutoHideEnabled
-            loginItemEnabled = LoginItem.isEnabled
-            loginItemMessage = LoginItem.statusDescription
+        .onAppear(perform: refreshState)
+        .onReceive(NotificationCenter.default.publisher(
+            for: NSApplication.didChangeScreenParametersNotification
+        )) { _ in
             reloadScreens()
         }
     }
 
+    private func refreshState() {
+        loginItemEnabled = LoginItem.isEnabled
+        loginItemMessage = LoginItem.statusDescription
+        reloadScreens()
+    }
+
     private func reloadScreens() {
-        screens = NSScreen.screens.map { ns in
-            let uuid = SpacesAPI.displayUUID(for: ns)
-            return ScreenItem(
-                id: uuid,
-                name: ns.localizedName,
-                isEnabled: !settings.disabledScreenUUIDs.contains(uuid)
+        screens = ScreenItem.snapshot()
+    }
+}
+
+private struct HotkeySettingsSection: View {
+    @ObservedObject var settings: SettingsStore
+
+    var body: some View {
+        Section {
+            HotkeyRecorderRow(
+                title: "Launcher hotkey",
+                hotkey: $settings.launcherHotkey,
+                resetValue: .default
             )
+            HotkeyRecorderRow(
+                title: "App switcher hotkey",
+                hotkey: $settings.switcherHotkey,
+                resetValue: .switcherDefault
+            )
+        } header: {
+            Text("Hotkeys")
+        } footer: {
+            FooterText("Click a field, press the new chord. Esc cancels. Each chord must include at least one non-shift modifier.")
+        }
+    }
+}
+
+private struct ScreenItem: Identifiable, Hashable {
+    let id: String
+    let name: String
+
+    static func snapshot() -> [ScreenItem] {
+        let rawScreens = NSScreen.screens.map { screen in
+            ScreenItem(
+                id: SpacesAPI.displayUUID(for: screen),
+                name: screen.localizedName
+            )
+        }
+        let counts = rawScreens.reduce(into: [String: Int]()) { result, screen in
+            result[screen.name, default: 0] += 1
+        }
+        var seen: [String: Int] = [:]
+        return rawScreens.map { screen in
+            guard counts[screen.name, default: 0] > 1 else { return screen }
+            seen[screen.name, default: 0] += 1
+            return ScreenItem(id: screen.id, name: "\(screen.name) \(seen[screen.name]!)")
+        }
+    }
+}
+
+private struct UtilitySettingsSection: View {
+    @ObservedObject var settings: SettingsStore
+
+    var body: some View {
+        Section {
+            Toggle("Collapse bar into edge tab", isOn: $settings.barCollapsed)
+
+            Picker("Collapsed tab position", selection: $settings.collapsedTabPosition) {
+                ForEach(CollapsedTabPosition.allCases) { position in
+                    Text(position.displayName).tag(position)
+                }
+            }
+        } header: {
+            Text("Bar Controls")
+        } footer: {
+            FooterText("Slides the full bar offscreen and leaves a small edge tab. You can anchor that tab to the bottom-left or bottom-right corner.")
+        }
+    }
+}
+
+private struct HotkeyRecorderRow: View {
+    let title: String
+    @Binding var hotkey: LauncherHotkey
+    let resetValue: LauncherHotkey
+
+    var body: some View {
+        HStack {
+            Text(title)
+            Spacer()
+            HotkeyRecorder(hotkey: $hotkey)
+                .frame(width: 160, height: 26)
+            Button("Reset") { hotkey = resetValue }
+                .controlSize(.small)
+        }
+    }
+}
+
+private struct LoginSettingsSection: View {
+    @Binding var loginItemEnabled: Bool
+    @Binding var loginItemMessage: String
+
+    var body: some View {
+        Section {
+            Toggle("Launch DockishOS at login", isOn: $loginItemEnabled)
+                .onChange(of: loginItemEnabled) { _, newValue in
+                    _ = LoginItem.setEnabled(newValue)
+                    loginItemEnabled = LoginItem.isEnabled
+                    loginItemMessage = LoginItem.statusDescription
+                }
+        } header: {
+            Text("Login")
+        } footer: {
+            FooterText(loginItemMessage)
+        }
+    }
+}
+
+private struct DisplaySettingsSection: View {
+    @ObservedObject var settings: SettingsStore
+    let screens: [ScreenItem]
+
+    var body: some View {
+        Section {
+            if screens.isEmpty {
+                Text("Detecting displays…")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(screens) { screen in
+                    Toggle(screen.name, isOn: enabledBinding(for: screen))
+                }
+            }
+        } header: {
+            Text("Displays")
+        } footer: {
+            FooterText("Turn off displays where you don't want a bar. Bars rebuild instantly.")
         }
     }
 
@@ -176,19 +232,30 @@ private struct BehaviorTab: View {
         Binding(
             get: { !settings.disabledScreenUUIDs.contains(screen.id) },
             set: { newValue in
-                var set = settings.disabledScreenUUIDs
-                if newValue { set.remove(screen.id) } else { set.insert(screen.id) }
-                settings.disabledScreenUUIDs = set
-                reloadScreens()
+                var disabled = settings.disabledScreenUUIDs
+                if newValue {
+                    disabled.remove(screen.id)
+                } else {
+                    disabled.insert(screen.id)
+                }
+                settings.disabledScreenUUIDs = disabled
             }
         )
     }
 }
 
-private struct ScreenItem: Identifiable, Hashable {
-    let id: String
-    let name: String
-    let isEnabled: Bool
+private struct FooterText: View {
+    let text: String
+
+    init(_ text: String) {
+        self.text = text
+    }
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 11))
+            .foregroundStyle(.secondary)
+    }
 }
 
 private struct HotkeyRecorder: NSViewRepresentable {
@@ -320,9 +387,8 @@ private struct AboutTab: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Image(systemName: "dock.rectangle")
-                .font(.system(size: 56, weight: .regular))
-                .foregroundStyle(.tint)
+            Image(nsImage: DockishBrandAssets.applicationIcon(size: NSSize(width: 112, height: 112)))
+                .interpolation(.high)
             Text("DockishOS")
                 .font(.system(size: 22, weight: .semibold))
             Text("v\(version) (build \(build))")

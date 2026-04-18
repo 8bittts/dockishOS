@@ -42,12 +42,28 @@ final class LauncherStore: ObservableObject {
         selectedIndex = max(0, min(results.count - 1, selectedIndex + delta))
     }
 
-    func activateSelected() {
-        guard results.indices.contains(selectedIndex) else { return }
-        let app = results[selectedIndex]
+    func selectedApp() -> AppEntry? {
+        guard results.indices.contains(selectedIndex) else { return nil }
+        return results[selectedIndex]
+    }
+
+    @discardableResult
+    func activateSelected() -> Bool {
+        guard let app = selectedApp() else { return false }
+        activate(app)
+        return true
+    }
+
+    func activate(_ app: AppEntry) {
+        if
+            let bundleID = app.bundleID,
+            let running = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first
+        {
+            running.activate(options: [])
+            return
+        }
         let config = NSWorkspace.OpenConfiguration()
         NSWorkspace.shared.openApplication(at: app.path, configuration: config) { _, _ in }
-        LauncherController.shared.hide()
     }
 
     func reset() {

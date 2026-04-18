@@ -9,28 +9,56 @@ struct WindowsRow: View {
     @ObservedObject var pinnedStore: PinnedAppsStore
     @ObservedObject var badgeStore: BadgeStore
     @ObservedObject var settings: SettingsStore
+    private let reorderAnimation = Animation.spring(response: 0.30, dampingFraction: 0.82)
+
+    private var suppressPinnedDuplicates: Bool {
+        settings.showPinnedRow && !pinnedStore.pins.isEmpty
+    }
+
+    private var visibleWindows: [WindowInfo] {
+        guard suppressPinnedDuplicates else { return windowStore.windows }
+        return windowStore.windows.filter { !pinnedStore.isPinned(bundleID: $0.bundleID) }
+    }
+
+    private var visibleGroups: [WindowGroup] {
+        let groups = windowStore.grouped()
+        guard suppressPinnedDuplicates else { return groups }
+        return groups.filter { !pinnedStore.isPinned(bundleID: $0.bundleID) }
+    }
+
+    private var layoutAnimationKey: [String] {
+        if settings.groupWindowsByApp {
+            return visibleGroups.map { group in
+                let isFrontmost = group.windows.contains(where: { $0.pid == windowStore.frontmostPID })
+                return "\(group.id):\(isFrontmost ? 1 : 0)"
+            }
+        }
+        return visibleWindows.map { window in
+            "\(window.id):\(window.pid == windowStore.frontmostPID ? 1 : 0)"
+        }
+    }
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
                 if settings.groupWindowsByApp {
-                    let groups = windowStore.grouped()
-                    ForEach(groups) { group in groupChip(for: group) }
-                    if groups.isEmpty { emptyState }
+                    ForEach(visibleGroups) { group in groupChip(for: group) }
+                    if visibleGroups.isEmpty { emptyState }
                 } else {
-                    ForEach(windowStore.windows, id: \.id) { window in
+                    ForEach(visibleWindows, id: \.id) { window in
                         chip(for: window)
                     }
-                    if windowStore.windows.isEmpty { emptyState }
+                    if visibleWindows.isEmpty { emptyState }
                 }
             }
             .padding(.vertical, 10)
+            .animation(reorderAnimation, value: layoutAnimationKey)
         }
     }
 
     @ViewBuilder
     private var emptyState: some View {
-        Text("No windows on this Space")
+        Text("No open apps in this space...")
             .font(.system(size: 12, weight: .medium))
             .foregroundStyle(.secondary)
             .padding(.horizontal, 8)
@@ -71,7 +99,6 @@ struct WindowsRow: View {
             isFrontmost: isFrontmost,
             isPinned: isPinned,
             badge: badge,
-            previewWindow: windowStore.nextWindow(in: group),
             onActivateNext: { windowStore.activateNext(in: group) },
             onActivate: { windowStore.activate($0) },
             onClose: { windowStore.close($0) },
@@ -118,24 +145,13 @@ private struct WindowChip: View {
             .padding(.vertical, 4)
             .frame(height: size.chipHeight)
             .frame(maxWidth: showTitle ? 220 : nil)
-            .background(
-                RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
-                    .fill(chipFill)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
-                    .stroke(isFrontmost ? Color.accentColor.opacity(ChipStyle.strokeOpacity) : .clear, lineWidth: 1.5)
-            )
+            .background(chipChrome)
+            .scaleEffect(hover ? ChipStyle.hoverScale : 1)
+            .offset(y: hover ? -ChipStyle.hoverLift : 0)
         }
         .buttonStyle(.plain)
-        .onHover { hovering in
-            hover = hovering
-            if hovering {
-                ThumbnailController.shared.requestShow(window, near: NSEvent.mouseLocation)
-            } else {
-                ThumbnailController.shared.cancelShow()
-            }
-        }
+        .onHover { hover = $0 }
+        .animation(ChipStyle.hoverAnimation, value: hover)
         .help(window.displayTitle)
         .accessibilityLabel("\(window.displayTitle)\(isFrontmost ? ", frontmost" : "")\(badge.map { ", \($0) notifications" } ?? "")")
         .contextMenu {
@@ -150,6 +166,45 @@ private struct WindowChip: View {
         if isFrontmost { return Color.white.opacity(ChipStyle.frontmostOpacity) }
         return Color.white.opacity(hover ? ChipStyle.hoverOpacity : ChipStyle.inactiveOpacity)
     }
+
+    private var chipChrome: some View {
+        RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
+            .fill(chipFill)
+            .overlay {
+                RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
+                    .strokeBorder(Color.white.opacity(borderOpacity), lineWidth: 0.65)
+            }
+            .overlay(alignment: .top) {
+                RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(topHighlightOpacity),
+                                Color.white.opacity(0)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(height: size.chipHeight * 0.42)
+                    .clipShape(RoundedRectangle(cornerRadius: ChipStyle.cornerRadius))
+            }
+            .shadow(
+                color: .black.opacity(hover ? ChipStyle.hoverShadowOpacity : 0),
+                radius: hover ? ChipStyle.hoverShadowRadius : 0,
+                y: hover ? ChipStyle.hoverShadowYOffset : 0
+            )
+    }
+
+    private var borderOpacity: Double {
+        if hover { return ChipStyle.hoverBorderOpacity }
+        if isFrontmost { return ChipStyle.frontmostBorderOpacity }
+        return ChipStyle.borderOpacity
+    }
+
+    private var topHighlightOpacity: Double {
+        hover ? ChipStyle.hoverTopHighlightOpacity : ChipStyle.topHighlightOpacity
+    }
 }
 
 private struct WindowGroupChip: View {
@@ -159,7 +214,6 @@ private struct WindowGroupChip: View {
     let isFrontmost: Bool
     let isPinned: Bool
     let badge: String?
-    let previewWindow: WindowInfo?
     let onActivateNext: () -> Void
     let onActivate: (WindowInfo) -> Void
     let onClose: (WindowInfo) -> Void
@@ -197,24 +251,13 @@ private struct WindowGroupChip: View {
             .padding(.vertical, 4)
             .frame(height: size.chipHeight)
             .frame(maxWidth: showTitle ? 220 : nil)
-            .background(
-                RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
-                    .fill(chipFill)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
-                    .stroke(isFrontmost ? Color.accentColor.opacity(ChipStyle.strokeOpacity) : .clear, lineWidth: 1.5)
-            )
+            .background(chipChrome)
+            .scaleEffect(hover ? ChipStyle.hoverScale : 1)
+            .offset(y: hover ? -ChipStyle.hoverLift : 0)
         }
         .buttonStyle(.plain)
-        .onHover { hovering in
-            hover = hovering
-            if hovering, let preview = previewWindow {
-                ThumbnailController.shared.requestShow(preview, near: NSEvent.mouseLocation)
-            } else {
-                ThumbnailController.shared.cancelShow()
-            }
-        }
+        .onHover { hover = $0 }
+        .animation(ChipStyle.hoverAnimation, value: hover)
         .help("\(group.ownerName) — \(group.windows.count) window\(group.windows.count == 1 ? "" : "s")")
         .accessibilityLabel("\(group.ownerName), \(group.windows.count) windows\(badge.map { ", \($0) notifications" } ?? "")")
         .contextMenu {
@@ -235,5 +278,44 @@ private struct WindowGroupChip: View {
     private var chipFill: Color {
         if isFrontmost { return Color.white.opacity(ChipStyle.frontmostOpacity) }
         return Color.white.opacity(hover ? ChipStyle.hoverOpacity : ChipStyle.inactiveOpacity)
+    }
+
+    private var chipChrome: some View {
+        RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
+            .fill(chipFill)
+            .overlay {
+                RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
+                    .strokeBorder(Color.white.opacity(borderOpacity), lineWidth: 0.65)
+            }
+            .overlay(alignment: .top) {
+                RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(topHighlightOpacity),
+                                Color.white.opacity(0)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(height: size.chipHeight * 0.42)
+                    .clipShape(RoundedRectangle(cornerRadius: ChipStyle.cornerRadius))
+            }
+            .shadow(
+                color: .black.opacity(hover ? ChipStyle.hoverShadowOpacity : 0),
+                radius: hover ? ChipStyle.hoverShadowRadius : 0,
+                y: hover ? ChipStyle.hoverShadowYOffset : 0
+            )
+    }
+
+    private var borderOpacity: Double {
+        if hover { return ChipStyle.hoverBorderOpacity }
+        if isFrontmost { return ChipStyle.frontmostBorderOpacity }
+        return ChipStyle.borderOpacity
+    }
+
+    private var topHighlightOpacity: Double {
+        hover ? ChipStyle.hoverTopHighlightOpacity : ChipStyle.topHighlightOpacity
     }
 }

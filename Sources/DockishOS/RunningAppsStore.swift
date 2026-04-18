@@ -10,9 +10,11 @@ final class RunningAppsStore: ObservableObject {
     static let shared = RunningAppsStore()
 
     @Published private(set) var bundleIDs: Set<String> = []
+    @Published private(set) var frontmostBundleID: String?
 
     private var launchObserver: NSObjectProtocol?
     private var terminateObserver: NSObjectProtocol?
+    private var activationObserver: NSObjectProtocol?
 
     private init() {
         refresh()
@@ -27,11 +29,26 @@ final class RunningAppsStore: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in self?.refresh() }
+        activationObserver = center.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] note in
+            if let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication {
+                self?.frontmostBundleID = app.bundleIdentifier
+            }
+        }
+        frontmostBundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
     }
 
     func contains(_ bundleID: String?) -> Bool {
         guard let bid = bundleID else { return false }
         return bundleIDs.contains(bid)
+    }
+
+    func isFrontmost(_ bundleID: String?) -> Bool {
+        guard let bundleID else { return false }
+        return frontmostBundleID == bundleID
     }
 
     private func refresh() {

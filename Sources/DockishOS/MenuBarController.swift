@@ -1,22 +1,34 @@
 import AppKit
+import Combine
 
 /// Minimal menu-bar item so users have a way to quit the app, open
 /// settings, and toggle quick system actions when no terminal is attached.
 final class MenuBarController: NSObject, NSMenuDelegate {
     private let statusItem: NSStatusItem
     private let menu = NSMenu()
-    private let dockToggleItem: NSMenuItem
+    private let launcherItem: NSMenuItem
+    private let utilitySectionsItem: NSMenuItem
+    private let collapsedTabPositionItem: NSMenuItem
+    private let collapsedTabPositionMenu = NSMenu()
+    private var collapsedTabPositionOptions: [CollapsedTabPosition: NSMenuItem] = [:]
+    private var cancellables: Set<AnyCancellable> = []
 
     override init() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        dockToggleItem = NSMenuItem(title: "Auto-hide system Dock", action: nil, keyEquivalent: "")
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        launcherItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        utilitySectionsItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        collapsedTabPositionItem = NSMenuItem(title: "Collapsed Tab Position", action: nil, keyEquivalent: "")
         super.init()
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "dock.rectangle", accessibilityDescription: "DockishOS")
-            button.image?.isTemplate = true
+            let icon = DockishBrandAssets.applicationIcon(size: DockishBrandAssets.menuBarIconSize)
+            icon.accessibilityDescription = "DockishOS"
+            button.image = icon
+            button.imageScaling = .scaleProportionallyDown
+            button.imagePosition = .imageOnly
             button.toolTip = "DockishOS"
         }
         buildMenu()
+        bindMenuState()
         menu.delegate = self
         statusItem.menu = menu
     }
@@ -27,13 +39,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.addItem(title)
         menu.addItem(.separator())
 
-        let launcher = NSMenuItem(
-            title: "Open Launcher  ⌥Space",
-            action: #selector(openLauncher),
-            keyEquivalent: ""
-        )
-        launcher.target = self
-        menu.addItem(launcher)
+        launcherItem.action = #selector(openLauncher)
+        launcherItem.target = self
+        menu.addItem(launcherItem)
 
         let settings = NSMenuItem(
             title: "Settings…",
@@ -43,11 +51,13 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         settings.target = self
         menu.addItem(settings)
 
-        menu.addItem(.separator())
+        utilitySectionsItem.action = #selector(toggleUtilitySections)
+        utilitySectionsItem.target = self
+        menu.addItem(utilitySectionsItem)
 
-        dockToggleItem.action = #selector(toggleDockAutoHide)
-        dockToggleItem.target = self
-        menu.addItem(dockToggleItem)
+        buildCollapsedTabPositionMenu()
+        collapsedTabPositionItem.submenu = collapsedTabPositionMenu
+        menu.addItem(collapsedTabPositionItem)
 
         menu.addItem(.separator())
 
@@ -80,15 +90,72 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.addItem(quit)
     }
 
+    private func buildCollapsedTabPositionMenu() {
+        CollapsedTabPosition.allCases.forEach { position in
+            let item = NSMenuItem(
+                title: position.displayName,
+                action: #selector(selectCollapsedTabPosition(_:)),
+                keyEquivalent: ""
+            )
+            item.target = self
+            item.representedObject = position.rawValue
+            collapsedTabPositionMenu.addItem(item)
+            collapsedTabPositionOptions[position] = item
+        }
+    }
+
+    private func bindMenuState() {
+        SettingsStore.shared.$launcherHotkey
+            .map(Self.launcherMenuTitle(for:))
+            .removeDuplicates()
+            .sink { [weak self] title in
+                self?.launcherItem.title = title
+            }
+            .store(in: &cancellables)
+
+        SettingsStore.shared.$barCollapsed
+            .map(Self.barMenuTitle(collapsed:))
+            .removeDuplicates()
+            .sink { [weak self] title in
+                self?.utilitySectionsItem.title = title
+            }
+            .store(in: &cancellables)
+    }
+
+    private static func launcherMenuTitle(for hotkey: LauncherHotkey) -> String {
+        "Open Launcher  \(hotkey.displayString)"
+    }
+
+    private static func barMenuTitle(collapsed: Bool) -> String {
+        collapsed ? "Expand Bar" : "Collapse Bar"
+    }
+
     // NSMenuDelegate — refresh the Dock toggle's checkmark each time the
-    // menu opens, since the user may have changed it elsewhere.
+    // menu opens.
     func menuNeedsUpdate(_ menu: NSMenu) {
-        dockToggleItem.state = DockHelper.isAutoHideEnabled ? .on : .off
+        launcherItem.title = Self.launcherMenuTitle(for: SettingsStore.shared.launcherHotkey)
+        utilitySectionsItem.title = Self.barMenuTitle(collapsed: SettingsStore.shared.barCollapsed)
+        updateCollapsedTabPositionState()
+    }
+
+    private func updateCollapsedTabPositionState() {
+        let selected = SettingsStore.shared.collapsedTabPosition
+        for (position, item) in collapsedTabPositionOptions {
+            item.state = position == selected ? .on : .off
+        }
     }
 
     @objc private func openLauncher()  { LauncherController.shared.toggle() }
     @objc private func openSettings()  { SettingsController.shared.show() }
-    @objc private func toggleDockAutoHide() { DockHelper.toggleAutoHide() }
+    @objc private func toggleUtilitySections() { SettingsStore.shared.barCollapsed.toggle() }
+    @objc private func selectCollapsedTabPosition(_ sender: NSMenuItem) {
+        guard
+            let rawValue = sender.representedObject as? String,
+            let position = CollapsedTabPosition(rawValue: rawValue)
+        else { return }
+        SettingsStore.shared.collapsedTabPosition = position
+        updateCollapsedTabPositionState()
+    }
     @objc private func checkForUpdates()    { Updater.shared.checkForUpdates() }
     @objc private func openRepo() {
         if let url = URL(string: "https://github.com/8bittts/dockishOS") {

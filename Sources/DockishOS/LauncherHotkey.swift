@@ -15,6 +15,12 @@ struct LauncherHotkey: Codable, Equatable {
         displayString: "⌥ Space"
     )
 
+    static let switcherDefault = LauncherHotkey(
+        keyCode: UInt32(kVK_Tab),
+        carbonModifiers: UInt32(optionKey),
+        displayString: "⌥ Tab"
+    )
+
     /// Convert NSEvent flags to Carbon's modifier bitmask used by
     /// `RegisterEventHotKey`.
     static func carbonMask(from flags: NSEvent.ModifierFlags) -> UInt32 {

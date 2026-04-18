@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import SwiftUI
 
 struct WindowGroup: Identifiable {
     var id: String { key }
@@ -17,12 +18,14 @@ final class WindowStore: ObservableObject {
 
     @Published private(set) var windows: [WindowInfo] = []
     @Published private(set) var frontmostPID: pid_t = 0
+    private let reorderAnimation = Animation.spring(response: 0.30, dampingFraction: 0.82)
+    private let focusAnimation = Animation.easeInOut(duration: 0.18)
     private var lastActivatedIndex: [String: Int] = [:]
     private var timer: Timer?
     private var activationObserver: NSObjectProtocol?
 
     private init() {
-        refresh()
+        refresh(animated: false)
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.refresh()
         }
@@ -32,15 +35,23 @@ final class WindowStore: ObservableObject {
             queue: .main
         ) { [weak self] note in
             if let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication {
-                self?.frontmostPID = app.processIdentifier
+                self?.setFrontmostPID(app.processIdentifier, animated: true)
+                self?.refresh()
             }
         }
         frontmostPID = NSWorkspace.shared.frontmostApplication?.processIdentifier ?? 0
     }
 
-    func refresh() {
+    func refresh(animated: Bool = true) {
         let next = WindowEnumerator.currentSpaceWindows()
-        if next != windows { windows = next }
+        guard next != windows else { return }
+        if animated {
+            withAnimation(reorderAnimation) {
+                windows = next
+            }
+        } else {
+            windows = next
+        }
     }
 
     func activate(_ window: WindowInfo) {
@@ -56,12 +67,16 @@ final class WindowStore: ObservableObject {
     /// "group windows by app" rendering mode.
     func grouped() -> [WindowGroup] {
         var byKey: [String: [WindowInfo]] = [:]
+        var orderedKeys: [String] = []
         for w in windows {
             let key = w.bundleID ?? "pid:\(w.pid)"
+            if byKey[key] == nil {
+                orderedKeys.append(key)
+            }
             byKey[key, default: []].append(w)
         }
-        return byKey.compactMap { key, ws -> WindowGroup? in
-            guard let first = ws.first else { return nil }
+        return orderedKeys.compactMap { key -> WindowGroup? in
+            guard let ws = byKey[key], let first = ws.first else { return nil }
             return WindowGroup(
                 key: key,
                 bundleID: first.bundleID,
@@ -70,7 +85,6 @@ final class WindowStore: ObservableObject {
                 windows: ws
             )
         }
-        .sorted { $0.ownerName.localizedCaseInsensitiveCompare($1.ownerName) == .orderedAscending }
     }
 
     /// Activate the next window in the group (round-robin). Used when
@@ -83,12 +97,14 @@ final class WindowStore: ObservableObject {
         activate(group.windows[next])
     }
 
-    /// Window most relevant for hover/preview in grouped mode (the one the
-    /// next click will raise).
-    func nextWindow(in group: WindowGroup) -> WindowInfo? {
-        guard !group.windows.isEmpty else { return nil }
-        let last = lastActivatedIndex[group.key] ?? -1
-        let next = (last + 1) % group.windows.count
-        return group.windows[next]
+    private func setFrontmostPID(_ pid: pid_t, animated: Bool) {
+        guard frontmostPID != pid else { return }
+        if animated {
+            withAnimation(focusAnimation) {
+                frontmostPID = pid
+            }
+        } else {
+            frontmostPID = pid
+        }
     }
 }

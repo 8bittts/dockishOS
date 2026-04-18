@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import DockishOSCore
 
 struct PinnedApp: Identifiable, Codable, Hashable {
     var id: String { bundleID }
@@ -32,7 +33,8 @@ final class PinnedAppsStore: ObservableObject {
     }
 
     func icon(for pin: PinnedApp) -> NSImage {
-        NSWorkspace.shared.icon(forFile: pin.path)
+        let path = resolvedBundleURL(for: pin)?.path ?? pin.path
+        return NSWorkspace.shared.icon(forFile: path)
     }
 
     // MARK: Mutations
@@ -43,13 +45,14 @@ final class PinnedAppsStore: ObservableObject {
             let app = NSRunningApplication(processIdentifier: window.pid),
             let url = app.bundleURL
         else { return }
-        pins.append(PinnedApp(bundleID: bid, name: window.ownerName, path: url.path))
+        let name = app.localizedName ?? window.ownerName
+        pins.append(PinnedApp(bundleID: bid, name: name, path: url.standardizedFileURL.path))
         save()
     }
 
     func pin(_ app: AppEntry) {
         guard let bid = app.bundleID, !isPinned(bundleID: bid) else { return }
-        pins.append(PinnedApp(bundleID: bid, name: app.name, path: app.path.path))
+        pins.append(PinnedApp(bundleID: bid, name: app.name, path: app.path.standardizedFileURL.path))
         save()
     }
 
@@ -60,10 +63,9 @@ final class PinnedAppsStore: ObservableObject {
 
     /// Swap-based reorder. `delta = -1` moves left, `+1` moves right.
     func move(_ pin: PinnedApp, by delta: Int) {
-        guard let i = pins.firstIndex(where: { $0.id == pin.id }) else { return }
-        let j = i + delta
-        guard pins.indices.contains(j) else { return }
-        pins.swapAt(i, j)
+        let next = StableIDReordering.moving(pins, itemID: pin.id, by: delta)
+        guard next != pins else { return }
+        pins = next
         save()
     }
 
@@ -75,15 +77,9 @@ final class PinnedAppsStore: ObservableObject {
     /// Move the pin with `sourceID` to the slot currently occupied by
     /// `targetID` (used by drag-and-drop reordering).
     func move(sourceID: String, onto targetID: String) {
-        guard sourceID != targetID,
-              let from = pins.firstIndex(where: { $0.id == sourceID })
-        else { return }
-        let item = pins.remove(at: from)
-        if let to = pins.firstIndex(where: { $0.id == targetID }) {
-            pins.insert(item, at: to)
-        } else {
-            pins.append(item)
-        }
+        let next = StableIDReordering.moving(pins, sourceID: sourceID, onto: targetID)
+        guard next != pins else { return }
+        pins = next
         save()
     }
 
@@ -95,7 +91,7 @@ final class PinnedAppsStore: ObservableObject {
         let display = bundle?.infoDictionary?["CFBundleDisplayName"] as? String
         let plain = bundle?.infoDictionary?["CFBundleName"] as? String
         let name = display ?? plain ?? url.deletingPathExtension().lastPathComponent
-        pins.append(PinnedApp(bundleID: bid, name: name, path: url.path))
+        pins.append(PinnedApp(bundleID: bid, name: name, path: url.standardizedFileURL.path))
         save()
     }
 
@@ -106,7 +102,8 @@ final class PinnedAppsStore: ObservableObject {
             running.activate(options: [])
             return
         }
-        let url = URL(fileURLWithPath: pin.path)
+        guard let url = resolvedBundleURL(for: pin) else { return }
+        refreshStoredPathIfNeeded(for: pin, resolvedURL: url)
         NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) { _, _ in }
     }
 
@@ -117,17 +114,44 @@ final class PinnedAppsStore: ObservableObject {
             let data = UserDefaults.standard.data(forKey: storageKey),
             let decoded = try? JSONDecoder().decode([PinnedApp].self, from: data)
         else { return }
-        // Drop pins whose .app no longer exists (uninstalled, moved). We
-        // re-save when entries were filtered so the stale ones don't keep
-        // loading on every launch.
-        let alive = decoded.filter { FileManager.default.fileExists(atPath: $0.path) }
-        pins = alive
-        if alive.count != decoded.count { save() }
+        let resolved = decoded.compactMap { resolvedPinnedApp(from: $0) }
+        pins = resolved
+        if resolved != decoded { save() }
     }
 
     private func save() {
         if let data = try? JSONEncoder().encode(pins) {
             UserDefaults.standard.set(data, forKey: storageKey)
         }
+    }
+
+    private func resolvedBundleURL(for pin: PinnedApp) -> URL? {
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: pin.bundleID) {
+            return url.standardizedFileURL
+        }
+
+        let fileURL = URL(fileURLWithPath: pin.path).standardizedFileURL
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            return fileURL
+        }
+        return nil
+    }
+
+    private func resolvedPinnedApp(from pin: PinnedApp) -> PinnedApp? {
+        guard let url = resolvedBundleURL(for: pin) else { return nil }
+        if url.path == pin.path { return pin }
+        return PinnedApp(bundleID: pin.bundleID, name: pin.name, path: url.path)
+    }
+
+    private func refreshStoredPathIfNeeded(for pin: PinnedApp, resolvedURL: URL) {
+        guard let index = pins.firstIndex(of: pin) else { return }
+        let resolvedPath = resolvedURL.standardizedFileURL.path
+        guard pins[index].path != resolvedPath else { return }
+        pins[index] = PinnedApp(
+            bundleID: pin.bundleID,
+            name: pin.name,
+            path: resolvedPath
+        )
+        save()
     }
 }

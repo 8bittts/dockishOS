@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Permissions.warmup()
+        installApplicationIcon()
         menuBar = MenuBarController()
         rebuildBars()
         registerLauncherHotkey()
@@ -85,5 +86,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyCode: switcher.keyCode,
             modifiers: switcher.carbonModifiers
         ) { SwitcherController.shared.toggle() }
+    }
+
+    private func installApplicationIcon() {
+        guard
+            let iconURL = Bundle.main.url(forResource: "DockishOS", withExtension: "icns"),
+            let icon = NSImage(contentsOf: iconURL)
+        else { return }
+        NSApp.applicationIconImage = icon
     }
 }

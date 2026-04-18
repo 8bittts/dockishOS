@@ -5,8 +5,13 @@ let package = Package(
     name: "DockishOS",
     platforms: [.macOS(.v14)],
     targets: [
+        .target(
+            name: "DockishOSCore",
+            path: "Sources/DockishOSCore"
+        ),
         .executableTarget(
             name: "DockishOS",
+            dependencies: ["DockishOSCore"],
             path: "Sources/DockishOS",
             swiftSettings: [
                 .unsafeFlags(["-F", "tools/sparkle"]),
@@ -23,6 +28,11 @@ let package = Package(
                     "-Xlinker", "-rpath", "-Xlinker", "@loader_path/../../../tools/sparkle",
                 ]),
             ]
+        ),
+        .testTarget(
+            name: "DockishOSCoreTests",
+            dependencies: ["DockishOSCore"],
+            path: "Tests/DockishOSCoreTests"
         )
     ]
 )

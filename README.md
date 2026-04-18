@@ -5,11 +5,7 @@
 <h1 align="center">DockishOS</h1>
 
 <p align="center">
-  A native macOS taskbar that organizes windows by Space.
-</p>
-
-<p align="center">
-  A free, open-source Dock alternative for people who actually use macOS Spaces. Built from scratch with AppKit + SwiftUI, no third-party dependencies, no analytics, no telemetry.
+  A free, open-source Dock alternative for people who actually use macOS Spaces. Built from scratch with AppKit + SwiftUI, with a vendored Sparkle framework for signed updates. No analytics, no telemetry.
 </p>
 
 <p align="center">
@@ -30,15 +26,17 @@ Open the `.dmg`, drag **DockishOS** to `/Applications`, launch it. Look for the 
 
 ## What it does
 
-DockishOS adds a translucent floating bar to every display. Each bar shows three rows side-by-side:
+DockishOS adds a translucent floating bar to every display. Each bar shows:
 
-1. **Spaces** — numbered chips for the virtual desktops on this display, current one highlighted, click to switch.
-2. **Pinned apps** *(optional)* — your favorites, drag-to-reorder, click to launch / activate.
-3. **Windows** — every window on the *current* Space (not every running app), with the frontmost outlined in your accent color.
+1. **Pinned apps** *(optional)* — your favorites, drag-to-reorder, click to launch or activate.
+2. **Windows** — every window on the *current* Space, not every running app.
+3. **A collapse control** — the full-width bar slides offscreen and leaves a compact bottom-corner edge tab you can reopen.
+
+When the pinned row is visible, matching apps are omitted from the windows row so you do not get duplicate Chrome, Slack, or Finder chips. Frontmost state is expressed through the chip treatment itself, not by a separate indicator light. Scroll vertically over the bar to switch Spaces on that display.
 
 It is designed for people who use macOS Spaces heavily and find the default Dock unhelpful at telling them what's actually open right now.
 
-> **Note:** DockishOS does not hide the system Dock. Toggle System Settings → Desktop & Dock → "Automatically hide and show the Dock" yourself, or use the menu-bar item's **Auto-hide system Dock** entry.
+> **Note:** DockishOS does not manage the system Dock. Configure Dock behavior in System Settings → Desktop & Dock.
 
 ---
 
@@ -52,7 +50,7 @@ cd dockishOS
 
 The app launches as a menu-bar accessory (no Dock icon, no `Cmd+Tab` entry). Quit from the menu bar item → **Quit DockishOS**.
 
-> **Tip:** First click on a window chip prompts for Accessibility. First 200 ms hover prompts for Screen Recording. Grant both in System Settings → Privacy & Security, then re-launch.
+> **Tip:** DockishOS only prompts for Accessibility, and only on first window action. There is no Screen Recording prompt in the current build.
 
 For the full build pipeline (signed DMG, notarization, Sparkle release), see the developer notes in `CLAUDE.md`.
 
@@ -62,33 +60,33 @@ For the full build pipeline (signed DMG, notarization, Sparkle release), see the
 
 ### Spaces
 
-The leftmost section of every bar shows the Spaces (virtual desktops) on the bar's display. Current Space is solid white; others are translucent.
+DockishOS keeps Space switching lightweight: there is no visible Spaces strip on the bar. Instead, scroll vertically anywhere over the bar to move to the previous or next Space on that display.
 
 | Action | Result |
 |---|---|
-| Click chip `N` | Switch to Space N on this display |
 | Scroll vertically over the bar | Switch to previous / next Space (250 ms cooldown) |
 
 DockishOS handles macOS's "Displays have separate Spaces" toggle in both states.
 
 ### Windows
 
-Every window on the *current* Space is listed. Updates immediately on Space switch and app activation; backstop poll every second for newly-opened windows.
+Every window on the *current* Space is listed. Updates immediately on Space switch and app activation, with a backstop poll every second for newly-opened windows.
 
 | Action | Result |
 |---|---|
 | Click chip | Activate the app **and** raise that specific window |
 | Right-click → Activate / Close Window | Same as click / press the AX close button |
-| Hover (200 ms) | Floating thumbnail preview via ScreenCaptureKit |
 | Hover (instant) | Tooltip with the full window title |
 
-**Group windows by app** (Settings → Appearance) collapses multiple windows of the same app to one chip with a count badge. Click cycles through them; right-click lists each window by title.
+**Group windows by app** (Settings → Appearance) collapses multiple windows of the same app to one chip with a count badge. Click cycles through them; right-click lists each window by title. If the pinned row is visible, pinned app bundles are filtered out of the windows row.
 
-> Without Screen Recording permission, foreign-app titles redact to the empty string and the chip falls back to the owning app's name (e.g., "Safari", "Terminal").
+Hover stays lightweight on purpose: no floating thumbnail panel, no preview capture, no extra permission prompt.
+
+> If macOS withholds a foreign-app window title, the chip falls back to the owning app's name (for example, "Safari" or "Terminal").
 
 ### Pinned apps
 
-A row of pinned-app chips lives between Spaces and Windows. Each chip shows the app's icon and a small running-state dot.
+When enabled and non-empty, the pinned row sits at the leading edge of the bar before the windows row. Each chip shows the app icon and a small running-state dot.
 
 | Action | Result |
 |---|---|
@@ -98,6 +96,7 @@ A row of pinned-app chips lives between Spaces and Windows. Each chip shows the 
 | Right-click → Move Left / Right / Unpin | Reorder or remove |
 
 Pin a running app from the right-click menu of any window chip, or from the right-click menu of any launcher result.
+Pinned apps also survive ordinary app moves or reinstalls when macOS can still resolve the bundle identifier to the current `.app` location.
 
 ### Settings
 
@@ -106,7 +105,7 @@ Open with **⌘,** or **Settings…** in the menu bar item.
 | Tab | Controls |
 |---|---|
 | **Appearance** | Bar size (S / M / L), bar position (Top / Bottom), show window titles, show pinned row, group windows by app, show notification badges |
-| **Behavior** | Customize launcher + switcher hotkeys, auto-hide system Dock, launch at login, per-display opt-in/out |
+| **Behavior** | Customize launcher + switcher hotkeys, collapse bar into edge tab, choose the collapsed-tab side, launch at login, per-display opt-in/out |
 | **Pinned** | Reorder or unpin individual apps |
 | **About** | Version, build, links |
 
@@ -118,8 +117,10 @@ A small dock-shaped icon in the menu bar exposes:
 |---|---|
 | Open Launcher | Same as the launcher hotkey |
 | Settings… | ⌘, |
-| Auto-hide system Dock | Toggle macOS Dock auto-hide (state shown by checkmark) |
+| Collapse Bar / Expand Bar | Toggle the edge-tab presentation |
+| Collapsed Tab Position | Choose bottom-left or bottom-right |
 | Open GitHub Repo | Opens the project page |
+| Check for Updates… | Appears only in real `.app` installs with Sparkle available |
 | Quit DockishOS | ⌘Q |
 
 ### Launcher
@@ -150,7 +151,7 @@ Settings → Appearance → **Show notification badges** reads each app's badge 
 
 ### Auto-update
 
-DockishOS checks for updates hourly via [Sparkle](https://sparkle-project.org) once installed from the DMG. The standard Sparkle dialog appears when a new release is available. Manual check via **Check for Updates…** in the menu bar item. The appcast and updates are EdDSA-signed; verification is enforced (`SUVerifyUpdateBeforeExtraction`, `SURequireSignedFeed`).
+DockishOS checks for updates hourly via [Sparkle](https://sparkle-project.org) once installed from the DMG. The standard Sparkle dialog appears when a new release is available. Manual check via **Check for Updates…** in the menu bar item. The feed is served from the repository's tracked `appcast.xml`, and both the feed and DMG updates are EdDSA-signed; verification is enforced (`SUVerifyUpdateBeforeExtraction`, `SURequireSignedFeed`).
 
 `swift run` builds skip Sparkle entirely — auto-update only takes effect inside a real `.app` bundle.
 
@@ -161,7 +162,6 @@ DockishOS requests permissions **lazily**, only on first use of a feature that n
 | Permission | Required for | Prompted on |
 |---|---|---|
 | Accessibility | Per-window raise + close, notification badges | First click on a window chip |
-| Screen Recording | Window titles + hover thumbnails | First 200 ms hover on a window chip |
 
 Spaces enumeration and switching require **no** permissions.
 
@@ -169,7 +169,7 @@ Spaces enumeration and switching require **no** permissions.
 
 ## Roadmap
 
-The original 25-item roadmap is complete. Everything DockishOS set out to do — per-monitor bars, per-window AX raise, Spaces switcher, hover thumbnails, app launcher, app switcher, settings, pinned apps, drag/drop, customizable hotkeys, login item, signed-DMG release pipeline, signed-feed Sparkle auto-update, opt-in notification badges — ships in the current release.
+The original 25-item roadmap is complete. Everything DockishOS set out to do — per-monitor bars, per-window AX raise, scroll-to-switch Spaces, app launcher, app switcher, settings, pinned apps, drag/drop, customizable hotkeys, login item, signed-DMG release pipeline, signed-feed Sparkle auto-update, opt-in notification badges — ships in the current release.
 
 Future ideas live in [GitHub issues](https://github.com/8bittts/dockishOS/issues).
 

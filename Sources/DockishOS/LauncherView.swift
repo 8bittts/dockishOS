@@ -3,6 +3,9 @@ import AppKit
 
 struct LauncherView: View {
     @ObservedObject var store: LauncherStore
+    @ObservedObject var pinnedStore: PinnedAppsStore
+    let onActivate: (AppEntry) -> Void
+    let onDismiss: () -> Void
     @FocusState private var queryFocused: Bool
 
     var body: some View {
@@ -15,14 +18,18 @@ struct LauncherView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 18, weight: .regular))
                     .focused($queryFocused)
-                    .onSubmit { store.activateSelected() }
+                    .onSubmit { activateSelected() }
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 14)
 
             if !store.results.isEmpty {
                 Divider().opacity(0.4)
-                ResultsList(store: store)
+                ResultsList(
+                    store: store,
+                    pinnedStore: pinnedStore,
+                    onActivateSelected: activateSelected
+                )
                     .frame(maxHeight: 360)
             } else if !store.query.isEmpty {
                 Divider().opacity(0.4)
@@ -45,13 +52,20 @@ struct LauncherView: View {
         .onAppear { queryFocused = true }
         .onKeyPress(.upArrow) { store.moveSelection(by: -1); return .handled }
         .onKeyPress(.downArrow) { store.moveSelection(by: 1); return .handled }
-        .onKeyPress(.escape) { LauncherController.shared.hide(); return .handled }
-        .onKeyPress(.return) { store.activateSelected(); return .handled }
+        .onKeyPress(.escape) { onDismiss(); return .handled }
+        .onKeyPress(.return) { activateSelected(); return .handled }
+    }
+
+    private func activateSelected() {
+        guard let app = store.selectedApp() else { return }
+        onActivate(app)
     }
 }
 
 private struct ResultsList: View {
     @ObservedObject var store: LauncherStore
+    @ObservedObject var pinnedStore: PinnedAppsStore
+    let onActivateSelected: () -> Void
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -63,18 +77,18 @@ private struct ResultsList: View {
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 store.selectedIndex = index
-                                store.activateSelected()
+                                onActivateSelected()
                             }
                             .contextMenu {
-                                if PinnedAppsStore.shared.isPinned(bundleID: app.bundleID) {
+                                if pinnedStore.isPinned(bundleID: app.bundleID) {
                                     Button("Unpin from Bar") {
                                         if let bid = app.bundleID {
-                                            PinnedAppsStore.shared.unpin(bundleID: bid)
+                                            pinnedStore.unpin(bundleID: bid)
                                         }
                                     }
                                 } else {
                                     Button("Pin to Bar") {
-                                        PinnedAppsStore.shared.pin(app)
+                                        pinnedStore.pin(app)
                                     }
                                 }
                             }

@@ -10,6 +10,40 @@ enum BarPosition: String, CaseIterable, Codable, Identifiable {
     var displayName: String { self == .top ? "Top" : "Bottom" }
 }
 
+enum CollapsedTabPosition: String, CaseIterable, Codable, Identifiable {
+    case bottomLeft
+    case bottomRight
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .bottomLeft:  return "Bottom Left"
+        case .bottomRight: return "Bottom Right"
+        }
+    }
+
+    var isRightEdge: Bool {
+        switch self {
+        case .bottomRight:
+            return true
+        case .bottomLeft:
+            return false
+        }
+    }
+
+    init(persistedRawValue: String?) {
+        switch persistedRawValue {
+        case CollapsedTabPosition.bottomLeft.rawValue?, "topLeft"?:
+            self = .bottomLeft
+        case CollapsedTabPosition.bottomRight.rawValue?, "topRight"?:
+            self = .bottomRight
+        default:
+            self = .bottomRight
+        }
+    }
+}
+
 enum BarSize: String, CaseIterable, Codable, Identifiable {
     case small, medium, large
 
@@ -80,6 +114,9 @@ final class SettingsStore: ObservableObject {
         static let barPosition     = "DockishOS.barPosition"
         static let showChipTitles  = "DockishOS.showChipTitles"
         static let showPinnedRow   = "DockishOS.showPinnedRow"
+        static let barCollapsed    = "DockishOS.barCollapsed"
+        static let collapsedTabPosition = "DockishOS.collapsedTabPosition"
+        static let legacyUtilityCollapsed = "DockishOS.utilitySectionsCollapsed"
         static let disabledScreens = "DockishOS.disabledScreens"
         static let launcherHotkey  = "DockishOS.launcherHotkey"
         static let switcherHotkey  = "DockishOS.switcherHotkey"
@@ -114,6 +151,25 @@ final class SettingsStore: ObservableObject {
         didSet {
             guard showPinnedRow != oldValue else { return }
             UserDefaults.standard.set(showPinnedRow, forKey: Key.showPinnedRow)
+        }
+    }
+
+    @Published var barCollapsed: Bool {
+        didSet {
+            guard barCollapsed != oldValue else { return }
+            UserDefaults.standard.set(barCollapsed, forKey: Key.barCollapsed)
+            NotificationCenter.default.post(name: .dockishBarCollapseDidChange, object: nil)
+        }
+    }
+
+    @Published var collapsedTabPosition: CollapsedTabPosition {
+        didSet {
+            guard collapsedTabPosition != oldValue else { return }
+            UserDefaults.standard.set(
+                collapsedTabPosition.rawValue,
+                forKey: Key.collapsedTabPosition
+            )
+            NotificationCenter.default.post(name: .dockishBarLayoutDidChange, object: nil)
         }
     }
 
@@ -177,6 +233,21 @@ final class SettingsStore: ObservableObject {
         self.barPosition = BarPosition(rawValue: rawPos) ?? .bottom
         self.showChipTitles = (UserDefaults.standard.object(forKey: Key.showChipTitles) as? Bool) ?? true
         self.showPinnedRow  = (UserDefaults.standard.object(forKey: Key.showPinnedRow)  as? Bool) ?? true
+        if let persisted = UserDefaults.standard.object(forKey: Key.barCollapsed) as? Bool {
+            self.barCollapsed = persisted
+        } else {
+            self.barCollapsed = (UserDefaults.standard.object(forKey: Key.legacyUtilityCollapsed) as? Bool) ?? false
+        }
+        let rawCollapsedTabPosition =
+            UserDefaults.standard.string(forKey: Key.collapsedTabPosition)
+            ?? CollapsedTabPosition.bottomRight.rawValue
+        let persistedCollapsedPosition =
+            CollapsedTabPosition(persistedRawValue: rawCollapsedTabPosition)
+        self.collapsedTabPosition = persistedCollapsedPosition
+        UserDefaults.standard.set(
+            persistedCollapsedPosition.rawValue,
+            forKey: Key.collapsedTabPosition
+        )
         let disabled = UserDefaults.standard.stringArray(forKey: Key.disabledScreens) ?? []
         self.disabledScreenUUIDs = Set(disabled)
         if let data = UserDefaults.standard.data(forKey: Key.launcherHotkey),
@@ -189,11 +260,7 @@ final class SettingsStore: ObservableObject {
            let hk = try? JSONDecoder().decode(LauncherHotkey.self, from: data) {
             self.switcherHotkey = hk
         } else {
-            self.switcherHotkey = LauncherHotkey(
-                keyCode: UInt32(kVK_Tab),
-                carbonModifiers: UInt32(optionKey),
-                displayString: "⌥ Tab"
-            )
+            self.switcherHotkey = .switcherDefault
         }
         self.groupWindowsByApp = (UserDefaults.standard.object(forKey: Key.groupByApp) as? Bool) ?? false
         self.showNotificationBadges = (UserDefaults.standard.object(forKey: Key.notifBadges) as? Bool) ?? false
@@ -204,4 +271,5 @@ extension Notification.Name {
     /// Posted when the launcher hotkey changes — AppDelegate re-registers
     /// the global Carbon hotkey.
     static let dockishHotkeyDidChange = Notification.Name("DockishOS.HotkeyDidChange")
+    static let dockishBarCollapseDidChange = Notification.Name("DockishOS.BarCollapseDidChange")
 }

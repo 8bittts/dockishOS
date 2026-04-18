@@ -20,6 +20,7 @@ struct PinnedRow: View {
                     app: app,
                     size: size,
                     isRunning: runningApps.contains(app.bundleID),
+                    isFrontmost: runningApps.isFrontmost(app.bundleID),
                     badge: badgeStore.badge(for: app.bundleID),
                     action: { onLaunch(app) },
                     onUnpin: { onUnpin(app) },
@@ -33,12 +34,6 @@ struct PinnedRow: View {
                     of: [.text],
                     delegate: PinnedDropDelegate(targetID: app.bundleID, onReorder: onReorder)
                 )
-            }
-            if pins.isEmpty {
-                Text("Drop apps here")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.tertiary)
-                    .padding(.horizontal, 6)
             }
         }
     }
@@ -62,6 +57,7 @@ private struct PinnedChip: View {
     let app: PinnedApp
     let size: BarSize
     let isRunning: Bool
+    let isFrontmost: Bool
     let badge: String?
     let action: () -> Void
     let onUnpin: () -> Void
@@ -92,7 +88,7 @@ private struct PinnedChip: View {
         .buttonStyle(.plain)
         .onHover { hover = $0 }
         .help(app.name)
-        .accessibilityLabel("\(app.name)\(isRunning ? ", running" : "")\(badge.map { ", \($0) notifications" } ?? "")")
+        .accessibilityLabel("\(app.name)\(isFrontmost ? ", frontmost" : isRunning ? ", running" : "")\(badge.map { ", \($0) notifications" } ?? "")")
         .contextMenu {
             Button("Activate \(app.name)") { action() }
             Divider()

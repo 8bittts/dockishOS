@@ -13,8 +13,8 @@ struct WindowInfo: Identifiable, Hashable {
 
 enum WindowEnumerator {
     /// On-screen, normal-layer (layer 0) windows == windows on the active Space.
-    /// No private SPI required. Window titles require Screen Recording permission;
-    /// without it we fall back to the owning app's name.
+    /// No private SPI required. macOS may redact foreign-app window titles, in
+    /// which case we fall back to the owning app's name.
     static func currentSpaceWindows() -> [WindowInfo] {
         let opts: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
         guard let raw = CGWindowListCopyWindowInfo(opts, kCGNullWindowID) as? [[String: Any]] else {

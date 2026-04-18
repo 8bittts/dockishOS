@@ -20,6 +20,7 @@ APP_NAME="DockishOS"
 GITHUB_REPO="8bittts/dockishOS"
 PLIST_FILE="Resources/Info.plist"
 README_FILE="README.md"
+ROOT_APPCAST_FILE="appcast.xml"
 
 info()  { printf "\033[1;34m==>\033[0m %s\n" "$1"; }
 warn()  { printf "\033[1;33mWARN:\033[0m %s\n" "$1"; }
@@ -62,8 +63,14 @@ command -v gh >/dev/null 2>&1 || fail "gh CLI is required"
 if ! git diff --quiet -- "$PLIST_FILE" "$README_FILE"; then
     fail "Unstaged changes in ${PLIST_FILE} or ${README_FILE}. Commit or stash first."
 fi
+if [ -f "$ROOT_APPCAST_FILE" ] && ! git diff --quiet -- "$ROOT_APPCAST_FILE"; then
+    fail "Unstaged changes in ${ROOT_APPCAST_FILE}. Commit or stash first."
+fi
 if ! git diff --cached --quiet -- "$PLIST_FILE" "$README_FILE"; then
     fail "Staged changes in ${PLIST_FILE} or ${README_FILE}. Release from a clean metadata state."
+fi
+if [ -f "$ROOT_APPCAST_FILE" ] && ! git diff --cached --quiet -- "$ROOT_APPCAST_FILE"; then
+    fail "Staged changes in ${ROOT_APPCAST_FILE}. Release from a clean metadata state."
 fi
 
 CURRENT_VERSION="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$PLIST_FILE")"
@@ -77,12 +84,17 @@ DOCKISHOS_VERSION="$NEXT_VERSION" \
 DOCKISHOS_BUILD="$NEXT_BUILD" \
 "${REPO_ROOT}/scripts/build-dmg.sh"
 
+APPCAST_FILE="build/appcast.xml"
+[ -f "$APPCAST_FILE" ] || fail "Missing appcast at ${APPCAST_FILE} — Sparkle pipeline broken"
+cp "$APPCAST_FILE" "$ROOT_APPCAST_FILE"
+step "Updated ${ROOT_APPCAST_FILE} from generated appcast"
+
 plist_set "$PLIST_FILE" "CFBundleShortVersionString" string "$NEXT_VERSION"
 plist_set "$PLIST_FILE" "CFBundleVersion" string "$NEXT_BUILD"
 update_readme "$NEXT_VERSION"
 step "Updated release metadata"
 
-git add "$PLIST_FILE" "$README_FILE"
+git add "$PLIST_FILE" "$README_FILE" "$ROOT_APPCAST_FILE"
 git commit -m "release: ${APP_NAME} v${NEXT_VERSION}"
 step "Committed release metadata"
 
@@ -95,7 +107,6 @@ step "Pushed commit and tag"
 
 DMG_FILE="build/${APP_NAME}-${NEXT_VERSION}.dmg"
 SHA_FILE="build/${APP_NAME}-${NEXT_VERSION}.sha256"
-APPCAST_FILE="build/appcast.xml"
 
 [ -f "$DMG_FILE" ]     || fail "Missing release DMG at ${DMG_FILE}"
 [ -f "$SHA_FILE" ]     || fail "Missing checksum at ${SHA_FILE}"
@@ -137,8 +148,8 @@ done
 [ "$HTTP_CODE" = "200" ] || fail "Download URL returned HTTP ${HTTP_CODE} after 10 attempts"
 step "Verified release download URL"
 
-# Wait for the appcast.xml to be available at the latest-release URL Sparkle reads.
-APPCAST_URL="https://github.com/${GITHUB_REPO}/releases/latest/download/appcast.xml"
+# Wait for the repo-hosted appcast.xml that Sparkle reads.
+APPCAST_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/main/appcast.xml"
 APPCAST_TMP="$(mktemp "${TMPDIR:-/tmp}/dockishOS-live-appcast.XXXXXX.xml")"
 APPCAST_OK=false
 for attempt in 1 2 3 4 5 6 7 8 9 10; do

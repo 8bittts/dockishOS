@@ -14,18 +14,33 @@ final class LauncherController {
     private init() {
         let size = NSSize(width: 560, height: 420)
         panel = LauncherPanel(size: size)
-        host = NSHostingView(rootView: LauncherView(store: LauncherStore.shared))
+        host = NSHostingView(rootView: LauncherView(
+            store: LauncherStore.shared,
+            pinnedStore: PinnedAppsStore.shared,
+            onActivate: { _ in },
+            onDismiss: {}
+        ))
         host.autoresizingMask = [.width, .height]
         panel.contentView = host
+        host.rootView = makeRootView()
 
         resignObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.didResignKeyNotification,
             object: panel,
             queue: .main
-        ) { _ in
+        ) { [weak self] _ in
             // Hide on click-outside / focus loss.
-            DispatchQueue.main.async { LauncherController.shared.hide() }
+            self?.hide()
         }
+    }
+
+    private func makeRootView() -> LauncherView {
+        LauncherView(
+            store: LauncherStore.shared,
+            pinnedStore: PinnedAppsStore.shared,
+            onActivate: { [weak self] app in self?.activate(app) },
+            onDismiss: { [weak self] in self?.hide() }
+        )
     }
 
     func toggle() {
@@ -34,6 +49,7 @@ final class LauncherController {
 
     func show() {
         previousActiveApp = NSWorkspace.shared.frontmostApplication
+        LauncherStore.shared.refreshIndex()
         LauncherStore.shared.reset()
         positionOnActiveScreen()
         NSApp.activate(ignoringOtherApps: true)
@@ -46,6 +62,12 @@ final class LauncherController {
         // Return focus to whatever was frontmost before we opened.
         previousActiveApp?.activate(options: [])
         previousActiveApp = nil
+    }
+
+    private func activate(_ app: AppEntry) {
+        previousActiveApp = nil
+        panel.orderOut(nil)
+        LauncherStore.shared.activate(app)
     }
 
     private func positionOnActiveScreen() {

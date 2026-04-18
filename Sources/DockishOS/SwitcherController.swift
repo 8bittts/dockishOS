@@ -20,8 +20,8 @@ final class SwitcherController {
             forName: NSWindow.didResignKeyNotification,
             object: panel,
             queue: .main
-        ) { _ in
-            DispatchQueue.main.async { SwitcherController.shared.hide() }
+        ) { [weak self] _ in
+            self?.hide()
         }
     }
 

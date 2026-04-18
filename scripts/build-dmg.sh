@@ -28,12 +28,13 @@ BUNDLE_ID="com.8bittts.dockishos"
 GITHUB_REPO="8bittts/dockishOS"
 BUILD_DIR="build"
 DMG_VOLUME_NAME="DockishOS"
-DMG_ICON_SIZE=160
+DMG_ICON_SIZE=128
 NOTARY_PROFILE="${DOCKISHOS_NOTARY_PROFILE:-YEN-Notarization}"
 SOURCE_PLIST="Resources/Info.plist"
 ENTITLEMENTS="DockishOS.entitlements"
 SPARKLE_SOURCE="tools/sparkle/Sparkle.framework"
 DMG_BG_SOURCE="public/mario.jpg"
+DMG_BG_GENERATOR="scripts/generate-dmg-background.swift"
 
 BUILD_ONLY=false
 LOCAL_MODE=false
@@ -241,51 +242,53 @@ DMG_RW="${BUILD_DIR}/${APP_NAME}-rw.dmg"
 DMG_FINAL="${BUILD_DIR}/${APP_NAME}-${VERSION}.dmg"
 DMG_BG_1X="${BUILD_DIR}/dmg-background.png"
 DMG_BG_2X="${BUILD_DIR}/dmg-background@2x.png"
-# Cinematic DMG window: 1280×720 logical (16:9 exact, matches mario.jpg's
-# 1280×721 native aspect). We ship two background images and let Finder
-# pick: background.png (1280×720) for non-Retina, background@2x.png
-# (2560×1440) for Retina — kindred-macOS's pattern. With a single image,
-# Finder treats it as 1x and clips most of mario; with both, mario
-# always fills the window edge-to-edge.
+# Finder stores the background image at content-view pixel size, not full
+# window bounds including title bar/chrome. Using kindred-macOS's pattern,
+# we size the 1x/@2x background to the content area and persist the outer
+# window bounds separately.
+DMG_CONTENT_WIDTH=1280
+DMG_CONTENT_HEIGHT=720
+DMG_WINDOW_WIDTH=$((DMG_CONTENT_WIDTH + 15))
+DMG_WINDOW_HEIGHT=$((DMG_CONTENT_HEIGHT + 60))
 DMG_WIN_LEFT=120
 DMG_WIN_TOP=120
-DMG_WIN_WIDTH=1280
-DMG_WIN_HEIGHT=720
+DMG_WIN_WIDTH=$DMG_WINDOW_WIDTH
+DMG_WIN_HEIGHT=$DMG_WINDOW_HEIGHT
 DMG_WIN_RIGHT=$((DMG_WIN_LEFT + DMG_WIN_WIDTH))
 DMG_WIN_BOTTOM=$((DMG_WIN_TOP + DMG_WIN_HEIGHT))
 DMG_WIN_RIGHT_JIGGLE=$((DMG_WIN_RIGHT - 10))
 DMG_WIN_BOTTOM_JIGGLE=$((DMG_WIN_BOTTOM - 10))
+DMG_LAYOUT_MAX_ATTEMPTS=5
+DMG_LAYOUT_RETRY_DELAY_SECONDS=2
 
-mkdir -p "$DMG_STAGING"
-cp -R "$APP_BUNDLE" "$DMG_STAGING/${APP_NAME}.app"
-ln -s /Applications "$DMG_STAGING/Applications"
-
-# Stage two opaque PNGs (1x + @2x) so Finder picks the right pixel
-# density per display. Finder rejects images with an alpha channel for
-# `set background picture`, so we round-trip PNG → JPEG → PNG to flatten
-# transparency. `sips -z H W` forces exact dimensions; mario.jpg is
-# 1280×721 so the 1x size loses 1 px vertically (invisible) and the 2x
-# size upscales 100 % via bicubic (soft but acceptable for landscape art).
 flatten_to_opaque_png() {
     local in_path="$1"
     local out_path="$2"
     local jpeg_temp="${out_path%.png}.tmp.jpg"
     sips -s format jpeg --setProperty formatOptions 100 "$in_path" --out "$jpeg_temp" >/dev/null 2>&1
     sips -s format png "$jpeg_temp" --out "$out_path" >/dev/null 2>&1
+    sips --setProperty dpiWidth 72 --setProperty dpiHeight 72 "$out_path" >/dev/null 2>&1
     /bin/rm -f "$jpeg_temp"
 }
 
+mkdir -p "$DMG_STAGING"
+cp -R "$APP_BUNDLE" "$DMG_STAGING/${APP_NAME}.app"
+ln -s /Applications "$DMG_STAGING/Applications"
+touch "$DMG_STAGING/.metadata_never_index"
+
 if [ -f "$DMG_BG_SOURCE" ]; then
-    sips -z "$DMG_WIN_HEIGHT" "$DMG_WIN_WIDTH" "$DMG_BG_SOURCE" \
-        --out "$DMG_BG_1X" >/dev/null 2>&1
+    swift "$DMG_BG_GENERATOR" \
+        "$DMG_BG_SOURCE" \
+        "$DMG_BG_1X" \
+        "$DMG_BG_2X" \
+        "$DMG_CONTENT_WIDTH" \
+        "$DMG_CONTENT_HEIGHT" >/dev/null
     flatten_to_opaque_png "$DMG_BG_1X" "$DMG_BG_1X"
-    sips -z $((DMG_WIN_HEIGHT * 2)) $((DMG_WIN_WIDTH * 2)) "$DMG_BG_SOURCE" \
-        --out "$DMG_BG_2X" >/dev/null 2>&1
     flatten_to_opaque_png "$DMG_BG_2X" "$DMG_BG_2X"
     mkdir -p "$DMG_STAGING/.background"
     cp "$DMG_BG_1X" "$DMG_STAGING/.background/background.png"
     cp "$DMG_BG_2X" "$DMG_STAGING/.background/background@2x.png"
-    step "Prepared DMG background (1x + @2x) from ${DMG_BG_SOURCE}"
+    step "Prepared DMG background (1x + @2x) with downward chevrons from ${DMG_BG_SOURCE}"
 else
     warn "DMG background source not found at ${DMG_BG_SOURCE} — using plain Finder background"
 fi
@@ -320,7 +323,9 @@ if [ -n "$DMG_MOUNT" ]; then
     fi
 
     DMG_MOUNT_NAME="$(basename "$DMG_MOUNT")"
-    osascript <<EOF >/dev/null 2>&1 || true
+    layout_applied=false
+    for attempt in $(seq 1 "$DMG_LAYOUT_MAX_ATTEMPTS"); do
+        if osascript <<EOF >/dev/null 2>&1
 set dmgDiskName to "$DMG_MOUNT_NAME"
 tell application "Finder"
     tell disk dmgDiskName
@@ -337,15 +342,15 @@ tell application "Finder"
         set icon size of theViewOptions to ${DMG_ICON_SIZE}
         set text size of theViewOptions to 13
         ${BG_CMD}
-        -- Icons sit in the upper-third sky/clouds region of mario.jpg so
-        -- the Mario character + grass at the bottom stay visually clear.
-        set position of item "${APP_NAME}.app" of container window to {410, 220}
-        set position of item "Applications" of container window to {870, 220}
+        -- Keep both draggable targets on the left side in a vertical stack so
+        -- the background arrow can guide the drag path down into Applications.
+        set position of item "${APP_NAME}.app" of container window to {230, 170}
+        set position of item "Applications" of container window to {230, 430}
         try
-            set position of item ".background" of container window to {330, 900}
+            set position of item ".background" of container window to {520, 980}
         end try
         try
-            set position of item ".fseventsd" of container window to {500, 900}
+            set position of item ".fseventsd" of container window to {520, 1030}
         end try
         try
             set selection to {}
@@ -359,14 +364,25 @@ tell application "Finder"
         end tell
         delay 1
         tell container window
+            set statusbar visible to false
             set bounds to {${DMG_WIN_LEFT}, ${DMG_WIN_TOP}, ${DMG_WIN_RIGHT}, ${DMG_WIN_BOTTOM}}
         end tell
-        delay 1
+        delay 3
         close
     end tell
 end tell
 EOF
-    step "Applied DMG layout with background"
+        then
+            layout_applied=true
+            step "Applied DMG layout with background"
+            break
+        fi
+        step "Retrying DMG layout (${attempt}/${DMG_LAYOUT_MAX_ATTEMPTS})..."
+        sleep "$DMG_LAYOUT_RETRY_DELAY_SECONDS"
+    done
+    if [ "$layout_applied" != true ]; then
+        warn "Finder layout automation did not fully apply; DMG will fall back to default window state"
+    fi
     hdiutil detach "$DMG_MOUNT" -quiet || hdiutil detach "$DMG_MOUNT" -force -quiet || true
 fi
 

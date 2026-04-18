@@ -1,0 +1,35 @@
+<?xml version="1.0" standalone="yes"?><!-- sparkle-sign-warning:
+IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
+--><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>DockishOS</title>
+        <item>
+            <title>0.011</title>
+            <pubDate>Fri, 17 Apr 2026 15:05:36 -0700</pubDate>
+            <sparkle:version>11</sparkle:version>
+            <sparkle:shortVersionString>0.011</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description><![CDATA[<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 16px 20px; line-height: 1.6; color: #1d1d1f; }
+    h2 { font-size: 17px; font-weight: 600; margin: 0 0 14px 0; }
+    ul { padding-left: 20px; margin: 0; }
+    li { margin-bottom: 6px; font-size: 13px; }
+    .footer { margin-top: 16px; font-size: 11px; color: #86868b; }
+    @media (prefers-color-scheme: dark) {
+        body { color: #f5f5f7; }
+        .footer { color: #a1a1a6; }
+    }
+</style>
+<h2>What's New</h2>
+<ul>
+    <li>Ship background.png + background@2x.png so Finder shows full mario at any density (kindred-macOS pattern)</li></ul>
+<p class="footer">DockishOS 0.011</p>
+]]></description>
+            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.011/DockishOS-0.011.dmg" length="5617390" type="application/octet-stream" sparkle:edSignature="n+OpvdjJbK3vHy7fAPTP44lBDfS242rrv3tIu9wldauXx/sb30V+VkWBvz7TlPRfU36HrAIQnpku43GZFI6ZCw=="></enclosure>
+        </item>
+    </channel>
+</rss><!-- sparkle-signatures:
+edSignature: klkwz2TycBjYOASY5P/SeYA2G5j9J1+atiq11/8XEl2EEVRqFem6BOagOAxu0qoDRnFCF2Zpm58SDN0G6mquBQ==
+length: 1858
+-->
