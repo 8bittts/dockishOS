@@ -36,6 +36,7 @@ struct BarView: View {
 
     private var expandedBar: some View {
         let showPinned = settings.showPinnedRow && !pinnedStore.pins.isEmpty
+        let collapseControlReservation: CGFloat = 88
 
         return ZStack {
             VisualEffectView(material: .hudWindow, blending: .behindWindow)
@@ -70,7 +71,7 @@ struct BarView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.leading, 12)
-            .padding(.trailing, 44)
+            .padding(.trailing, collapseControlReservation)
 
             HStack {
                 Spacer(minLength: 0)
@@ -81,7 +82,7 @@ struct BarView: View {
                     }
                 )
             }
-            .padding(.trailing, 14)
+            .padding(.trailing, 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
@@ -183,10 +184,6 @@ private struct CollapsedTabMetrics {
     var iconOffsetY: CGFloat {
         -7
     }
-
-    var hoverOffset: CGSize {
-        return CGSize(width: 0, height: -3)
-    }
 }
 
 private struct CollapsedTabBackdrop: View {
@@ -267,11 +264,6 @@ private struct CollapsedTabCluster: View {
                 sheenPhase = -1.2
             }
         }
-        .offset(
-            x: hover ? metrics.hoverOffset.width : 0,
-            y: hover ? metrics.hoverOffset.height : 0
-        )
-        .animation(.spring(response: 0.22, dampingFraction: 0.82), value: hover)
         .help("Expand bar")
         .accessibilityLabel("Expand bar")
     }
@@ -351,8 +343,8 @@ private struct CollapsedBarTab: View {
                     .clipShape(RoundedRectangle(cornerRadius: metrics.buttonCornerRadius, style: .continuous))
             }
             .shadow(
-                color: .black.opacity(hover ? 0.15 : 0.10),
-                radius: 7,
+                color: .black.opacity(0.10),
+                radius: 6,
                 y: 2
             )
     }
@@ -362,21 +354,54 @@ private struct UtilitySectionsToggle: View {
     let collapsed: Bool
     let action: () -> Void
     @State private var hover = false
+    private let logo = DockishBrandAssets.applicationIcon(size: NSSize(width: 16, height: 16))
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: collapsed ? "chevron.left" : "chevron.down")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.primary)
-                .frame(width: 18, height: collapsed ? 44 : 24)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.white.opacity(hover ? ChipStyle.hoverOpacity : ChipStyle.inactiveOpacity))
-                )
+            HStack(spacing: collapsed ? 0 : 7) {
+                Image(systemName: collapsed ? "chevron.left" : "chevron.down")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.primary)
+
+                if !collapsed {
+                    Image(nsImage: logo)
+                        .resizable()
+                        .interpolation(.high)
+                        .frame(width: 16, height: 16)
+                }
+            }
+            .frame(width: collapsed ? 44 : 68, height: collapsed ? 44 : 34)
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(buttonChrome)
         }
         .buttonStyle(.plain)
         .onHover { hover = $0 }
+        .animation(.easeOut(duration: 0.10), value: hover)
         .help(collapsed ? "Expand bar" : "Collapse bar into edge tab")
         .accessibilityLabel(collapsed ? "Expand bar" : "Collapse bar")
+    }
+
+    private var buttonChrome: some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(Color(nsColor: .windowBackgroundColor).opacity(hover ? 0.88 : 0.42))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Color.white.opacity(hover ? 0.34 : 0.12), lineWidth: 0.8)
+            }
+            .overlay(alignment: .top) {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(hover ? 0.28 : 0.12),
+                                Color.white.opacity(0)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(height: 12)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
     }
 }

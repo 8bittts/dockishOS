@@ -60,15 +60,15 @@ enum ChipStyle {
     static let inactiveOpacity: Double = 0.08
     static let hoverOpacity: Double = 0.18
     static let frontmostOpacity: Double = 0.22
-    static let hoverLift: CGFloat = 1
-    static let hoverScale: CGFloat = 1.012
+    static let hoverLift: CGFloat = 0
+    static let hoverScale: CGFloat = 1.0
     static let borderOpacity: Double = 0.05
     static let hoverBorderOpacity: Double = 0.12
     static let frontmostBorderOpacity: Double = 0.10
-    static let hoverShadowOpacity: Double = 0.16
-    static let hoverShadowRadius: CGFloat = 10
-    static let hoverShadowYOffset: CGFloat = 3
+    static let hoverShadowOpacity: Double = 0
+    static let hoverShadowRadius: CGFloat = 0
+    static let hoverShadowYOffset: CGFloat = 0
     static let topHighlightOpacity: Double = 0.08
     static let hoverTopHighlightOpacity: Double = 0.14
-    static let hoverAnimation = Animation.spring(response: 0.20, dampingFraction: 0.84)
+    static let hoverAnimation = Animation.easeOut(duration: 0.10)
 }
