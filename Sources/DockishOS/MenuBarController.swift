@@ -40,6 +40,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.addItem(titleItem)
         menu.addItem(.separator())
 
+        launcherItem.image = Self.menuIcon(systemName: "magnifyingglass")
         launcherItem.action = #selector(openLauncher)
         launcherItem.target = self
         menu.addItem(launcherItem)
@@ -49,14 +50,17 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             action: #selector(openSettings),
             keyEquivalent: ","
         )
+        settings.image = Self.menuIcon(systemName: "gearshape")
         settings.target = self
         menu.addItem(settings)
 
+        utilitySectionsItem.image = Self.barMenuIcon(collapsed: SettingsStore.shared.barCollapsed)
         utilitySectionsItem.action = #selector(toggleUtilitySections)
         utilitySectionsItem.target = self
         menu.addItem(utilitySectionsItem)
 
         buildCollapsedTabPositionMenu()
+        collapsedTabPositionItem.image = Self.menuIcon(systemName: "arrow.left.and.right")
         collapsedTabPositionItem.submenu = collapsedTabPositionMenu
         menu.addItem(collapsedTabPositionItem)
 
@@ -67,6 +71,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             action: #selector(openRepo),
             keyEquivalent: ""
         )
+        github.image = Self.menuIcon(systemName: "globe")
         github.target = self
         menu.addItem(github)
 
@@ -78,6 +83,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
                 action: #selector(checkForUpdates),
                 keyEquivalent: ""
             )
+            updates.image = Self.menuIcon(systemName: "arrow.triangle.2.circlepath")
             updates.target = self
             menu.addItem(updates)
             menu.addItem(.separator())
@@ -87,6 +93,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             action: #selector(quit),
             keyEquivalent: "q"
         )
+        quit.image = Self.menuIcon(systemName: "power")
         quit.target = self
         menu.addItem(quit)
     }
@@ -98,6 +105,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
                 action: #selector(selectCollapsedTabPosition(_:)),
                 keyEquivalent: ""
             )
+            item.image = Self.collapsedTabPositionIcon(for: position)
             item.target = self
             item.representedObject = position.rawValue
             collapsedTabPositionMenu.addItem(item)
@@ -119,6 +127,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             .removeDuplicates()
             .sink { [weak self] title in
                 self?.utilitySectionsItem.title = title
+                self?.utilitySectionsItem.image = Self.barMenuIcon(collapsed: SettingsStore.shared.barCollapsed)
             }
             .store(in: &cancellables)
     }
@@ -127,9 +136,27 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         "Open Launcher  \(hotkey.displayString)"
     }
 
+    private static func menuIcon(systemName: String) -> NSImage? {
+        let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .medium)
+        guard let base = NSImage(systemSymbolName: systemName, accessibilityDescription: nil) else {
+            return nil
+        }
+        let image = base.withSymbolConfiguration(config) ?? base
+        image.isTemplate = true
+        return image
+    }
+
+    private static func collapsedTabPositionIcon(for position: CollapsedTabPosition) -> NSImage? {
+        menuIcon(systemName: position.isRightEdge ? "arrow.down.right" : "arrow.down.left")
+    }
+
     private static var menuTitle: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
         return "DockishOS - v\(version)"
+    }
+
+    private static func barMenuIcon(collapsed: Bool) -> NSImage? {
+        menuIcon(systemName: collapsed ? "chevron.up" : "chevron.down")
     }
 
     private static func barMenuTitle(collapsed: Bool) -> String {
@@ -142,6 +169,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         titleItem.title = Self.menuTitle
         launcherItem.title = Self.launcherMenuTitle(for: SettingsStore.shared.launcherHotkey)
         utilitySectionsItem.title = Self.barMenuTitle(collapsed: SettingsStore.shared.barCollapsed)
+        utilitySectionsItem.image = Self.barMenuIcon(collapsed: SettingsStore.shared.barCollapsed)
         updateCollapsedTabPositionState()
     }
 
