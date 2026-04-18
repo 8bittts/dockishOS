@@ -39,7 +39,7 @@ DerivedData/
 *.swp
 *.swo
 
-# Local Claude Code agent rules (not part of the project)
+# Agent docs / local tool state
 CLAUDE.md
 AGENTS.md
 .claude/

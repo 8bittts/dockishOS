@@ -95,7 +95,7 @@ struct BarView: View {
         )
 
         return CollapsedTabCluster(metrics: metrics, action: { settings.barCollapsed = false })
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
     }
 
     private func handleFinderDrop(_ providers: [NSItemProvider]) -> Bool {

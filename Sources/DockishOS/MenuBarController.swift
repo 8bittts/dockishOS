@@ -6,6 +6,7 @@ import Combine
 final class MenuBarController: NSObject, NSMenuDelegate {
     private let statusItem: NSStatusItem
     private let menu = NSMenu()
+    private let titleItem: NSMenuItem
     private let launcherItem: NSMenuItem
     private let utilitySectionsItem: NSMenuItem
     private let collapsedTabPositionItem: NSMenuItem
@@ -15,6 +16,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
 
     override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        titleItem = NSMenuItem(title: Self.menuTitle, action: nil, keyEquivalent: "")
         launcherItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
         utilitySectionsItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
         collapsedTabPositionItem = NSMenuItem(title: "Collapsed Tab Position", action: nil, keyEquivalent: "")
@@ -34,9 +36,8 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     }
 
     private func buildMenu() {
-        let title = NSMenuItem(title: "DockishOS", action: nil, keyEquivalent: "")
-        title.isEnabled = false
-        menu.addItem(title)
+        titleItem.isEnabled = false
+        menu.addItem(titleItem)
         menu.addItem(.separator())
 
         launcherItem.action = #selector(openLauncher)
@@ -126,6 +127,11 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         "Open Launcher  \(hotkey.displayString)"
     }
 
+    private static var menuTitle: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
+        return "DockishOS - v\(version)"
+    }
+
     private static func barMenuTitle(collapsed: Bool) -> String {
         collapsed ? "Expand Bar" : "Collapse Bar"
     }
@@ -133,6 +139,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     // NSMenuDelegate — refresh the Dock toggle's checkmark each time the
     // menu opens.
     func menuNeedsUpdate(_ menu: NSMenu) {
+        titleItem.title = Self.menuTitle
         launcherItem.title = Self.launcherMenuTitle(for: SettingsStore.shared.launcherHotkey)
         utilitySectionsItem.title = Self.barMenuTitle(collapsed: SettingsStore.shared.barCollapsed)
         updateCollapsedTabPositionState()

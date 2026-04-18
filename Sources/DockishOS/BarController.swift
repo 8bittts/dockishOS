@@ -16,6 +16,7 @@ final class BarController {
     private let expandedHorizontalInset: CGFloat = 0
     private let collapsedTabWidth: CGFloat = 56
     private let collapsedTabInset: CGFloat = 6
+    private static let collapsedTabHoverHeadroom: CGFloat = 6
     private static let collapsedTabVisibleHeight: CGFloat = 40
     private static let collapsedTabVisibleWidth: CGFloat = 44
 
@@ -269,7 +270,7 @@ final class BarController {
             let y = collapsedOriginY(
                 visibleFrame: visible,
                 tabHeight: tabHeight,
-                exposedHeight: max(Self.collapsedTabVisibleHeight, settings.barSize.height * 0.78)
+                exposedHeight: max(Self.collapsedTabVisibleHeight, settings.barSize.height * 0.78) + Self.collapsedTabHoverHeadroom
             )
             return NSRect(x: x, y: y, width: collapsedTabWidth, height: tabHeight)
         }
@@ -287,7 +288,7 @@ final class BarController {
     }
 
     private static func collapsedTabHeight(for settings: SettingsStore) -> CGFloat {
-        return max(70, settings.barSize.height + 10)
+        return max(70, settings.barSize.height + 10) + Self.collapsedTabHoverHeadroom
     }
 
     private static func collapsedOriginX(

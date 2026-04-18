@@ -20,13 +20,13 @@
 [**Download DockishOS v0.011**](https://github.com/8bittts/dockishOS/releases/download/v0.011/DockishOS-0.011.dmg)
 <!-- /download-link -->
 
-Open the `.dmg`, drag **DockishOS** to `/Applications`, launch it. Look for the floating bar at the bottom of every display and the dock-shaped icon in the menu bar. Releases are code-signed with a Developer ID and notarized by Apple.
+Open the `.dmg`, drag **DockishOS** to `/Applications`, launch it. Look for the floating bar on every enabled display (bottom edge by default) and the dock-shaped icon in the menu bar. Releases are code-signed with a Developer ID and notarized by Apple.
 
 ---
 
 ## What it does
 
-DockishOS adds a translucent floating bar to every display. Each bar shows:
+DockishOS adds a translucent floating bar to every enabled display. Each bar shows:
 
 1. **Pinned apps** *(optional)* — your favorites, drag-to-reorder, click to launch or activate.
 2. **Windows** — every window on the *current* Space, not every running app.
@@ -50,7 +50,7 @@ cd dockishOS
 
 The app launches as a menu-bar accessory (no Dock icon, no `Cmd+Tab` entry). Quit from the menu bar item → **Quit DockishOS**.
 
-> **Tip:** DockishOS only prompts for Accessibility, and only on first window action. There is no Screen Recording prompt in the current build.
+> **Tip:** DockishOS only prompts for Accessibility, and only on first window action. That prompt is intentionally one-shot across launches until access is granted or the user resets TCC. There is no Screen Recording prompt in the current build.
 
 For the full build pipeline (signed DMG, notarization, Sparkle release), see the developer notes in `CLAUDE.md`.
 
@@ -169,7 +169,7 @@ Spaces enumeration and switching require **no** permissions.
 
 ## Roadmap
 
-The original 25-item roadmap is complete. Everything DockishOS set out to do — per-monitor bars, per-window AX raise, scroll-to-switch Spaces, app launcher, app switcher, settings, pinned apps, drag/drop, customizable hotkeys, login item, signed-DMG release pipeline, signed-feed Sparkle auto-update, opt-in notification badges — ships in the current release.
+The core DockishOS roadmap is complete. Per-display bars, per-window activation, scroll-to-switch Spaces, launcher, switcher, settings, pinned apps, drag/drop, customizable hotkeys, login item, signed DMG packaging, Sparkle auto-update, and opt-in notification badges all ship in the current release.
 
 Future ideas live in [GitHub issues](https://github.com/8bittts/dockishOS/issues).
 

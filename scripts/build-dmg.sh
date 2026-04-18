@@ -54,6 +54,30 @@ warn()  { printf "\033[1;33mWARN:\033[0m %s\n" "$1"; }
 fail()  { printf "\033[1;31mERROR:\033[0m %s\n" "$1" >&2; exit 1; }
 step()  { printf "\033[1;36m  ->\033[0m %s\n" "$1"; }
 
+# Detach any volumes named DockishOS* before mounting a new one. Prevents
+# macOS from silently renaming the new mount to "DockishOS 1/2/3…" after a
+# previous run (or a killed script) left one attached.
+detach_stray_dockish_mounts() {
+    local devnode
+    while IFS= read -r devnode; do
+        [ -n "$devnode" ] || continue
+        hdiutil detach "$devnode" -force -quiet 2>/dev/null || true
+    done < <(hdiutil info 2>/dev/null \
+        | awk -v name="$DMG_VOLUME_NAME" '
+            /^\/dev\// && $0 ~ "/Volumes/" name "( |$)" {
+                print $1
+            }
+        ')
+}
+
+CURRENT_DMG_MOUNT=""
+cleanup_on_exit() {
+    if [ -n "$CURRENT_DMG_MOUNT" ] && [ -d "$CURRENT_DMG_MOUNT" ]; then
+        hdiutil detach "$CURRENT_DMG_MOUNT" -force -quiet 2>/dev/null || true
+    fi
+}
+trap cleanup_on_exit EXIT
+
 plist_set() {
     local plist="$1" key="$2" type="$3" value="$4"
     if /usr/libexec/PlistBuddy -c "Print :${key}" "$plist" >/dev/null 2>&1; then
@@ -301,11 +325,14 @@ hdiutil create -srcfolder "$DMG_STAGING" \
     -ov "$DMG_RW" \
     -quiet
 
+detach_stray_dockish_mounts
+
 DMG_MOUNT="$(
     hdiutil attach "$DMG_RW" -readwrite -noverify -noautoopen -nobrowse 2>&1 \
         | grep "/Volumes/" \
         | /usr/bin/sed 's/.*\/Volumes/\/Volumes/'
 )"
+CURRENT_DMG_MOUNT="$DMG_MOUNT"
 
 if [ -n "$DMG_MOUNT" ]; then
     step "Mounted at ${DMG_MOUNT}"
@@ -384,6 +411,7 @@ EOF
         warn "Finder layout automation did not fully apply; DMG will fall back to default window state"
     fi
     hdiutil detach "$DMG_MOUNT" -quiet || hdiutil detach "$DMG_MOUNT" -force -quiet || true
+    CURRENT_DMG_MOUNT=""
 fi
 
 hdiutil convert "$DMG_RW" \
