@@ -13,7 +13,8 @@ Icon[]
 Package.resolved
 
 # Local build / packaging artifacts (icons, DMGs, staging)
-build/
+build/*
+!build/dockishos.png
 dist/
 
 # Xcode

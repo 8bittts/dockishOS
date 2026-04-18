@@ -1,15 +1,20 @@
-# DockishOS
+<p align="center">
+  <img src="build/dockishos.png" alt="DockishOS" width="200">
+</p>
 
-**A native macOS taskbar that organizes windows by Space.**
+<h1 align="center">DockishOS</h1>
 
-A free, open-source Dock alternative for people who actually use macOS Spaces. Built from scratch with AppKit + SwiftUI, no third-party dependencies, no analytics, no telemetry.
+<p align="center">
+  A native macOS taskbar that organizes windows by Space.
+</p>
 
-<!-- version-badge -->v0.011<!-- /version-badge --> · macOS 14+ · Swift 5.10+ · MIT
+<p align="center">
+  A free, open-source Dock alternative for people who actually use macOS Spaces. Built from scratch with AppKit + SwiftUI, no third-party dependencies, no analytics, no telemetry.
+</p>
 
-[![macOS](https://img.shields.io/badge/macOS-14%2B-000?logo=apple&logoColor=white)](https://www.apple.com/macos/)
-[![Swift](https://img.shields.io/badge/Swift-5.10%2B-F05138?logo=swift&logoColor=white)](https://swift.org)
-[![SwiftPM](https://img.shields.io/badge/SwiftPM-compatible-brightgreen)](https://swift.org/package-manager/)
-[![License](https://img.shields.io/github/license/8bittts/dockishOS)](LICENSE)
+<p align="center">
+  <!-- version-badge -->v0.011<!-- /version-badge --> · macOS 14+ · Swift 5.10+ · MIT
+</p>
 
 ---
 
