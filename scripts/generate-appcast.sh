@@ -27,6 +27,7 @@ PLIST_BUDDY="/usr/libexec/PlistBuddy"
 APP_BUNDLE="build/${APP_NAME}.app"
 INFO_PLIST="${APP_BUNDLE}/Contents/Info.plist"
 OUTPUT="build/appcast.xml"
+CHANGELOG_FILE="CHANGELOG.md"
 
 info()  { printf "\033[1;34m==>\033[0m %s\n" "$1"; }
 step()  { printf "\033[1;36m  ->\033[0m %s\n" "$1"; }
@@ -68,6 +69,16 @@ $(printf '%b' "$items")</ul>
 HTML
 }
 
+changelog_unreleased_items() {
+    [ -f "$CHANGELOG_FILE" ] || return 0
+    awk '
+        /^## \[Unreleased\]/ { capture = 1; next }
+        capture && /^## / { exit }
+        capture { print }
+    ' "$CHANGELOG_FILE" \
+        | sed -e '/^[[:space:]]*$/d' -e '/^### /d' -e 's/^- //'
+}
+
 generate_release_notes() {
     local ver="$1"
 
@@ -79,6 +90,18 @@ generate_release_notes() {
             cap=$(echo "$line" | awk '{$1=toupper(substr($1,1,1)) substr($1,2)} 1')
             items="${items}    <li>${cap}</li>\n"
         done <<< "$(printf '%b' "$SPARKLE_NOTES")"
+        release_notes_html "$ver" "$items"
+        return
+    fi
+
+    local changelog_items
+    changelog_items="$(changelog_unreleased_items)"
+    if [ -n "$changelog_items" ]; then
+        local items=""
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            items="${items}    <li>${line}</li>\n"
+        done <<< "$changelog_items"
         release_notes_html "$ver" "$items"
         return
     fi

@@ -15,7 +15,8 @@ struct SwitcherView: View {
                         ForEach(Array(store.windows.enumerated()), id: \.element.id) { index, window in
                             SwitcherTile(
                                 window: window,
-                                isSelected: index == selectedIndex
+                                isSelected: index == selectedIndex,
+                                isFirst: index == 0
                             )
                             .id(index)
                             .contentShape(Rectangle())
@@ -78,6 +79,7 @@ struct SwitcherView: View {
 private struct SwitcherTile: View {
     let window: WindowInfo
     let isSelected: Bool
+    let isFirst: Bool
 
     var body: some View {
         VStack(spacing: 6) {
@@ -105,5 +107,9 @@ private struct SwitcherTile: View {
                 .truncationMode(.tail)
                 .frame(width: 84)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(window.ownerName), \(window.displayTitle)")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
+        .accessibilityHint(isFirst ? "Use Tab or arrow keys to choose a window, then press Return." : "")
     }
 }

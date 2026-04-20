@@ -16,7 +16,7 @@ struct SettingsView: View {
             AboutTab()
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
-        .frame(width: 480, height: 460)
+        .frame(minWidth: 480, minHeight: 460)
         .padding(.top, 4)
     }
 }
@@ -76,6 +76,7 @@ private struct BehaviorTab: View {
     var body: some View {
         Form {
             HotkeySettingsSection(settings: settings)
+            AccessibilitySettingsSection()
             UtilitySettingsSection(settings: settings)
             LoginSettingsSection(
                 loginItemEnabled: $loginItemEnabled,
@@ -101,6 +102,37 @@ private struct BehaviorTab: View {
 
     private func reloadScreens() {
         screens = ScreenItem.snapshot()
+    }
+}
+
+private struct AccessibilitySettingsSection: View {
+    @State private var granted = Permissions.isAccessibilityGranted
+
+    var body: some View {
+        Section {
+            HStack {
+                Text("Accessibility")
+                Spacer()
+                Label(granted ? "Granted" : "Not Granted", systemImage: granted ? "checkmark.circle.fill" : "exclamationmark.circle")
+                    .foregroundStyle(granted ? .green : .secondary)
+            }
+            Button("Open Accessibility Settings") {
+                Permissions.requestAccessibilityFromSettings()
+                refresh()
+            }
+            Button("Check Again") {
+                refresh()
+            }
+        } header: {
+            Text("Permissions")
+        } footer: {
+            FooterText("Accessibility lets DockishOS raise and close specific windows from the bar.")
+        }
+        .onAppear(perform: refresh)
+    }
+
+    private func refresh() {
+        granted = Permissions.isAccessibilityGranted
     }
 }
 

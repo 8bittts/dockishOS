@@ -153,6 +153,18 @@ can_notarize() {
         && xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1
 }
 
+json_value() {
+    local key="$1" file="$2"
+    /usr/bin/plutil -extract "$key" raw -o - "$file" 2>/dev/null || true
+}
+
+print_notary_log() {
+    local submission_id="$1"
+    [ -n "$submission_id" ] || return 0
+    warn "Fetching notarization log for ${submission_id}"
+    xcrun notarytool log "$submission_id" --keychain-profile "$NOTARY_PROFILE" || true
+}
+
 [ -f "$SOURCE_PLIST" ] || fail "Source Info.plist not found at ${SOURCE_PLIST}"
 
 CURRENT_VERSION="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$SOURCE_PLIST")"
@@ -327,11 +339,18 @@ hdiutil create -srcfolder "$DMG_STAGING" \
 
 detach_stray_dockish_mounts
 
-DMG_MOUNT="$(
-    hdiutil attach "$DMG_RW" -readwrite -noverify -noautoopen -nobrowse 2>&1 \
-        | grep "/Volumes/" \
-        | /usr/bin/sed 's/.*\/Volumes/\/Volumes/'
-)"
+ATTACH_ERR="$(mktemp -t dockishOS-hdiutil-attach)"
+if ! ATTACH_OUT="$(hdiutil attach "$DMG_RW" -readwrite -noverify -noautoopen -nobrowse 2>"$ATTACH_ERR")"; then
+    cat "$ATTACH_ERR" >&2
+    /bin/rm -f "$ATTACH_ERR"
+    fail "hdiutil attach failed for ${DMG_RW}"
+fi
+DMG_MOUNT="$(printf '%s\n' "$ATTACH_OUT" \
+    | grep "/Volumes/" \
+    | /usr/bin/sed 's/.*\/Volumes/\/Volumes/' \
+    || true)"
+/bin/rm -f "$ATTACH_ERR"
+[ -n "$DMG_MOUNT" ] || fail "hdiutil attach did not report a /Volumes mount for ${DMG_RW}"
 CURRENT_DMG_MOUNT="$DMG_MOUNT"
 
 if [ -n "$DMG_MOUNT" ]; then
@@ -429,20 +448,36 @@ fi
 
 if can_notarize; then
     info "Notarizing DMG"
-    xcrun notarytool submit "$DMG_FINAL" \
+    NOTARY_JSON="${BUILD_DIR}/${APP_NAME}-${VERSION}.notary-submission.json"
+    if ! xcrun notarytool submit "$DMG_FINAL" \
         --keychain-profile "$NOTARY_PROFILE" \
-        --wait
+        --wait \
+        --output-format json > "$NOTARY_JSON"; then
+        NOTARY_ID="$(json_value id "$NOTARY_JSON")"
+        print_notary_log "$NOTARY_ID"
+        fail "Notarization submission failed"
+    fi
+    NOTARY_ID="$(json_value id "$NOTARY_JSON")"
+    NOTARY_STATUS="$(json_value status "$NOTARY_JSON")"
+    step "Notary submission ${NOTARY_ID:-unknown}: ${NOTARY_STATUS:-unknown}"
+    if [ "$NOTARY_STATUS" != "Accepted" ]; then
+        print_notary_log "$NOTARY_ID"
+        fail "Notarization rejected"
+    fi
 
     attempt=0
+    stapled=false
     while [ $attempt -lt 10 ]; do
         if xcrun stapler staple "$DMG_FINAL" 2>&1; then
             step "Notarization ticket stapled"
+            stapled=true
             break
         fi
         attempt=$((attempt + 1))
         step "Staple retry $attempt/10..."
         sleep 10
     done
+    [ "$stapled" = true ] || fail "Staple retry limit exhausted"
 else
     if [ "$LOCAL_MODE" = true ]; then
         step "Skipping notarization (--local)"

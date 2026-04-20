@@ -99,7 +99,7 @@ final class PinnedAppsStore: ObservableObject {
 
     func launch(_ pin: PinnedApp) {
         if let running = runningApp(for: pin) {
-            running.activate(options: [])
+            AppActivation.activate(running)
             return
         }
         guard let url = resolvedBundleURL(for: pin) else { return }

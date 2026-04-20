@@ -60,7 +60,9 @@ final class LauncherController {
         guard panel.isVisible else { return }
         panel.orderOut(nil)
         // Return focus to whatever was frontmost before we opened.
-        previousActiveApp?.activate(options: [])
+        if let previousActiveApp {
+            AppActivation.activate(previousActiveApp)
+        }
         previousActiveApp = nil
     }
 

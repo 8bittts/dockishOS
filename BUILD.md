@@ -72,6 +72,7 @@ After a successful run, look in `build/`:
 - Always: `build/DockishOS.app`
 - DMG-producing modes: `build/DockishOS-<version>.dmg`
 - DMG-producing modes: SHA-256 at `build/DockishOS-<version>.sha256`
+- Notarized mode: submission JSON at `build/DockishOS-<version>.notary-submission.json`
 - Notarized mode: look for `Notarization ticket stapled` in the build output
 - DMG-producing modes: the release script prints the GitHub download URL
 
@@ -114,6 +115,12 @@ Writes a private key to the login keychain and prints the public key. Copy the p
 
 ---
 
+## Release notes
+
+Keep user-facing changes under `CHANGELOG.md` → `## [Unreleased]`. The release flow uses that section for Sparkle release notes and GitHub release notes. For one-off appcast generation, override with `SPARKLE_NOTES` when needed.
+
+---
+
 ## Common failure modes
 
 | Symptom | Likely cause |
@@ -121,6 +128,7 @@ Writes a private key to the login keychain and prints the public key. Copy the p
 | `Source Info.plist not found` | Running from a directory other than the repo root. The script `cd`s into the repo's own path — re-check. |
 | `No Developer ID found — falling back to ad-hoc signing` | No Developer ID Application certificate in the login keychain. Add one or use `--unsigned`. |
 | `Notarization skipped — no keychain profile` | Run the `notarytool store-credentials` snippet above. |
+| `Notarization rejected` | Inspect `build/DockishOS-<version>.notary-submission.json`; the script also fetches the notary log when a submission ID is available. |
 | Signing retry loops | Apple's timestamp server is slow. The script auto-retries 5×. |
 | `xcrun stapler staple` fails | Notarization succeeded but propagation is slow. The script auto-retries 10×. |
 

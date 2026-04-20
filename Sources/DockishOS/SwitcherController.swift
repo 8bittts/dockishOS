@@ -45,7 +45,9 @@ final class SwitcherController {
     func hide() {
         guard panel.isVisible else { return }
         panel.orderOut(nil)
-        previousActiveApp?.activate(options: [])
+        if let previousActiveApp {
+            AppActivation.activate(previousActiveApp)
+        }
         previousActiveApp = nil
     }
 

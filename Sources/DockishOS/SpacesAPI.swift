@@ -1,5 +1,6 @@
 import AppKit
 import CoreGraphics
+import Darwin
 
 /// Private CoreGraphics SPI bindings for Spaces (a.k.a. virtual desktops).
 ///
@@ -32,6 +33,21 @@ struct SpaceInfo: Identifiable, Hashable {
 }
 
 enum SpacesAPI {
+    private typealias SpaceCopyWindowsFunction = @convention(c) (
+        CGSConnectionID,
+        Int32,
+        CGSSpaceID
+    ) -> Unmanaged<CFArray>?
+
+    private static let copyWindowsForSpace: SpaceCopyWindowsFunction? = {
+        let handle = UnsafeMutableRawPointer(bitPattern: -2)
+        guard let symbol = dlsym(handle, "CGSSpaceCopyWindows") else {
+            Diagnostics.spaces.debug("CGSSpaceCopyWindows unavailable")
+            return nil
+        }
+        return unsafeBitCast(symbol, to: SpaceCopyWindowsFunction.self)
+    }()
+
     /// Returns Spaces grouped by display identifier, in Mission Control order.
     /// Filters out fullscreen-app spaces by default to keep the UI clean.
     static func allSpaces(includeFullscreen: Bool = false) -> [String: [SpaceInfo]] {
@@ -48,16 +64,24 @@ enum SpacesAPI {
             var entries: [SpaceInfo] = []
             var idx = 1
             for s in spaces {
+                defer { idx += 1 }
                 guard let id = s["ManagedSpaceID"] as? CGSSpaceID else { continue }
                 let type = s["type"] as? Int ?? 0
                 let isFs = (type == 4)
                 if !includeFullscreen && isFs { continue }
                 entries.append(SpaceInfo(id: id, displayUUID: display, index: idx, isFullscreen: isFs))
-                idx += 1
             }
             result[display] = entries
         }
         return result
+    }
+
+    static func windowIDs(for spaceID: CGSSpaceID) -> [CGWindowID] {
+        guard let copyWindowsForSpace else { return [] }
+        guard let raw = copyWindowsForSpace(CGSMainConnectionID(), 0x7, spaceID)?.takeRetainedValue() else {
+            return []
+        }
+        return (raw as? [NSNumber] ?? []).map { CGWindowID($0.uint32Value) }
     }
 
     /// Current active Space ID for the given display.

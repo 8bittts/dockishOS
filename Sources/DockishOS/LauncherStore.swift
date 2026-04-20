@@ -59,7 +59,7 @@ final class LauncherStore: ObservableObject {
             let bundleID = app.bundleID,
             let running = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first
         {
-            running.activate(options: [])
+            AppActivation.activate(running)
             return
         }
         let config = NSWorkspace.OpenConfiguration()

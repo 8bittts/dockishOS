@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 import Combine
 
 /// Minimal menu-bar item so users have a way to quit the app, open
@@ -8,6 +9,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     private let menu = NSMenu()
     private let titleItem: NSMenuItem
     private let launcherItem: NSMenuItem
+    private let hotkeyWarningItem: NSMenuItem
     private let utilitySectionsItem: NSMenuItem
     private let collapsedTabPositionItem: NSMenuItem
     private let collapsedTabPositionMenu = NSMenu()
@@ -18,11 +20,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         titleItem = NSMenuItem(title: Self.menuTitle, action: nil, keyEquivalent: "")
         launcherItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+        hotkeyWarningItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
         utilitySectionsItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
         collapsedTabPositionItem = NSMenuItem(title: "Collapsed Tab Position", action: nil, keyEquivalent: "")
         super.init()
         if let button = statusItem.button {
-            let icon = DockishBrandAssets.applicationIcon(size: DockishBrandAssets.menuBarIconSize)
+            let icon = DockishBrandAssets.menuBarIcon(size: DockishBrandAssets.menuBarIconSize)
             icon.accessibilityDescription = "DockishOS"
             button.image = icon
             button.imageScaling = .scaleProportionallyDown
@@ -44,6 +47,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         launcherItem.action = #selector(openLauncher)
         launcherItem.target = self
         menu.addItem(launcherItem)
+
+        hotkeyWarningItem.image = Self.menuIcon(systemName: "exclamationmark.triangle")
+        hotkeyWarningItem.action = #selector(openSettings)
+        hotkeyWarningItem.target = self
+        hotkeyWarningItem.isHidden = true
+        menu.addItem(hotkeyWarningItem)
 
         let settings = NSMenuItem(
             title: "Settings…",
@@ -130,6 +139,10 @@ final class MenuBarController: NSObject, NSMenuDelegate {
                 self?.utilitySectionsItem.image = Self.barMenuIcon(collapsed: SettingsStore.shared.barCollapsed)
             }
             .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .dockishHotkeyRegistrationDidChange)
+            .sink { [weak self] _ in self?.updateHotkeyWarning() }
+            .store(in: &cancellables)
     }
 
     private static func launcherMenuTitle(for hotkey: LauncherHotkey) -> String {
@@ -170,7 +183,27 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         launcherItem.title = Self.launcherMenuTitle(for: SettingsStore.shared.launcherHotkey)
         utilitySectionsItem.title = Self.barMenuTitle(collapsed: SettingsStore.shared.barCollapsed)
         utilitySectionsItem.image = Self.barMenuIcon(collapsed: SettingsStore.shared.barCollapsed)
+        updateHotkeyWarning()
         updateCollapsedTabPositionState()
+    }
+
+    private func updateHotkeyWarning() {
+        if let status = HotkeyManager.shared.registrationStatus(name: "launcher") {
+            hotkeyWarningItem.title = Self.hotkeyWarningTitle(label: "Launcher", status: status)
+            hotkeyWarningItem.isHidden = false
+        } else if let status = HotkeyManager.shared.registrationStatus(name: "switcher") {
+            hotkeyWarningItem.title = Self.hotkeyWarningTitle(label: "Switcher", status: status)
+            hotkeyWarningItem.isHidden = false
+        } else {
+            hotkeyWarningItem.isHidden = true
+        }
+    }
+
+    private static func hotkeyWarningTitle(label: String, status: OSStatus) -> String {
+        if status == eventHotKeyExistsErr {
+            return "\(label) hotkey unavailable - conflict detected"
+        }
+        return "\(label) hotkey unavailable - OSStatus \(status)"
     }
 
     private func updateCollapsedTabPositionState() {

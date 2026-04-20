@@ -271,5 +271,6 @@ extension Notification.Name {
     /// Posted when the launcher hotkey changes — AppDelegate re-registers
     /// the global Carbon hotkey.
     static let dockishHotkeyDidChange = Notification.Name("DockishOS.HotkeyDidChange")
+    static let dockishHotkeyRegistrationDidChange = Notification.Name("DockishOS.HotkeyRegistrationDidChange")
     static let dockishBarCollapseDidChange = Notification.Name("DockishOS.BarCollapseDidChange")
 }

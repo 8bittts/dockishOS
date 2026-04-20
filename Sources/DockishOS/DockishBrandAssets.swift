@@ -3,6 +3,17 @@ import AppKit
 enum DockishBrandAssets {
     static let menuBarIconSize = NSSize(width: 18, height: 18)
 
+    static func menuBarIcon(size: NSSize) -> NSImage {
+        let config = NSImage.SymbolConfiguration(pointSize: min(size.width, size.height), weight: .semibold)
+        if let base = NSImage(systemSymbolName: "dock.rectangle", accessibilityDescription: "DockishOS") {
+            let image = (base.withSymbolConfiguration(config) ?? base).copy() as? NSImage ?? base
+            image.size = size
+            image.isTemplate = true
+            return image
+        }
+        return renderedTemplateFallbackIcon(size: size)
+    }
+
     static func applicationIcon(size: NSSize) -> NSImage {
         if let appIcon = resolvedApplicationIcon() {
             return resized(appIcon, to: size)
@@ -49,6 +60,43 @@ enum DockishBrandAssets {
         drawIcon(in: NSRect(origin: .zero, size: size))
         image.unlockFocus()
         image.isTemplate = false
+        return image
+    }
+
+    private static func renderedTemplateFallbackIcon(size: NSSize) -> NSImage {
+        let image = NSImage(size: size)
+        image.lockFocus()
+        let side = min(size.width, size.height)
+        let rect = NSRect(
+            x: (size.width - side) / 2,
+            y: (size.height - side) / 2,
+            width: side,
+            height: side
+        )
+        NSColor.black.setStroke()
+        NSColor.black.setFill()
+
+        let dock = NSBezierPath(
+            roundedRect: rect.insetBy(dx: side * 0.12, dy: side * 0.18),
+            xRadius: side * 0.10,
+            yRadius: side * 0.10
+        )
+        dock.lineWidth = max(1.2, side * 0.08)
+        dock.stroke()
+
+        let chipHeight = side * 0.18
+        let chipY = rect.midY - chipHeight / 2
+        for i in 0..<3 {
+            let chip = NSRect(
+                x: rect.minX + side * (0.25 + CGFloat(i) * 0.18),
+                y: chipY,
+                width: side * 0.10,
+                height: chipHeight
+            )
+            NSBezierPath(roundedRect: chip, xRadius: chipHeight * 0.25, yRadius: chipHeight * 0.25).fill()
+        }
+        image.unlockFocus()
+        image.isTemplate = true
         return image
     }
 

@@ -78,6 +78,7 @@ enum DockBadgeReader {
         }
 
         let dockAX = AXUIElementCreateApplication(dockApp.processIdentifier)
+        AXUIElementSetMessagingTimeout(dockAX, 0.5)
         guard
             let dockChildren: [AXUIElement] = AX.value(dockAX, kAXChildrenAttribute as CFString),
             let list = dockChildren.first,

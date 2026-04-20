@@ -6,9 +6,17 @@
 
 <!-- version-badge -->v0.013<!-- /version-badge -->
 
-DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar for people who use Spaces heavily. It focuses on the windows in the current Space instead of every running app.
+The macOS Dock shows every app on every Space. DockishOS shows what is open on this Space.
 
-The app is built with SwiftUI and AppKit, targets macOS 14+, and ships as an accessory app with no Dock icon.
+DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar for people who use Spaces heavily. The app is built with SwiftUI and AppKit, targets macOS 14+, and ships as an accessory app with no Dock icon.
+
+## Why DockishOS
+
+**Current-Space-only:** see and switch the windows that matter right now.
+
+**Scroll-to-switch:** scroll over the bar to move between Spaces without opening Mission Control.
+
+**Finder drag-to-pin:** drop `.app` bundles or right-click windows and launcher results to keep important apps close.
 
 ## Download
 
@@ -40,8 +48,8 @@ xattr -dr com.apple.quarantine /Applications/DockishOS.app
 - Right-click chips to close windows or pin/unpin apps.
 - Vertical scroll over the bar to switch Spaces.
 - Collapse the bar into a bottom-left or bottom-right edge tab.
-- Launcher hotkey, default `Option-Space`, for opening installed apps.
-- Window switcher hotkey, default `Option-Tab`, for cycling windows in the current Space.
+- Launcher hotkey, default `Option-Space`, for fuzzy-searching installed apps.
+- Window switcher hotkey, default `Option-Tab`, for cycling windows in the current Space with Tab, arrow keys, Return, and Escape.
 - Settings for size, top/bottom placement, titles, badges, hotkeys, login launch, and per-display visibility.
 
 DockishOS does not replace or configure the system Dock. Use System Settings for Dock behavior.
@@ -53,6 +61,12 @@ DockishOS asks for Accessibility only when a feature needs it. Accessibility is 
 Window listing and Spaces switching do not require a Screen Recording permission.
 
 Notification badges are off by default. They rely on an undocumented Dock accessibility attribute, so they may stop working on future macOS releases.
+
+## Launcher And Switcher
+
+Press `Option-Space` to open the app launcher. Search matches app names case-insensitively, with exact and prefix matches ranked ahead of word-prefix, contains, and ordered-character matches. Press Return to open the selected result, or right-click a result to pin it to the bar.
+
+Press `Option-Tab` to open the current-Space window switcher. Tab and the arrow keys move selection, Return activates the selected window, and Escape closes the switcher. Change either hotkey from `Cmd-,` Settings.
 
 ## Build
 
@@ -90,4 +104,4 @@ Keep changes native to macOS APIs where possible. Run `swift build` and `swift t
 
 ## License
 
-[MIT](LICENSE) © 2026 [@8bittts](https://github.com/8bittts)
+[MIT](LICENSE) © 2026 [8BIT](https://github.com/8bittts)

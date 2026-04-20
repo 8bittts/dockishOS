@@ -21,11 +21,20 @@ GITHUB_REPO="8bittts/dockishOS"
 PLIST_FILE="Resources/Info.plist"
 README_FILE="README.md"
 ROOT_APPCAST_FILE="appcast.xml"
+CHANGELOG_FILE="CHANGELOG.md"
+RELEASE_NOTES=""
+APPCAST_TMP=""
 
 info()  { printf "\033[1;34m==>\033[0m %s\n" "$1"; }
 warn()  { printf "\033[1;33mWARN:\033[0m %s\n" "$1"; }
 fail()  { printf "\033[1;31mERROR:\033[0m %s\n" "$1" >&2; exit 1; }
 step()  { printf "\033[1;36m  ->\033[0m %s\n" "$1"; }
+
+cleanup_on_exit() {
+    [ -z "$RELEASE_NOTES" ] || rm -f "$RELEASE_NOTES"
+    [ -z "$APPCAST_TMP" ] || rm -f "$APPCAST_TMP"
+}
+trap cleanup_on_exit EXIT
 
 plist_set() {
     local plist="$1" key="$2" type="$3" value="$4"
@@ -56,6 +65,64 @@ update_readme() {
     perl -0pi -e "s|<!-- version-badge -->.*?<!-- /version-badge -->|<!-- version-badge -->v${version}<!-- /version-badge -->|s" "$README_FILE"
 }
 
+changelog_unreleased_markdown() {
+    [ -f "$CHANGELOG_FILE" ] || return 0
+    awk '
+        /^## \[Unreleased\]/ { capture = 1; next }
+        capture && /^## / { exit }
+        capture { print }
+    ' "$CHANGELOG_FILE" | sed '/^[[:space:]]*$/d'
+}
+
+changelog_unreleased_items() {
+    changelog_unreleased_markdown \
+        | sed -e '/^### /d' -e 's/^- //' \
+        | sed '/^[[:space:]]*$/d'
+}
+
+tag_exists() {
+    git rev-parse -q --verify "refs/tags/$1" >/dev/null
+}
+
+tag_points_at_head() {
+    local tag="$1"
+    [ "$(git rev-list -n 1 "$tag" 2>/dev/null || true)" = "$(git rev-parse HEAD)" ]
+}
+
+release_exists() {
+    gh release view "$1" --repo "$GITHUB_REPO" >/dev/null 2>&1
+}
+
+run_build() {
+    local version="$1" build="$2" notes="$3"
+    if [ -n "$notes" ]; then
+        SPARKLE_NOTES="$notes" \
+        DOCKISHOS_VERSION="$version" \
+        DOCKISHOS_BUILD="$build" \
+        "${REPO_ROOT}/scripts/build-dmg.sh"
+    else
+        DOCKISHOS_VERSION="$version" \
+        DOCKISHOS_BUILD="$build" \
+        "${REPO_ROOT}/scripts/build-dmg.sh"
+    fi
+}
+
+write_release_notes() {
+    local version="$1" sha_file="$2" markdown="$3"
+    RELEASE_NOTES="$(mktemp -t dockishOS-release-notes)"
+    {
+        printf "%s v%s\n\n" "$APP_NAME" "$version"
+        if [ -n "$markdown" ]; then
+            printf "%s\n\n" "$markdown"
+        else
+            printf "Bug fixes and performance improvements.\n\n"
+        fi
+        printf "Download the DMG, open it, and drag %s.app to /Applications.\n" "$APP_NAME"
+        printf "Launch it from Applications. The app lives as a menu-bar accessory.\n\n"
+        printf "**SHA-256:** %s\n" "$(cat "$sha_file")"
+    } > "$RELEASE_NOTES"
+}
+
 [ -f "$PLIST_FILE" ] || fail "Missing ${PLIST_FILE}"
 [ -f "$README_FILE" ] || fail "Missing ${README_FILE}"
 command -v gh >/dev/null 2>&1 || fail "gh CLI is required"
@@ -77,65 +144,84 @@ CURRENT_VERSION="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString
 CURRENT_BUILD="$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$PLIST_FILE")"
 NEXT_VERSION="$(bump_version "$CURRENT_VERSION")"
 NEXT_BUILD="$((CURRENT_BUILD + 1))"
+CURRENT_TAG="v${CURRENT_VERSION}"
+RESUME_RELEASE=false
+if tag_exists "$CURRENT_TAG" && tag_points_at_head "$CURRENT_TAG"; then
+    RESUME_RELEASE=true
+    RELEASE_VERSION="$CURRENT_VERSION"
+    RELEASE_BUILD="$CURRENT_BUILD"
+else
+    RELEASE_VERSION="$NEXT_VERSION"
+    RELEASE_BUILD="$NEXT_BUILD"
+fi
+RELEASE_TAG="v${RELEASE_VERSION}"
+CHANGELOG_MARKDOWN="$(changelog_unreleased_markdown)"
+CHANGELOG_ITEMS="$(changelog_unreleased_items)"
 
-info "Releasing ${APP_NAME} v${NEXT_VERSION} (build ${NEXT_BUILD})"
-
-DOCKISHOS_VERSION="$NEXT_VERSION" \
-DOCKISHOS_BUILD="$NEXT_BUILD" \
-"${REPO_ROOT}/scripts/build-dmg.sh"
+if [ "$RESUME_RELEASE" = true ]; then
+    info "Resuming ${APP_NAME} ${RELEASE_TAG} at current HEAD"
+else
+    info "Releasing ${APP_NAME} v${RELEASE_VERSION} (build ${RELEASE_BUILD})"
+fi
 
 APPCAST_FILE="build/appcast.xml"
-[ -f "$APPCAST_FILE" ] || fail "Missing appcast at ${APPCAST_FILE} — Sparkle pipeline broken"
-cp "$APPCAST_FILE" "$ROOT_APPCAST_FILE"
-step "Updated ${ROOT_APPCAST_FILE} from generated appcast"
+DMG_FILE="build/${APP_NAME}-${RELEASE_VERSION}.dmg"
+SHA_FILE="build/${APP_NAME}-${RELEASE_VERSION}.sha256"
 
-plist_set "$PLIST_FILE" "CFBundleShortVersionString" string "$NEXT_VERSION"
-plist_set "$PLIST_FILE" "CFBundleVersion" string "$NEXT_BUILD"
-update_readme "$NEXT_VERSION"
-step "Updated release metadata"
-
-git add "$PLIST_FILE" "$README_FILE" "$ROOT_APPCAST_FILE"
-git commit -m "release: ${APP_NAME} v${NEXT_VERSION}"
-step "Committed release metadata"
-
-git tag -a "v${NEXT_VERSION}" -m "${APP_NAME} v${NEXT_VERSION}"
-step "Tagged v${NEXT_VERSION}"
-
-git push origin HEAD
-git push origin "v${NEXT_VERSION}"
-step "Pushed commit and tag"
-
-DMG_FILE="build/${APP_NAME}-${NEXT_VERSION}.dmg"
-SHA_FILE="build/${APP_NAME}-${NEXT_VERSION}.sha256"
+if [ "$RESUME_RELEASE" = true ] && [ -f "$DMG_FILE" ] && [ -f "$SHA_FILE" ] && [ -f "$APPCAST_FILE" ]; then
+    step "Using existing release artifacts"
+else
+    run_build "$RELEASE_VERSION" "$RELEASE_BUILD" "$CHANGELOG_ITEMS"
+fi
 
 [ -f "$DMG_FILE" ]     || fail "Missing release DMG at ${DMG_FILE}"
 [ -f "$SHA_FILE" ]     || fail "Missing checksum at ${SHA_FILE}"
 [ -f "$APPCAST_FILE" ] || fail "Missing appcast at ${APPCAST_FILE} — Sparkle pipeline broken"
 
-RELEASE_NOTES="$(mktemp)"
-trap 'rm -f "$RELEASE_NOTES"' EXIT
+if [ "$RESUME_RELEASE" != true ]; then
+    cp "$APPCAST_FILE" "$ROOT_APPCAST_FILE"
+    step "Updated ${ROOT_APPCAST_FILE} from generated appcast"
 
-cat > "$RELEASE_NOTES" <<EOF
-${APP_NAME} v${NEXT_VERSION}
+    plist_set "$PLIST_FILE" "CFBundleShortVersionString" string "$RELEASE_VERSION"
+    plist_set "$PLIST_FILE" "CFBundleVersion" string "$RELEASE_BUILD"
+    update_readme "$RELEASE_VERSION"
+    step "Updated release metadata"
 
-Download the DMG, open it, and drag ${APP_NAME}.app to /Applications.
-Launch it from Applications. The app lives as a menu-bar accessory — look for
-the floating bar at the bottom of every display.
+    git add "$PLIST_FILE" "$README_FILE" "$ROOT_APPCAST_FILE"
+    git commit -m "release: ${APP_NAME} v${RELEASE_VERSION}"
+    step "Committed release metadata"
 
-**SHA-256:** $(cat "$SHA_FILE")
-EOF
+    git tag -a "$RELEASE_TAG" -m "${APP_NAME} v${RELEASE_VERSION}"
+    step "Tagged ${RELEASE_TAG}"
 
-gh release create "v${NEXT_VERSION}" \
-    --repo "$GITHUB_REPO" \
-    --verify-tag \
-    --title "${APP_NAME} v${NEXT_VERSION}" \
-    --notes-file "$RELEASE_NOTES" \
-    "$DMG_FILE" \
-    "$SHA_FILE" \
-    "$APPCAST_FILE"
-step "Created GitHub release"
+    git push origin HEAD
+    git push origin "$RELEASE_TAG"
+    step "Pushed commit and tag"
+fi
 
-DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/v${NEXT_VERSION}/${APP_NAME}-${NEXT_VERSION}.dmg"
+write_release_notes "$RELEASE_VERSION" "$SHA_FILE" "$CHANGELOG_MARKDOWN"
+
+if release_exists "$RELEASE_TAG"; then
+    gh release upload "$RELEASE_TAG" \
+        --repo "$GITHUB_REPO" \
+        --clobber \
+        "$DMG_FILE" \
+        "$SHA_FILE" \
+        "$APPCAST_FILE"
+    step "Uploaded release assets to ${RELEASE_TAG}"
+else
+    gh release create "$RELEASE_TAG" \
+        --repo "$GITHUB_REPO" \
+        --verify-tag \
+        --title "${APP_NAME} v${RELEASE_VERSION}" \
+        --notes-file "$RELEASE_NOTES" \
+        "$DMG_FILE" \
+        "$SHA_FILE" \
+        "$APPCAST_FILE"
+    step "Created GitHub release"
+fi
+
+DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/${RELEASE_TAG}/${APP_NAME}-${RELEASE_VERSION}.dmg"
 HTTP_CODE=""
 for attempt in 1 2 3 4 5 6 7 8 9 10; do
     HTTP_CODE="$(curl -sI -o /dev/null -w "%{http_code}" -L \
@@ -150,11 +236,11 @@ step "Verified release download URL"
 
 # Wait for the repo-hosted appcast.xml that Sparkle reads.
 APPCAST_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/main/appcast.xml"
-APPCAST_TMP="$(mktemp "${TMPDIR:-/tmp}/dockishOS-live-appcast.XXXXXX.xml")"
+APPCAST_TMP="$(mktemp -t dockishOS-live-appcast)"
 APPCAST_OK=false
 for attempt in 1 2 3 4 5 6 7 8 9 10; do
     if curl -fsSL -H "Cache-Control: no-cache" "${APPCAST_URL}?t=$(date +%s)" -o "$APPCAST_TMP" \
-        && grep -q "<sparkle:shortVersionString>${NEXT_VERSION}</sparkle:shortVersionString>" "$APPCAST_TMP" \
+        && grep -q "<sparkle:shortVersionString>${RELEASE_VERSION}</sparkle:shortVersionString>" "$APPCAST_TMP" \
         && grep -q "sparkle-signatures:" "$APPCAST_TMP"; then
         APPCAST_OK=true
         break
@@ -162,16 +248,15 @@ for attempt in 1 2 3 4 5 6 7 8 9 10; do
     step "Live appcast not ready — retry ${attempt}/10 in 3s"
     sleep 3
 done
-rm -f "$APPCAST_TMP"
 [ "$APPCAST_OK" = true ] || fail "Live appcast.xml at ${APPCAST_URL} did not propagate after 10 attempts"
 step "Verified live signed appcast"
 
 echo ""
 info "Release complete"
-echo "  Version:  v${NEXT_VERSION} (build ${NEXT_BUILD})"
+echo "  Version:  v${RELEASE_VERSION} (build ${RELEASE_BUILD})"
 echo "  App:      build/${APP_NAME}.app"
 echo "  DMG:      ${DMG_FILE}"
 echo "  Checksum: ${SHA_FILE}"
-echo "  Release:  https://github.com/${GITHUB_REPO}/releases/tag/v${NEXT_VERSION}"
+echo "  Release:  https://github.com/${GITHUB_REPO}/releases/tag/${RELEASE_TAG}"
 echo "  Download: ${DOWNLOAD_URL}"
 echo ""

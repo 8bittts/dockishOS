@@ -16,17 +16,19 @@ final class HotkeyManager {
     }
 
     private var registrations: [String: Registration] = [:]
+    private var registrationFailures: [String: OSStatus] = [:]
     private var handlerRef: EventHandlerRef?
     private let signature: OSType = 0x444B5301 // 'DKS\1'
 
     /// Register or replace a named hotkey. Calling with the same `name`
     /// unregisters the previous binding first.
+    @discardableResult
     func register(
         name: String,
         keyCode: UInt32,
         modifiers: UInt32,
         onFire: @escaping () -> Void
-    ) {
+    ) -> OSStatus {
         unregister(name: name)
         let id = (registrations.values.map(\.id).max() ?? 0) + 1
         let hkID = EventHotKeyID(signature: signature, id: id)
@@ -35,17 +37,25 @@ final class HotkeyManager {
             keyCode, modifiers, hkID,
             GetApplicationEventTarget(), 0, &ref
         )
-        guard status == noErr, let ref else { return }
+        guard status == noErr, let ref else {
+            registrationFailures[name] = status
+            NotificationCenter.default.post(name: .dockishHotkeyRegistrationDidChange, object: nil)
+            return status
+        }
         registrations[name] = Registration(id: id, ref: ref, callback: onFire)
+        registrationFailures.removeValue(forKey: name)
         installHandlerIfNeeded()
+        NotificationCenter.default.post(name: .dockishHotkeyRegistrationDidChange, object: nil)
+        return noErr
     }
 
     /// Convenience for the launcher (default-name slot).
+    @discardableResult
     func register(
         keyCode: UInt32 = UInt32(kVK_Space),
         modifiers: UInt32 = UInt32(optionKey),
         onFire: @escaping () -> Void
-    ) {
+    ) -> OSStatus {
         register(name: "launcher", keyCode: keyCode, modifiers: modifiers, onFire: onFire)
     }
 
@@ -53,6 +63,13 @@ final class HotkeyManager {
         if let r = registrations.removeValue(forKey: name) {
             UnregisterEventHotKey(r.ref)
         }
+        if registrationFailures.removeValue(forKey: name) != nil {
+            NotificationCenter.default.post(name: .dockishHotkeyRegistrationDidChange, object: nil)
+        }
+    }
+
+    func registrationStatus(name: String) -> OSStatus? {
+        registrationFailures[name]
     }
 
     func unregister() {
@@ -62,10 +79,12 @@ final class HotkeyManager {
     func unregisterAll() {
         for r in registrations.values { UnregisterEventHotKey(r.ref) }
         registrations.removeAll()
+        registrationFailures.removeAll()
         if let h = handlerRef {
             RemoveEventHandler(h)
             handlerRef = nil
         }
+        NotificationCenter.default.post(name: .dockishHotkeyRegistrationDidChange, object: nil)
     }
 
     fileprivate func dispatch(_ id: UInt32) {

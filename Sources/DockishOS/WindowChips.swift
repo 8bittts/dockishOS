@@ -156,9 +156,17 @@ private struct WindowChip: View {
         .accessibilityLabel("\(window.displayTitle)\(isFrontmost ? ", frontmost" : "")\(badge.map { ", \($0) notifications" } ?? "")")
         .contextMenu {
             Button("Activate") { onActivate() }
-            Button("Close Window") { onClose() }
+            Button(role: .destructive) { onClose() } label: {
+                Text("Close Window")
+            }
             Divider()
-            Button(isPinned ? "Unpin App from Bar" : "Pin App to Bar") { onTogglePin() }
+            if isPinned {
+                Button(role: .destructive) { onTogglePin() } label: {
+                    Text("Unpin App from Bar")
+                }
+            } else {
+                Button("Pin App to Bar") { onTogglePin() }
+            }
         }
     }
 
@@ -267,11 +275,19 @@ private struct WindowGroupChip: View {
                 }
             }
             Divider()
-            Button("Close All Windows") {
+            Button(role: .destructive) {
                 for w in group.windows { onClose(w) }
+            } label: {
+                Text("Close All Windows")
             }
             Divider()
-            Button(isPinned ? "Unpin App from Bar" : "Pin App to Bar") { onTogglePin() }
+            if isPinned {
+                Button(role: .destructive) { onTogglePin() } label: {
+                    Text("Unpin App from Bar")
+                }
+            } else {
+                Button("Pin App to Bar") { onTogglePin() }
+            }
         }
     }
 
