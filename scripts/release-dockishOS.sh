@@ -133,11 +133,17 @@ fi
 if [ -f "$ROOT_APPCAST_FILE" ] && ! git diff --quiet -- "$ROOT_APPCAST_FILE"; then
     fail "Unstaged changes in ${ROOT_APPCAST_FILE}. Commit or stash first."
 fi
+if [ -f "$CHANGELOG_FILE" ] && ! git diff --quiet -- "$CHANGELOG_FILE"; then
+    fail "Unstaged changes in ${CHANGELOG_FILE}. Commit or stash first."
+fi
 if ! git diff --cached --quiet -- "$PLIST_FILE" "$README_FILE"; then
     fail "Staged changes in ${PLIST_FILE} or ${README_FILE}. Release from a clean metadata state."
 fi
 if [ -f "$ROOT_APPCAST_FILE" ] && ! git diff --cached --quiet -- "$ROOT_APPCAST_FILE"; then
     fail "Staged changes in ${ROOT_APPCAST_FILE}. Release from a clean metadata state."
+fi
+if [ -f "$CHANGELOG_FILE" ] && ! git diff --cached --quiet -- "$CHANGELOG_FILE"; then
+    fail "Staged changes in ${CHANGELOG_FILE}. Release from a clean metadata state."
 fi
 
 CURRENT_VERSION="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$PLIST_FILE")"
@@ -197,6 +203,10 @@ if [ "$RESUME_RELEASE" != true ]; then
     git push origin HEAD
     git push origin "$RELEASE_TAG"
     step "Pushed commit and tag"
+else
+    git push origin HEAD
+    git push origin "$RELEASE_TAG"
+    step "Verified pushed commit and tag"
 fi
 
 write_release_notes "$RELEASE_VERSION" "$SHA_FILE" "$CHANGELOG_MARKDOWN"
