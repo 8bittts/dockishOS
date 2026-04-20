@@ -43,6 +43,7 @@ DerivedData/
 CLAUDE.md
 AGENTS.md
 .claude/
+todos.md
 
 # Local environment / secrets
 .env
