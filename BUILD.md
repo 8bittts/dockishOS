@@ -10,6 +10,10 @@ All commands below are wrappers around scripts in [`scripts/`](scripts/). Run th
 
 | Command | Behavior |
 |---|---|
+| `./scripts/build_and_run.sh` | Build a real local `.app` bundle at `build/DockishOS.app` and launch it |
+| `./scripts/build_and_run.sh --verify` | Build, launch, and confirm the app process is alive |
+| `./scripts/build_and_run.sh --logs` | Build, launch, and stream DockishOS unified logs |
+| `./scripts/build_and_run.sh --debug` | Build the bundle, then launch the binary under `lldb` |
 | `./scripts/build-dmg.sh` | Default: signed + notarized release DMG (requires Developer ID + notary keychain profile) |
 | `./scripts/build-dmg.sh --local` | Signed DMG, **skip** notarization (fastest path that still produces a draggable DMG) |
 | `./scripts/build-dmg.sh --unsigned` | Ad-hoc sign only — no Developer ID required (good for first-time bootstrapping) |
@@ -33,6 +37,18 @@ If the build fails, stop here — the DMG pipeline will fail at the same step bu
 ### 2. Run the requested build
 
 ```bash
+# Local development bundle:
+./scripts/build_and_run.sh
+
+# Local development bundle + process check:
+./scripts/build_and_run.sh --verify
+
+# Local development bundle + unified logs:
+./scripts/build_and_run.sh --logs
+
+# Local development bundle under lldb:
+./scripts/build_and_run.sh --debug
+
 # Default — signed + notarized release DMG:
 ./scripts/build-dmg.sh
 

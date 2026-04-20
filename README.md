@@ -4,15 +4,31 @@
 
 # DockishOS
 
+<!-- version-badge -->v0.013<!-- /version-badge -->
+
 DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar for people who use Spaces heavily. It focuses on the windows in the current Space instead of every running app.
 
 The app is built with SwiftUI and AppKit, targets macOS 14+, and ships as an accessory app with no Dock icon.
 
 ## Download
 
-Download the current DMG from [GitHub Releases](https://github.com/8bittts/dockishOS/releases), drag DockishOS to `/Applications`, and launch it from there.
+<!-- download-link -->
+[**Download DockishOS v0.013**](https://github.com/8bittts/dockishOS/releases/download/v0.013/DockishOS-0.013.dmg)
+<!-- /download-link -->
+
+Download the DMG, drag DockishOS to `/Applications`, and launch it from there. Older builds remain available from [GitHub Releases](https://github.com/8bittts/dockishOS/releases).
 
 Installed app bundles can use Sparkle for update checks. Plain `swift run` builds do not use the bundled app metadata or Sparkle path.
+
+### First launch
+
+Release DMGs are built through the signing and notarization pipeline. Local `--local` and `--unsigned` builds are not notarized, so macOS may show an "unidentified developer" first-launch warning.
+
+If macOS blocks launch, right-click `DockishOS.app` in `/Applications`, choose **Open**, then choose **Open** again in the confirmation dialog. For a local build you created and trust, you can also remove the quarantine flag:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/DockishOS.app
+```
 
 ## Features
 
