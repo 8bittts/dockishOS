@@ -4,10 +4,10 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>DockishOS</title>
         <item>
-            <title>0.014</title>
-            <pubDate>Thu, 30 Apr 2026 20:16:16 -0700</pubDate>
-            <sparkle:version>14</sparkle:version>
-            <sparkle:shortVersionString>0.014</sparkle:shortVersionString>
+            <title>0.015</title>
+            <pubDate>Thu, 30 Apr 2026 20:22:19 -0700</pubDate>
+            <sparkle:version>15</sparkle:version>
+            <sparkle:shortVersionString>0.015</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description><![CDATA[<style>
@@ -23,26 +23,13 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </style>
 <h2>What's New</h2>
 <ul>
-    <li>Menu bar icon now uses a template image so macOS can tint it correctly.</li>
-    <li>Release packaging now aborts on rejected notarization or failed stapling.</li>
-    <li>Release retries can resume an existing tag/release without bumping again.</li>
-    <li>Hotkey registration failures are surfaced from the menu bar item.</li>
-    <li>Window activation now uses macOS 14 cooperative activation.</li>
-    <li>Fullscreen Space window enumeration and Space numbering are more robust.</li>
-    <li>Dock badge polling uses an Accessibility messaging timeout.</li>
-    <li>Dock badge lookup no longer assumes the Dock list is the first Accessibility child.</li>
-    <li>Space switching now confirms the private CGS switch landed before updating cached state.</li>
-    <li>Shift-Tab now cycles backward in the window switcher.</li>
-    <li>Settings, switcher tiles, and destructive window actions have better accessibility behavior.</li>
-    <li>README now includes a product bar preview image.</li>
-    <li>README and build docs now describe first launch, release markers, and local build modes.</li>
-    <li>Removed unused Dock auto-hide helper code.</li></ul>
-<p class="footer">DockishOS 0.014</p>
+    <li>Menu bar status item shows the full DockishOS app icon again (regression in 0.014 swapped it for a generic SF Symbol).</li></ul>
+<p class="footer">DockishOS 0.015</p>
 ]]></description>
-            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.014/DockishOS-0.014.dmg" length="6276406" type="application/octet-stream" sparkle:edSignature="YwavJ0OiGE9QJYFtcO6E1jhvz6ILh4cedV4ktK6ilmRAiVG9+WiMVl3v00dvbpEJ3up3N/lQ3amDjUZzL+RPCQ=="></enclosure>
+            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.015/DockishOS-0.015.dmg" length="6275099" type="application/octet-stream" sparkle:edSignature="TiwEuP2JDA3PdEFOAVoShDNt3D3NMGmEWO1IEDJXrkT3mObze7Z8edQ1b/FbIdkBWaR66tJLpHtsfmO5cFiDAA=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: z5dKxcicdOg12a8elQ3j3HugTJ9mXfZ/DlUsSWn1eoL8DWaMRrlR3GIAoSn2u80nT+zrfyqf7Acqn9xbTugQCw==
-length: 2901
+edSignature: Zw++I5w6i/P8B/urrT9Gm8CutWA3Us9c5oKM2LBlSs14Th3OhuD/9RDzmfQejbIQckEyCDz336WMRm1YDupACQ==
+length: 1871
 -->
