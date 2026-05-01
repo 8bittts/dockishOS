@@ -6,7 +6,11 @@ All notable changes to DockishOS live here. Release tooling reads the
 ## [Unreleased]
 
 ### Fixed
-- Menu bar icon now uses a template image so macOS can tint it correctly.
+- Menu bar status item shows the full DockishOS app icon again (regression in 0.014 swapped it for a generic SF Symbol).
+
+## [0.014]
+
+### Fixed
 - Release packaging now aborts on rejected notarization or failed stapling.
 - Release retries can resume an existing tag/release without bumping again.
 - Hotkey registration failures are surfaced from the menu bar item.

@@ -25,7 +25,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         collapsedTabPositionItem = NSMenuItem(title: "Collapsed Tab Position", action: nil, keyEquivalent: "")
         super.init()
         if let button = statusItem.button {
-            let icon = DockishBrandAssets.menuBarIcon(size: DockishBrandAssets.menuBarIconSize)
+            let icon = DockishBrandAssets.applicationIcon(size: DockishBrandAssets.menuBarIconSize)
             icon.accessibilityDescription = "DockishOS"
             button.image = icon
             button.imageScaling = .scaleProportionallyDown
