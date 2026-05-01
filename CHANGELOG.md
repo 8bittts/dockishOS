@@ -5,8 +5,13 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+## [0.015]
+
 ### Fixed
 - Menu bar status item shows the full DockishOS app icon again (regression in 0.014 swapped it for a generic SF Symbol).
+
+### Tests
+- Added a source-level regression guard (`MenuBarIconRegressionTests`) that fails if the status item icon is reverted to a generic SF Symbol.
 
 ## [0.014]
 
