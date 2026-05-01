@@ -49,7 +49,13 @@ final class SpacesStore: ObservableObject {
 
     func switchTo(_ space: SpaceInfo) {
         SpacesAPI.switchTo(space)
-        // Optimistic local update; next notification refreshes truth.
-        currentByDisplay[space.displayUUID] = space.id
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            if SpacesAPI.currentSpaceID(for: space.displayUUID) == space.id {
+                self.currentByDisplay[space.displayUUID] = space.id
+            } else {
+                self.refresh()
+            }
+        }
     }
 }

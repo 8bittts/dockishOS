@@ -57,7 +57,6 @@ struct SwitcherView: View {
             RoundedRectangle(cornerRadius: 18)
                 .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
         )
-        .onKeyPress(.tab)        { advance(by: 1); return .handled }
         .onKeyPress(.return)     { activate(); return .handled }
         .onKeyPress(.escape)     { onDismiss(); return .handled }
         .onKeyPress(.leftArrow)  { advance(by: -1); return .handled }

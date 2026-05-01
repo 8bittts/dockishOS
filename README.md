@@ -18,6 +18,10 @@ DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar 
 
 **Finder drag-to-pin:** drop `.app` bundles or right-click windows and launcher results to keep important apps close.
 
+<p align="center">
+  <img src="public/dockishos-bar-preview.png" alt="DockishOS showing a floating current-Space app bar with app chips" width="100%">
+</p>
+
 ## Download
 
 <!-- download-link -->
@@ -49,7 +53,7 @@ xattr -dr com.apple.quarantine /Applications/DockishOS.app
 - Vertical scroll over the bar to switch Spaces.
 - Collapse the bar into a bottom-left or bottom-right edge tab.
 - Launcher hotkey, default `Option-Space`, for fuzzy-searching installed apps.
-- Window switcher hotkey, default `Option-Tab`, for cycling windows in the current Space with Tab, arrow keys, Return, and Escape.
+- Window switcher hotkey, default `Option-Tab`, for cycling windows in the current Space with Tab, Shift-Tab, arrow keys, Return, and Escape.
 - Settings for size, top/bottom placement, titles, badges, hotkeys, login launch, and per-display visibility.
 
 DockishOS does not replace or configure the system Dock. Use System Settings for Dock behavior.
@@ -66,7 +70,7 @@ Notification badges are off by default. They rely on an undocumented Dock access
 
 Press `Option-Space` to open the app launcher. Search matches app names case-insensitively, with exact and prefix matches ranked ahead of word-prefix, contains, and ordered-character matches. Press Return to open the selected result, or right-click a result to pin it to the bar.
 
-Press `Option-Tab` to open the current-Space window switcher. Tab and the arrow keys move selection, Return activates the selected window, and Escape closes the switcher. Change either hotkey from `Cmd-,` Settings.
+Press `Option-Tab` to open the current-Space window switcher. Tab, Shift-Tab, and the arrow keys move selection, Return activates the selected window, and Escape closes the switcher. Change either hotkey from `Cmd-,` Settings.
 
 ## Build
 
@@ -95,6 +99,7 @@ swift test
 - `Sources/DockishOSCore`: testable utility logic.
 - `Tests/DockishOSCoreTests`: unit tests.
 - `Resources/Info.plist`: app bundle metadata and Sparkle settings.
+- `public`: README and product media assets.
 - `scripts`: local build, DMG, appcast, and release helpers.
 - `tools/sparkle`: vendored Sparkle framework used by bundled app builds.
 

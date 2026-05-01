@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 import SwiftUI
 
 /// Modal-ish app/window switcher panel triggered by a global hotkey
@@ -16,6 +17,9 @@ final class SwitcherController {
     private init() {
         let size = NSSize(width: 720, height: 200)
         panel = SwitcherPanel(size: size)
+        panel.onAdvance = { [weak self] delta in
+            self?.advanceSelection(by: delta)
+        }
         resignObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.didResignKeyNotification,
             object: panel,
@@ -59,6 +63,13 @@ final class SwitcherController {
         WindowStore.shared.activate(window)
     }
 
+    private func advanceSelection(by delta: Int) {
+        let count = WindowStore.shared.windows.count
+        guard count > 0 else { return }
+        selectedIndex = (selectedIndex + delta + count) % count
+        rebuildView()
+    }
+
     private func rebuildView() {
         let view = SwitcherView(
             store: WindowStore.shared,
@@ -69,6 +80,10 @@ final class SwitcherController {
             onActivate: { [weak self] in self?.activate($0) },
             onDismiss: { [weak self] in self?.hide() }
         )
+        if let hostingView {
+            hostingView.rootView = view
+            return
+        }
         let host = NSHostingView(rootView: view)
         host.autoresizingMask = [.width, .height]
         panel.contentView = host
@@ -86,6 +101,8 @@ final class SwitcherController {
 }
 
 final class SwitcherPanel: NSPanel {
+    var onAdvance: ((Int) -> Void)?
+
     init(size: NSSize) {
         super.init(
             contentRect: NSRect(origin: .zero, size: size),
@@ -106,4 +123,24 @@ final class SwitcherPanel: NSPanel {
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if handleTab(event) {
+            return true
+        }
+        return super.performKeyEquivalent(with: event)
+    }
+
+    override func keyDown(with event: NSEvent) {
+        if handleTab(event) {
+            return
+        }
+        super.keyDown(with: event)
+    }
+
+    private func handleTab(_ event: NSEvent) -> Bool {
+        guard event.keyCode == UInt16(kVK_Tab) else { return false }
+        onAdvance?(event.modifierFlags.contains(.shift) ? -1 : 1)
+        return true
+    }
 }

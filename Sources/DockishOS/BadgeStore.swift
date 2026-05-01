@@ -81,7 +81,7 @@ enum DockBadgeReader {
         AXUIElementSetMessagingTimeout(dockAX, 0.5)
         guard
             let dockChildren: [AXUIElement] = AX.value(dockAX, kAXChildrenAttribute as CFString),
-            let list = dockChildren.first,
+            let list = dockList(from: dockChildren),
             let icons: [AXUIElement] = AX.value(list, kAXChildrenAttribute as CFString)
         else { return [:] }
 
@@ -99,6 +99,13 @@ enum DockBadgeReader {
             result[bundleID] = badge
         }
         return result
+    }
+
+    private static func dockList(from children: [AXUIElement]) -> AXUIElement? {
+        children.first { child in
+            let role: String? = AX.value(child, kAXRoleAttribute as CFString)
+            return role == (kAXListRole as String)
+        }
     }
 
     private static func bundleIdentifier(for icon: AXUIElement) -> String? {
