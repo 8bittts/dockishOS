@@ -4,10 +4,10 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>DockishOS</title>
         <item>
-            <title>0.017</title>
-            <pubDate>Wed, 13 May 2026 16:16:32 -0700</pubDate>
-            <sparkle:version>17</sparkle:version>
-            <sparkle:shortVersionString>0.017</sparkle:shortVersionString>
+            <title>0.018</title>
+            <pubDate>Wed, 13 May 2026 16:22:20 -0700</pubDate>
+            <sparkle:version>18</sparkle:version>
+            <sparkle:shortVersionString>0.018</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description><![CDATA[<style>
@@ -23,20 +23,14 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </style>
 <h2>What's New</h2>
 <ul>
-    <li>Vendored Sparkle framework is now pinned in `tools/sparkle/VERSION` (2.9.1 / build 2054 + main-binary SHA-256). `scripts/build-dmg.sh` runs a preflight that aborts the build if `Updater.app`, the Installer/Downloader XPC services, or `Autoupdate` is missing, or if the framework binary hash drifts from the pin. `BUILD.md` documents the re-vendor procedure.</li>
-    <li>App launcher index now scans `/Applications` on a detached task instead of blocking the main thread on first open.</li>
-    <li>Window chips highlight the frontmost window with a 2pt accent leading stripe and a semibold title weight, in addition to the existing opacity delta.</li>
-    <li>Bar, window chips, switcher tiles, launcher, and pinned row chrome now use semantic `NSColor` values (`separatorColor`, `selectedContentBackgroundColor`, `controlAccentColor`, `highlightColor`) so affordances stay legible in light mode and high-contrast mode.</li>
-    <li>`scripts/build-dmg.sh`, `scripts/build_and_run.sh`, `scripts/generate-appcast.sh`, and `scripts/release-dockishOS.sh` now respond to `-h` / `--help`.</li>
-    <li>Extracted pure logic into `DockishOSCore` (`HotkeyMask`, `CollapsedTabPlacement`, `SettingsSnapshot`, `WindowGrouping`) with XCTests covering Carbon-mask combinations, legacy persisted-placement migration, settings JSON round-trip, and window grouping by bundle ID + PID fallback.</li>
-    <li>`LauncherHotkey.carbonMask(from:)` anchors `HotkeyMask`'s hardcoded bit positions against the live `Carbon.HIToolbox` constants via a static precondition block; future drift in Apple's headers crashes loudly instead of silently mis-registering hotkeys.</li>
-    <li>`WindowStore.grouped()` uses `Dictionary(_:uniquingKeysWith:)` so a refresh race that surfaces the same `CGWindowID` twice no longer traps the process.</li></ul>
-<p class="footer">DockishOS 0.017</p>
+    <li>README now closes with a "Built with YEN" cross-promotion block matching the footer used in `8bittts/movingpaper`.</li>
+    <li>New `.github/FUNDING.yml`, `docs/index.md` (GitHub Pages landing), and reference `casks/dockishos.rb` Homebrew Cask formula.</li></ul>
+<p class="footer">DockishOS 0.018</p>
 ]]></description>
-            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.017/DockishOS-0.017.dmg" length="6400851" type="application/octet-stream" sparkle:edSignature="4UezbRKI1s5SkeOVeoilkcqKi5obVOJ18hWpBsFk0v3d42bElkSkt09TS11Y3GZOUBsq8ii8MOffhQn2B/CPCQ=="></enclosure>
+            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.018/DockishOS-0.018.dmg" length="6400873" type="application/octet-stream" sparkle:edSignature="VJOSrhyxzlfs5VB1L64lhxY/YMsrFdtMMuU5CRyZfey468vcsVVerVmRsg0qk6UNo/bmH/0lkObfQUcvbCetCA=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: dTJ/EuycLMfrn2PytGVetZrAfLa6Wvo6jQ0pp9Zhk5j1/+Fj2XJ4Jfa3BLSqA4wdDFkTOa/Za3aMxnVIFDzlAg==
-length: 3561
+edSignature: h1IQp9uCN3pSxtJYPAAzTJsUFtwnVmicx37WO+jJ2k9NegOfahgVodHCIwMbRn0kVtjpPK5nid8C2tGQdc+BDw==
+length: 2005
 -->
