@@ -5,6 +5,11 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+### Changed
+- Live verification release for the Sparkle signing fix that shipped in 0.019. No app behavior changes between 0.019 and this build; the purpose is to exercise the 0.019 → next-version Sparkle auto-update path end-to-end now that the helper signing order produces a consistent framework seal.
+
+## [0.019]
+
 ### Fixed
 - Auto-update could fail with "An error occurred while launching the installer." again on a fresh 0.016/0.017/0.018 install when Sparkle's `Updater.app` disappeared from the bundled framework between launch and first Check-for-Updates click. Root cause: `scripts/build-dmg.sh` re-signed the `.xpc` / `.app` helper wrappers without first re-signing their inner Mach-Os, leaving the wrapper's `CodeResources` referencing an inconsistent inner signature. macOS treated `Updater.app` as a broken sealed resource and removed it on the next launch validation pass. Signing now follows Sparkle's upstream recipe verbatim: inner binary first, then the wrapping bundle, then the framework. `codesign --verify --deep --strict` now lists `Updater.app` in the validation chain (it was previously skipped).
 
