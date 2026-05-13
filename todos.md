@@ -18,17 +18,12 @@
 
 Promote exactly one Phase into active work at a time. Phase ordering is intentional.
 
-#### Phase 1 — Release hardening (High)
-Promoted after the 0.016 incident: the vendored Sparkle framework had silently lost `Updater.app`, and there was no pin or preflight to catch it. Goal is to make the same regression impossible.
-- [ ] Add `tools/sparkle/VERSION` recording the upstream Sparkle release tag and a SHA-256 of `Sparkle.framework/Versions/B/Sparkle` (the main framework binary).
-- [ ] Add a preflight check to `scripts/build-dmg.sh` that fails the build if `Updater.app`, `XPCServices/Installer.xpc`, `XPCServices/Downloader.xpc`, or `Autoupdate` are missing from the vendored framework, and that compares the framework binary's SHA-256 against `tools/sparkle/VERSION`.
-- [ ] Document the Sparkle upgrade procedure in `BUILD.md`: where to download the official archive, which files to copy in (full `Sparkle.framework/Versions/B/` tree, including `Updater.app`), and how to refresh `tools/sparkle/VERSION` afterwards.
+(No active phase. Promote the next phase from Follow-On Candidates when ready.)
 
 ### Follow-On Candidates
 Not active work. Promote only one item at a time into `#### Phase N` in `### Work TODOs` when implementation starts.
 
 #### Medium complexity
-- **Ship one GIF above the Features list.** `README.md` now has the static bar preview at `public/dockishos-bar-preview.png`; the remaining conversion asset is a 3-5s GIF showing scroll-to-switch-Space and edge-tab collapse.
 - Replace `WindowStore.refresh()` polling with notification-driven refresh + throttled coalescing. Promote only after profiling shows idle polling is a user-visible cost; don't build a visibility coordinator preemptively.
 - Ship a `.github/FUNDING.yml` + a small GitHub Pages landing at `8bittts.github.io/dockishOS` (hero GIF + download CTA + 3-line pitch).
 - Add `brew install --cask dockishos` path; PR to `homebrew/homebrew-cask` using the current notarized release.
