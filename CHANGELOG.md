@@ -5,6 +5,9 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+### Fixed
+- Auto-update no longer fails with "An error occurred while launching the installer." The vendored Sparkle.framework was missing `Versions/B/Updater.app`, which Sparkle 2.7+ requires as its progress/authorization helper. Existing 0.014 and 0.015 installs have the same broken framework and must reinstall manually from this DMG to recover auto-update.
+
 ## [0.015]
 
 ### Fixed

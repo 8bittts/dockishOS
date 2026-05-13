@@ -32,6 +32,10 @@ DerivedData/
 *.dSYM
 *.dSYM.zip
 *.app
+# Sparkle ships Updater.app as the progress/authorization helper inside the
+# vendored framework; without it, in-app updates fail to launch the installer.
+!tools/sparkle/Sparkle.framework/Versions/*/Updater.app
+!tools/sparkle/Sparkle.framework/Versions/*/Updater.app/**
 
 # Editor / tooling
 .vscode/
