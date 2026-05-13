@@ -4,10 +4,10 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>DockishOS</title>
         <item>
-            <title>0.016</title>
-            <pubDate>Wed, 13 May 2026 15:52:04 -0700</pubDate>
-            <sparkle:version>16</sparkle:version>
-            <sparkle:shortVersionString>0.016</sparkle:shortVersionString>
+            <title>0.017</title>
+            <pubDate>Wed, 13 May 2026 16:16:32 -0700</pubDate>
+            <sparkle:version>17</sparkle:version>
+            <sparkle:shortVersionString>0.017</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description><![CDATA[<style>
@@ -23,13 +23,20 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </style>
 <h2>What's New</h2>
 <ul>
-    <li>Auto-update no longer fails with "An error occurred while launching the installer." The vendored Sparkle.framework was missing `Versions/B/Updater.app`, which Sparkle 2.7+ requires as its progress/authorization helper. Existing 0.014 and 0.015 installs have the same broken framework and must reinstall manually from this DMG to recover auto-update.</li></ul>
-<p class="footer">DockishOS 0.016</p>
+    <li>Vendored Sparkle framework is now pinned in `tools/sparkle/VERSION` (2.9.1 / build 2054 + main-binary SHA-256). `scripts/build-dmg.sh` runs a preflight that aborts the build if `Updater.app`, the Installer/Downloader XPC services, or `Autoupdate` is missing, or if the framework binary hash drifts from the pin. `BUILD.md` documents the re-vendor procedure.</li>
+    <li>App launcher index now scans `/Applications` on a detached task instead of blocking the main thread on first open.</li>
+    <li>Window chips highlight the frontmost window with a 2pt accent leading stripe and a semibold title weight, in addition to the existing opacity delta.</li>
+    <li>Bar, window chips, switcher tiles, launcher, and pinned row chrome now use semantic `NSColor` values (`separatorColor`, `selectedContentBackgroundColor`, `controlAccentColor`, `highlightColor`) so affordances stay legible in light mode and high-contrast mode.</li>
+    <li>`scripts/build-dmg.sh`, `scripts/build_and_run.sh`, `scripts/generate-appcast.sh`, and `scripts/release-dockishOS.sh` now respond to `-h` / `--help`.</li>
+    <li>Extracted pure logic into `DockishOSCore` (`HotkeyMask`, `CollapsedTabPlacement`, `SettingsSnapshot`, `WindowGrouping`) with XCTests covering Carbon-mask combinations, legacy persisted-placement migration, settings JSON round-trip, and window grouping by bundle ID + PID fallback.</li>
+    <li>`LauncherHotkey.carbonMask(from:)` anchors `HotkeyMask`'s hardcoded bit positions against the live `Carbon.HIToolbox` constants via a static precondition block; future drift in Apple's headers crashes loudly instead of silently mis-registering hotkeys.</li>
+    <li>`WindowStore.grouped()` uses `Dictionary(_:uniquingKeysWith:)` so a refresh race that surfaces the same `CGWindowID` twice no longer traps the process.</li></ul>
+<p class="footer">DockishOS 0.017</p>
 ]]></description>
-            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.016/DockishOS-0.016.dmg" length="6371158" type="application/octet-stream" sparkle:edSignature="haOFkhrU+ouZgLZRTBE3gxzHntob9EnzCa+9tfWaXCJ8uhXOkhOemaAjutwe/7wgJn4FcgK5wiMQ80vhDkJcCw=="></enclosure>
+            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.017/DockishOS-0.017.dmg" length="6400851" type="application/octet-stream" sparkle:edSignature="4UezbRKI1s5SkeOVeoilkcqKi5obVOJ18hWpBsFk0v3d42bElkSkt09TS11Y3GZOUBsq8ii8MOffhQn2B/CPCQ=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: 7zIIUkVQz+gbLcUzrUZIW+/T59tz+0eMoHuE1zNbbodo3ZjyV0H56lxNbY2toQ3brlAendPl/xo0aG7uYlOlDQ==
-length: 2102
+edSignature: dTJ/EuycLMfrn2PytGVetZrAfLa6Wvo6jQ0pp9Zhk5j1/+Fj2XJ4Jfa3BLSqA4wdDFkTOa/Za3aMxnVIFDzlAg==
+length: 3561
 -->
