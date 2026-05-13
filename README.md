@@ -32,6 +32,21 @@ Download the DMG, drag DockishOS to `/Applications`, and launch it from there. O
 
 Installed app bundles can use Sparkle for update checks. Plain `swift run` builds do not use the bundled app metadata or Sparkle path.
 
+### Homebrew
+
+The repo doubles as a Homebrew tap, so you can install via [Homebrew Cask](https://docs.brew.sh/Cask-Cookbook) without leaving the terminal:
+
+```bash
+# One-shot install of the latest release (no tap):
+brew install --cask https://raw.githubusercontent.com/8bittts/dockishOS/main/Casks/dockishos.rb
+
+# Or tap the repo for ongoing `brew upgrade` updates:
+brew tap 8bittts/dockishos https://github.com/8bittts/dockishOS
+brew install --cask 8bittts/dockishos/dockishos
+```
+
+The Cask formula in [`Casks/dockishos.rb`](Casks/dockishos.rb) is pinned to the current release. Sparkle auto-update keeps installed apps current between Cask bumps.
+
 ### First launch
 
 Release DMGs are built through the signing and notarization pipeline. Local `--local` and `--unsigned` builds are not notarized, so macOS may show an "unidentified developer" first-launch warning.

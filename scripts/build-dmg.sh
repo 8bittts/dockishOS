@@ -289,16 +289,27 @@ info "Signing ${APP_NAME}.app"
 
 SPARKLE_FW="${APP_BUNDLE}/Contents/Frameworks/Sparkle.framework"
 if [ -d "$SPARKLE_FW" ]; then
-    for nested in \
-        "$SPARKLE_FW/Versions/B/XPCServices"/*.xpc \
-        "$SPARKLE_FW/Versions/B/Autoupdate.app" \
-        "$SPARKLE_FW/Versions/B/Autoupdate" \
-        "$SPARKLE_FW/Versions/B/Updater.app"; do
-        [ -e "$nested" ] || continue
-        sign_target "$nested" false >/dev/null
+    # Order matters: sign each helper's inner Mach-O *before* the .xpc / .app
+    # bundle that wraps it, then the framework last. Signing the bundle alone
+    # (the old order) leaves the wrapper's CodeResources referencing an
+    # ad-hoc-signed inner binary, which macOS rejects at install-launch time
+    # and triggers "Cannot retrieve path for auxiliary tool: Updater.app".
+    # This sequence matches Sparkle's upstream signing recipe verbatim.
+    SPARKLE_HELPERS=(
+        "$SPARKLE_FW/Versions/B/XPCServices/Installer.xpc/Contents/MacOS/Installer"
+        "$SPARKLE_FW/Versions/B/XPCServices/Installer.xpc"
+        "$SPARKLE_FW/Versions/B/XPCServices/Downloader.xpc/Contents/MacOS/Downloader"
+        "$SPARKLE_FW/Versions/B/XPCServices/Downloader.xpc"
+        "$SPARKLE_FW/Versions/B/Autoupdate"
+        "$SPARKLE_FW/Versions/B/Updater.app/Contents/MacOS/Updater"
+        "$SPARKLE_FW/Versions/B/Updater.app"
+    )
+    for helper in "${SPARKLE_HELPERS[@]}"; do
+        [ -e "$helper" ] || continue
+        sign_target "$helper" false >/dev/null
     done
     sign_target "$SPARKLE_FW" false >/dev/null
-    step "Signed Sparkle.framework"
+    step "Signed Sparkle.framework (helpers inner-out per upstream recipe)"
 fi
 
 sign_with_retry "$APP_BUNDLE"

@@ -5,9 +5,17 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+### Fixed
+- Auto-update could fail with "An error occurred while launching the installer." again on a fresh 0.016/0.017/0.018 install when Sparkle's `Updater.app` disappeared from the bundled framework between launch and first Check-for-Updates click. Root cause: `scripts/build-dmg.sh` re-signed the `.xpc` / `.app` helper wrappers without first re-signing their inner Mach-Os, leaving the wrapper's `CodeResources` referencing an inconsistent inner signature. macOS treated `Updater.app` as a broken sealed resource and removed it on the next launch validation pass. Signing now follows Sparkle's upstream recipe verbatim: inner binary first, then the wrapping bundle, then the framework. `codesign --verify --deep --strict` now lists `Updater.app` in the validation chain (it was previously skipped).
+
+### Changed
+- Repo doubles as a Homebrew tap. Cask formula moved to `Casks/dockishos.rb` (capital C is the Homebrew convention). README documents `brew install --cask <URL>` and `brew tap` flows.
+
+## [0.018]
+
 ### Changed
 - README now closes with a "Built with YEN" cross-promotion block matching the footer used in `8bittts/movingpaper`.
-- New `.github/FUNDING.yml`, `docs/index.md` (GitHub Pages landing), and reference `casks/dockishos.rb` Homebrew Cask formula.
+- New `.github/FUNDING.yml`, `docs/index.md` (GitHub Pages landing), and reference `Casks/dockishos.rb` Homebrew Cask formula.
 
 ## [0.017]
 
