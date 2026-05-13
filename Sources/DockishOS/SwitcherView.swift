@@ -55,7 +55,7 @@ struct SwitcherView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.55), lineWidth: 0.5)
         )
         .onKeyPress(.return)     { activate(); return .handled }
         .onKeyPress(.escape)     { onDismiss(); return .handled }
@@ -93,11 +93,13 @@ private struct SwitcherTile: View {
             .frame(width: 84, height: 84)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(isSelected ? Color.accentColor.opacity(0.30) : Color.white.opacity(0.06))
+                    .fill(isSelected
+                        ? Color(nsColor: .selectedContentBackgroundColor).opacity(0.35)
+                        : Color(nsColor: .separatorColor).opacity(0.16))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(isSelected ? Color.accentColor : Color.white.opacity(0.08),
+                    .stroke(isSelected ? Color(nsColor: .controlAccentColor) : Color(nsColor: .separatorColor).opacity(0.45),
                             lineWidth: isSelected ? 2 : 0.5)
             )
             Text(window.ownerName)

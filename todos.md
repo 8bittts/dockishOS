@@ -29,14 +29,9 @@ Not active work. Promote only one item at a time into `#### Phase N` in `### Wor
 
 #### Medium complexity
 - **Ship one GIF above the Features list.** `README.md` now has the static bar preview at `public/dockishos-bar-preview.png`; the remaining conversion asset is a 3-5s GIF showing scroll-to-switch-Space and edge-tab collapse.
-- Move `Sources/DockishOS/AppIndex.scan()` off the main thread (`LauncherStore.swift:16-21`, `LauncherController.swift:53`) — cold scan of `/Applications` blocks the launcher open animation 50-150ms on a developer machine. Background actor + stale-snapshot UI.
 - Replace `WindowStore.refresh()` polling with notification-driven refresh + throttled coalescing. Promote only after profiling shows idle polling is a user-visible cost; don't build a visibility coordinator preemptively.
-- Tighten chip visual hierarchy: frontmost chip should carry `.bold` or a 2pt accent leading stripe in addition to opacity delta (`Sources/DockishOS/BarSupport.swift:61-63`).
-- Replace `Color.white.opacity(…)` constants across `BarView.swift`, `WindowChips.swift`, `SwitcherView.swift` with semantic colors (`NSColor.separatorColor`, `.selectedContentBackgroundColor`, `.controlAccentColor`) so light-mode + high-contrast-mode users get usable affordances.
-- Expand `Tests/DockishOSCoreTests/` — currently covers 2 pure helpers + 1 source-level regression guard for the menu bar status icon. Move `LauncherHotkey.carbonMask` mapping, `CollapsedTabPosition` migration, Settings JSON round-trip, and WindowStore grouping into `DockishOSCore` and add XCTests.
 - Ship a `.github/FUNDING.yml` + a small GitHub Pages landing at `8bittts.github.io/dockishOS` (hero GIF + download CTA + 3-line pitch).
 - Add `brew install --cask dockishos` path; PR to `homebrew/homebrew-cask` using the current notarized release.
-- Add `--help` / `-h` parsing to all scripts; `scripts/build-dmg.sh:43-50` currently exits 1 on `--help` with "Unknown flag".
 
 #### Higher complexity
 (No items. Re-add only when a concrete user-facing driver exists.)

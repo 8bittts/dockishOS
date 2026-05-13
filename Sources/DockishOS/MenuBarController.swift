@@ -213,7 +213,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         }
     }
 
-    @objc private func openLauncher()  { LauncherController.shared.toggle() }
+    @MainActor @objc private func openLauncher()  { LauncherController.shared.toggle() }
     @objc private func openSettings()  { SettingsController.shared.show() }
     @objc private func toggleUtilitySections() { SettingsStore.shared.barCollapsed.toggle() }
     @objc private func selectCollapsedTabPosition(_ sender: NSMenuItem) {

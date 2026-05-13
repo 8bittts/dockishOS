@@ -146,6 +146,14 @@ private struct WindowChip: View {
             .frame(height: size.chipHeight)
             .frame(maxWidth: showTitle ? 220 : nil)
             .background(chipChrome)
+            .overlay(alignment: .leading) {
+                if isFrontmost {
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(ChipStyle.accent)
+                        .frame(width: 2)
+                        .padding(.vertical, 7)
+                }
+            }
             .scaleEffect(hover ? ChipStyle.hoverScale : 1)
             .offset(y: hover ? -ChipStyle.hoverLift : 0)
         }
@@ -171,8 +179,8 @@ private struct WindowChip: View {
     }
 
     private var chipFill: Color {
-        if isFrontmost { return Color.white.opacity(ChipStyle.frontmostOpacity) }
-        return Color.white.opacity(hover ? ChipStyle.hoverOpacity : ChipStyle.inactiveOpacity)
+        if isFrontmost { return ChipStyle.frontmostFill }
+        return hover ? ChipStyle.hoverFill : ChipStyle.inactiveFill
     }
 
     private var chipChrome: some View {
@@ -180,15 +188,15 @@ private struct WindowChip: View {
             .fill(chipFill)
             .overlay {
                 RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
-                    .strokeBorder(Color.white.opacity(borderOpacity), lineWidth: 0.65)
+                    .strokeBorder(ChipStyle.border.opacity(borderOpacity), lineWidth: 0.65)
             }
             .overlay(alignment: .top) {
                 RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(topHighlightOpacity),
-                                Color.white.opacity(0)
+                                Color(nsColor: .highlightColor).opacity(topHighlightOpacity),
+                                Color(nsColor: .highlightColor).opacity(0)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -260,6 +268,14 @@ private struct WindowGroupChip: View {
             .frame(height: size.chipHeight)
             .frame(maxWidth: showTitle ? 220 : nil)
             .background(chipChrome)
+            .overlay(alignment: .leading) {
+                if isFrontmost {
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(ChipStyle.accent)
+                        .frame(width: 2)
+                        .padding(.vertical, 7)
+                }
+            }
             .scaleEffect(hover ? ChipStyle.hoverScale : 1)
             .offset(y: hover ? -ChipStyle.hoverLift : 0)
         }
@@ -292,8 +308,8 @@ private struct WindowGroupChip: View {
     }
 
     private var chipFill: Color {
-        if isFrontmost { return Color.white.opacity(ChipStyle.frontmostOpacity) }
-        return Color.white.opacity(hover ? ChipStyle.hoverOpacity : ChipStyle.inactiveOpacity)
+        if isFrontmost { return ChipStyle.frontmostFill }
+        return hover ? ChipStyle.hoverFill : ChipStyle.inactiveFill
     }
 
     private var chipChrome: some View {
@@ -301,15 +317,15 @@ private struct WindowGroupChip: View {
             .fill(chipFill)
             .overlay {
                 RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
-                    .strokeBorder(Color.white.opacity(borderOpacity), lineWidth: 0.65)
+                    .strokeBorder(ChipStyle.border.opacity(borderOpacity), lineWidth: 0.65)
             }
             .overlay(alignment: .top) {
                 RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(topHighlightOpacity),
-                                Color.white.opacity(0)
+                                Color(nsColor: .highlightColor).opacity(topHighlightOpacity),
+                                Color(nsColor: .highlightColor).opacity(0)
                             ],
                             startPoint: .top,
                             endPoint: .bottom

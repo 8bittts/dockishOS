@@ -40,8 +40,13 @@ BUILD_ONLY=false
 LOCAL_MODE=false
 UNSIGNED=false
 
+usage() {
+    sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
+}
+
 for arg in "$@"; do
     case "$arg" in
+        -h|--help)    usage; exit 0 ;;
         --build-only) BUILD_ONLY=true ;;
         --local)      LOCAL_MODE=true ;;
         --unsigned)   UNSIGNED=true ;;

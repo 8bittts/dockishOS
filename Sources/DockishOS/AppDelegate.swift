@@ -78,7 +78,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             name: "launcher",
             keyCode: launcher.keyCode,
             modifiers: launcher.carbonModifiers
-        ) { LauncherController.shared.toggle() }
+        ) {
+            Task { @MainActor in
+                LauncherController.shared.toggle()
+            }
+        }
 
         let switcher = SettingsStore.shared.switcherHotkey
         HotkeyManager.shared.register(

@@ -19,6 +19,17 @@
 
 set -euo pipefail
 
+usage() {
+    sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+case "${1:-}" in
+    -h|--help)
+        usage
+        exit 0
+        ;;
+esac
+
 MODE="${1:-run}"
 APP_NAME="DockishOS"
 BUNDLE_ID="com.8bittts.dockishos"

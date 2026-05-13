@@ -1,5 +1,6 @@
 import AppKit
 import Carbon.HIToolbox
+import DockishOSCore
 
 /// User-configurable global hotkey for the launcher. Stored as Carbon
 /// keyCode + modifier mask (matches `RegisterEventHotKey`'s ABI) plus a
@@ -24,12 +25,12 @@ struct LauncherHotkey: Codable, Equatable {
     /// Convert NSEvent flags to Carbon's modifier bitmask used by
     /// `RegisterEventHotKey`.
     static func carbonMask(from flags: NSEvent.ModifierFlags) -> UInt32 {
-        var mask: UInt32 = 0
-        if flags.contains(.command)  { mask |= UInt32(cmdKey) }
-        if flags.contains(.option)   { mask |= UInt32(optionKey) }
-        if flags.contains(.control)  { mask |= UInt32(controlKey) }
-        if flags.contains(.shift)    { mask |= UInt32(shiftKey) }
-        return mask
+        HotkeyMask.carbonMask(
+            command: flags.contains(.command),
+            option: flags.contains(.option),
+            control: flags.contains(.control),
+            shift: flags.contains(.shift)
+        )
     }
 
     /// Build the user-visible string ("⌥⌘ K", "⌃ Space", …) from an event.

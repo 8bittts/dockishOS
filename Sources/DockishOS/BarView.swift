@@ -194,15 +194,15 @@ private struct CollapsedTabBackdrop: View {
             .fill(Color.black.opacity(metrics.backgroundFillOpacity))
             .overlay {
                 RoundedRectangle(cornerRadius: metrics.backgroundCornerRadius, style: .continuous)
-                    .stroke(Color.white.opacity(metrics.backgroundStrokeOpacity), lineWidth: 0.55)
+                    .stroke(Color(nsColor: .separatorColor).opacity(metrics.backgroundStrokeOpacity), lineWidth: 0.55)
             }
             .overlay(alignment: .top) {
                 RoundedRectangle(cornerRadius: metrics.backgroundCornerRadius, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(metrics.backgroundHighlightOpacity),
-                                Color.white.opacity(0)
+                                Color(nsColor: .highlightColor).opacity(metrics.backgroundHighlightOpacity),
+                                Color(nsColor: .highlightColor).opacity(0)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -294,11 +294,11 @@ private struct CollapsedBarTab: View {
                     GeometryReader { proxy in
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.0),
-                                Color.white.opacity(0.0),
-                                Color.white.opacity(0.24),
-                                Color.white.opacity(0.0),
-                                Color.white.opacity(0.0),
+                                Color(nsColor: .highlightColor).opacity(0.0),
+                                Color(nsColor: .highlightColor).opacity(0.0),
+                                Color(nsColor: .highlightColor).opacity(0.24),
+                                Color(nsColor: .highlightColor).opacity(0.0),
+                                Color(nsColor: .highlightColor).opacity(0.0),
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -332,8 +332,8 @@ private struct CollapsedBarTab: View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(hover ? 0.34 : 0.26),
-                                Color.white.opacity(0)
+                                Color(nsColor: .highlightColor).opacity(hover ? 0.34 : 0.26),
+                                Color(nsColor: .highlightColor).opacity(0)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -386,15 +386,15 @@ private struct UtilitySectionsToggle: View {
             .fill(Color(nsColor: .windowBackgroundColor).opacity(hover ? 0.88 : 0.42))
             .overlay {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(Color.white.opacity(hover ? 0.34 : 0.12), lineWidth: 0.8)
+                    .strokeBorder(Color(nsColor: .separatorColor).opacity(hover ? 0.70 : 0.32), lineWidth: 0.8)
             }
             .overlay(alignment: .top) {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(hover ? 0.28 : 0.12),
-                                Color.white.opacity(0)
+                                Color(nsColor: .highlightColor).opacity(hover ? 0.28 : 0.12),
+                                Color(nsColor: .highlightColor).opacity(0)
                             ],
                             startPoint: .top,
                             endPoint: .bottom

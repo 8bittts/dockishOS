@@ -1,6 +1,7 @@
 import AppKit
 import Carbon.HIToolbox
 import Combine
+import DockishOSCore
 
 /// Three discrete bar sizes. Chosen instead of a slider so the layout is
 /// always pixel-honest and easy to test.
@@ -33,12 +34,10 @@ enum CollapsedTabPosition: String, CaseIterable, Codable, Identifiable {
     }
 
     init(persistedRawValue: String?) {
-        switch persistedRawValue {
-        case CollapsedTabPosition.bottomLeft.rawValue?, "topLeft"?:
+        switch CollapsedTabPlacement(persistedRawValue: persistedRawValue) {
+        case .bottomLeft:
             self = .bottomLeft
-        case CollapsedTabPosition.bottomRight.rawValue?, "topRight"?:
-            self = .bottomRight
-        default:
+        case .bottomRight:
             self = .bottomRight
         }
     }

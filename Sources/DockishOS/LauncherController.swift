@@ -3,6 +3,7 @@ import SwiftUI
 
 /// Lifecycle for the launcher panel. Singleton so the global hotkey can
 /// toggle it from anywhere. All methods must be called on the main thread.
+@MainActor
 final class LauncherController {
     static let shared = LauncherController()
 
@@ -30,7 +31,9 @@ final class LauncherController {
             queue: .main
         ) { [weak self] _ in
             // Hide on click-outside / focus loss.
-            self?.hide()
+            Task { @MainActor in
+                self?.hide()
+            }
         }
     }
 

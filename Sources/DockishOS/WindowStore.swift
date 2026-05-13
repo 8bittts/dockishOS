@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import DockishOSCore
 import SwiftUI
 
 struct WindowGroup: Identifiable {
@@ -66,23 +67,23 @@ final class WindowStore: ObservableObject {
     /// Group windows by bundle ID (or PID as fallback) for the
     /// "group windows by app" rendering mode.
     func grouped() -> [WindowGroup] {
-        var byKey: [String: [WindowInfo]] = [:]
-        var orderedKeys: [String] = []
-        for w in windows {
-            let key = w.bundleID ?? "pid:\(w.pid)"
-            if byKey[key] == nil {
-                orderedKeys.append(key)
-            }
-            byKey[key, default: []].append(w)
-        }
-        return orderedKeys.compactMap { key -> WindowGroup? in
-            guard let ws = byKey[key], let first = ws.first else { return nil }
+        let byID = Dictionary(uniqueKeysWithValues: windows.map { ($0.id, $0) })
+        return WindowGrouping.group(windows.map { window in
+            WindowGroupingInput(
+                id: window.id,
+                pid: window.pid,
+                ownerName: window.ownerName,
+                bundleID: window.bundleID
+            )
+        }).compactMap { group -> WindowGroup? in
+            let groupedWindows = group.windowIDs.compactMap { byID[$0] }
+            guard !groupedWindows.isEmpty else { return nil }
             return WindowGroup(
-                key: key,
-                bundleID: first.bundleID,
-                pid: first.pid,
-                ownerName: first.ownerName,
-                windows: ws
+                key: group.key,
+                bundleID: group.bundleID,
+                pid: group.pid,
+                ownerName: group.ownerName,
+                windows: groupedWindows
             )
         }
     }

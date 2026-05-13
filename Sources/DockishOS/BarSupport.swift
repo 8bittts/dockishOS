@@ -13,7 +13,7 @@ struct NotificationBadge: View {
             .padding(.horizontal, 4)
             .padding(.vertical, 1)
             .background(Capsule().fill(Color.red))
-            .overlay(Capsule().stroke(Color.white.opacity(0.45), lineWidth: 0.5))
+            .overlay(Capsule().stroke(Color(nsColor: .separatorColor).opacity(0.65), lineWidth: 0.5))
             .accessibilityLabel("\(text) notifications")
     }
 }
@@ -71,4 +71,9 @@ enum ChipStyle {
     static let topHighlightOpacity: Double = 0.08
     static let hoverTopHighlightOpacity: Double = 0.14
     static let hoverAnimation = Animation.easeOut(duration: 0.10)
+    static let inactiveFill = Color(nsColor: .separatorColor).opacity(0.20)
+    static let hoverFill = Color(nsColor: .selectedContentBackgroundColor).opacity(0.22)
+    static let frontmostFill = Color(nsColor: .selectedContentBackgroundColor).opacity(0.34)
+    static let border = Color(nsColor: .separatorColor)
+    static let accent = Color(nsColor: .controlAccentColor)
 }

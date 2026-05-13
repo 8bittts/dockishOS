@@ -2,6 +2,7 @@ import AppKit
 import Combine
 
 /// Observable state for the app launcher panel.
+@MainActor
 final class LauncherStore: ObservableObject {
     static let shared = LauncherStore()
 
@@ -11,6 +12,7 @@ final class LauncherStore: ObservableObject {
 
     private var allApps: [AppEntry] = []
     private var cancellables: Set<AnyCancellable> = []
+    private var refreshTask: Task<Void, Never>?
 
     private init() {
         refreshIndex()
@@ -21,8 +23,15 @@ final class LauncherStore: ObservableObject {
     }
 
     func refreshIndex() {
-        allApps = AppIndex.scan()
-        search(query)
+        refreshTask?.cancel()
+        refreshTask = Task {
+            let scanned = await Task.detached(priority: .userInitiated) {
+                AppIndex.scan()
+            }.value
+            guard !Task.isCancelled else { return }
+            allApps = scanned
+            search(query)
+        }
     }
 
     func search(_ q: String) {
