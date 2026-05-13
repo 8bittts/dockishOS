@@ -47,7 +47,7 @@ struct LauncherView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+                .stroke(Color(nsColor: .separatorColor).opacity(0.55), lineWidth: 0.5)
         )
         .onAppear { queryFocused = true }
         .onKeyPress(.upArrow) { store.moveSelection(by: -1); return .handled }

@@ -67,7 +67,9 @@ final class WindowStore: ObservableObject {
     /// Group windows by bundle ID (or PID as fallback) for the
     /// "group windows by app" rendering mode.
     func grouped() -> [WindowGroup] {
-        let byID = Dictionary(uniqueKeysWithValues: windows.map { ($0.id, $0) })
+        // Refresh races can briefly surface the same CGWindowID twice;
+        // keep the last copy rather than trapping on a duplicate key.
+        let byID = Dictionary(windows.map { ($0.id, $0) }, uniquingKeysWith: { _, new in new })
         return WindowGrouping.group(windows.map { window in
             WindowGroupingInput(
                 id: window.id,

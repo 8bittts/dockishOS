@@ -75,14 +75,14 @@ private struct PinnedChip: View {
                         if let badge { NotificationBadge(text: badge).offset(x: 4, y: -4) }
                     }
                 Circle()
-                    .fill(isRunning ? Color.white.opacity(0.85) : Color.clear)
+                    .fill(isRunning ? ChipStyle.accent : Color.clear)
                     .frame(width: 4, height: 4)
             }
             .padding(.horizontal, 6)
             .padding(.vertical, 4)
             .background(
                 RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
-                    .fill(Color.white.opacity(hover ? ChipStyle.hoverOpacity : 0))
+                    .fill(hover ? ChipStyle.hoverFill : Color.clear)
             )
         }
         .buttonStyle(.plain)

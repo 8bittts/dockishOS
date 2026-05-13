@@ -23,15 +23,31 @@ struct LauncherHotkey: Codable, Equatable {
     )
 
     /// Convert NSEvent flags to Carbon's modifier bitmask used by
-    /// `RegisterEventHotKey`.
+    /// `RegisterEventHotKey`. `HotkeyMask` lives in the AppKit/Carbon-free
+    /// `DockishOSCore` and reproduces the Carbon bit positions as literals;
+    /// `_verifiedCarbonMaskBitPositions` asserts those literals still match
+    /// Apple's headers, so if `cmdKey` etc. ever move, the app crashes
+    /// loudly here instead of silently mis-registering the hotkey.
     static func carbonMask(from flags: NSEvent.ModifierFlags) -> UInt32 {
-        HotkeyMask.carbonMask(
+        _ = _verifiedCarbonMaskBitPositions
+        return HotkeyMask.carbonMask(
             command: flags.contains(.command),
             option: flags.contains(.option),
             control: flags.contains(.control),
             shift: flags.contains(.shift)
         )
     }
+
+    private static let _verifiedCarbonMaskBitPositions: Void = {
+        precondition(HotkeyModifierMask.command.rawValue == UInt32(cmdKey),
+                     "Carbon cmdKey moved; update DockishOSCore.HotkeyModifierMask")
+        precondition(HotkeyModifierMask.shift.rawValue == UInt32(shiftKey),
+                     "Carbon shiftKey moved; update DockishOSCore.HotkeyModifierMask")
+        precondition(HotkeyModifierMask.option.rawValue == UInt32(optionKey),
+                     "Carbon optionKey moved; update DockishOSCore.HotkeyModifierMask")
+        precondition(HotkeyModifierMask.control.rawValue == UInt32(controlKey),
+                     "Carbon controlKey moved; update DockishOSCore.HotkeyModifierMask")
+    }()
 
     /// Build the user-visible string ("⌥⌘ K", "⌃ Space", …) from an event.
     static func displayString(for event: NSEvent) -> String {
