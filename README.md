@@ -110,3 +110,18 @@ Keep changes native to macOS APIs where possible. Run `swift build` and `swift t
 ## License
 
 [MIT](LICENSE) © 2026 [8BIT](https://github.com/8bittts)
+
+---
+
+<p align="center">
+  <img src="build/yen.png" alt="YEN Terminal" width="100%" />
+</p>
+
+<h3 align="center">Built with YEN</h3>
+
+<p align="center">
+  <a href="https://yen.chat">YEN</a> is a personal terminal experience that makes command-line work beautiful.<br/>
+  Fast, customizable, and designed for developers who live in the terminal.<br/>
+  <br/>
+  <a href="https://yen.chat"><img src="https://img.shields.io/badge/Download-YEN-ff5100?style=for-the-badge" alt="Download YEN" /></a>
+</p>

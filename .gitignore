@@ -15,6 +15,7 @@ Package.resolved
 # Local build / packaging artifacts (icons, DMGs, staging)
 build/*
 !build/dockishos.png
+!build/yen.png
 dist/
 
 # Xcode
