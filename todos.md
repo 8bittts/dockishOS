@@ -32,7 +32,7 @@ Not active work. Promote only one item at a time into `#### Phase N` in `### Wor
 - Add Sparkle vendored-framework version pin (`tools/sparkle/VERSION` + checksum) and document the upgrade procedure in `BUILD.md`.
 - Expand `Tests/DockishOSCoreTests/` — currently covers 2 pure helpers + 1 source-level regression guard for the menu bar status icon. Move `LauncherHotkey.carbonMask` mapping, `CollapsedTabPosition` migration, Settings JSON round-trip, and WindowStore grouping into `DockishOSCore` and add XCTests.
 - Ship a `.github/FUNDING.yml` + a small GitHub Pages landing at `8bittts.github.io/dockishOS` (hero GIF + download CTA + 3-line pitch).
-- Add `brew install --cask dockishos` path once the next notarized release is out; PR to `homebrew/homebrew-cask`.
+- Add `brew install --cask dockishos` path; PR to `homebrew/homebrew-cask` using the current notarized release.
 - Add `--help` / `-h` parsing to all scripts; `scripts/build-dmg.sh:43-50` currently exits 1 on `--help` with "Unknown flag".
 
 #### Higher complexity
