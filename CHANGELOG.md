@@ -6,6 +6,12 @@ All notable changes to DockishOS live here. Release tooling reads the
 ## [Unreleased]
 
 ### Changed
+- README now closes with a "Built with YEN" cross-promotion block matching the footer used in `8bittts/movingpaper`.
+- New `.github/FUNDING.yml`, `docs/index.md` (GitHub Pages landing), and reference `casks/dockishos.rb` Homebrew Cask formula.
+
+## [0.017]
+
+### Changed
 - Vendored Sparkle framework is now pinned in `tools/sparkle/VERSION` (2.9.1 / build 2054 + main-binary SHA-256). `scripts/build-dmg.sh` runs a preflight that aborts the build if `Updater.app`, the Installer/Downloader XPC services, or `Autoupdate` is missing, or if the framework binary hash drifts from the pin. `BUILD.md` documents the re-vendor procedure.
 - App launcher index now scans `/Applications` on a detached task instead of blocking the main thread on first open.
 - Window chips highlight the frontmost window with a 2pt accent leading stripe and a semibold title weight, in addition to the existing opacity delta.
