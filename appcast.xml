@@ -4,10 +4,10 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>DockishOS</title>
         <item>
-            <title>0.015</title>
-            <pubDate>Thu, 30 Apr 2026 20:22:19 -0700</pubDate>
-            <sparkle:version>15</sparkle:version>
-            <sparkle:shortVersionString>0.015</sparkle:shortVersionString>
+            <title>0.016</title>
+            <pubDate>Wed, 13 May 2026 15:52:04 -0700</pubDate>
+            <sparkle:version>16</sparkle:version>
+            <sparkle:shortVersionString>0.016</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description><![CDATA[<style>
@@ -23,13 +23,13 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </style>
 <h2>What's New</h2>
 <ul>
-    <li>Menu bar status item shows the full DockishOS app icon again (regression in 0.014 swapped it for a generic SF Symbol).</li></ul>
-<p class="footer">DockishOS 0.015</p>
+    <li>Auto-update no longer fails with "An error occurred while launching the installer." The vendored Sparkle.framework was missing `Versions/B/Updater.app`, which Sparkle 2.7+ requires as its progress/authorization helper. Existing 0.014 and 0.015 installs have the same broken framework and must reinstall manually from this DMG to recover auto-update.</li></ul>
+<p class="footer">DockishOS 0.016</p>
 ]]></description>
-            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.015/DockishOS-0.015.dmg" length="6275099" type="application/octet-stream" sparkle:edSignature="TiwEuP2JDA3PdEFOAVoShDNt3D3NMGmEWO1IEDJXrkT3mObze7Z8edQ1b/FbIdkBWaR66tJLpHtsfmO5cFiDAA=="></enclosure>
+            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.016/DockishOS-0.016.dmg" length="6371158" type="application/octet-stream" sparkle:edSignature="haOFkhrU+ouZgLZRTBE3gxzHntob9EnzCa+9tfWaXCJ8uhXOkhOemaAjutwe/7wgJn4FcgK5wiMQ80vhDkJcCw=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: Zw++I5w6i/P8B/urrT9Gm8CutWA3Us9c5oKM2LBlSs14Th3OhuD/9RDzmfQejbIQckEyCDz336WMRm1YDupACQ==
-length: 1871
+edSignature: 7zIIUkVQz+gbLcUzrUZIW+/T59tz+0eMoHuE1zNbbodo3ZjyV0H56lxNbY2toQ3brlAendPl/xo0aG7uYlOlDQ==
+length: 2102
 -->

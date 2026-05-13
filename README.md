@@ -4,7 +4,7 @@
 
 # DockishOS
 
-<!-- version-badge -->v0.015<!-- /version-badge -->
+<!-- version-badge -->v0.016<!-- /version-badge -->
 
 The macOS Dock shows every app on every Space. DockishOS shows what is open on this Space.
 
@@ -25,7 +25,7 @@ DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar 
 ## Download
 
 <!-- download-link -->
-[**Download DockishOS v0.015**](https://github.com/8bittts/dockishOS/releases/download/v0.015/DockishOS-0.015.dmg)
+[**Download DockishOS v0.016**](https://github.com/8bittts/dockishOS/releases/download/v0.016/DockishOS-0.016.dmg)
 <!-- /download-link -->
 
 Download the DMG, drag DockishOS to `/Applications`, and launch it from there. Older builds remain available from [GitHub Releases](https://github.com/8bittts/dockishOS/releases).
