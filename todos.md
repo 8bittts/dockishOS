@@ -18,18 +18,21 @@
 
 Promote exactly one Phase into active work at a time. Phase ordering is intentional.
 
-#### Phase 1 — Product conversion (High)
-- [ ] **Ship one GIF above the Features list.** `README.md` now has the static bar preview at `public/dockishos-bar-preview.png`; the remaining conversion asset is a 3-5s GIF showing scroll-to-switch-Space and edge-tab collapse.
+#### Phase 1 — Release hardening (High)
+Promoted after the 0.016 incident: the vendored Sparkle framework had silently lost `Updater.app`, and there was no pin or preflight to catch it. Goal is to make the same regression impossible.
+- [ ] Add `tools/sparkle/VERSION` recording the upstream Sparkle release tag and a SHA-256 of `Sparkle.framework/Versions/B/Sparkle` (the main framework binary).
+- [ ] Add a preflight check to `scripts/build-dmg.sh` that fails the build if `Updater.app`, `XPCServices/Installer.xpc`, `XPCServices/Downloader.xpc`, or `Autoupdate` are missing from the vendored framework, and that compares the framework binary's SHA-256 against `tools/sparkle/VERSION`.
+- [ ] Document the Sparkle upgrade procedure in `BUILD.md`: where to download the official archive, which files to copy in (full `Sparkle.framework/Versions/B/` tree, including `Updater.app`), and how to refresh `tools/sparkle/VERSION` afterwards.
 
 ### Follow-On Candidates
 Not active work. Promote only one item at a time into `#### Phase N` in `### Work TODOs` when implementation starts.
 
 #### Medium complexity
+- **Ship one GIF above the Features list.** `README.md` now has the static bar preview at `public/dockishos-bar-preview.png`; the remaining conversion asset is a 3-5s GIF showing scroll-to-switch-Space and edge-tab collapse.
 - Move `Sources/DockishOS/AppIndex.scan()` off the main thread (`LauncherStore.swift:16-21`, `LauncherController.swift:53`) — cold scan of `/Applications` blocks the launcher open animation 50-150ms on a developer machine. Background actor + stale-snapshot UI.
 - Replace `WindowStore.refresh()` polling with notification-driven refresh + throttled coalescing. Promote only after profiling shows idle polling is a user-visible cost; don't build a visibility coordinator preemptively.
 - Tighten chip visual hierarchy: frontmost chip should carry `.bold` or a 2pt accent leading stripe in addition to opacity delta (`Sources/DockishOS/BarSupport.swift:61-63`).
 - Replace `Color.white.opacity(…)` constants across `BarView.swift`, `WindowChips.swift`, `SwitcherView.swift` with semantic colors (`NSColor.separatorColor`, `.selectedContentBackgroundColor`, `.controlAccentColor`) so light-mode + high-contrast-mode users get usable affordances.
-- Add Sparkle vendored-framework version pin (`tools/sparkle/VERSION` + checksum) and document the upgrade procedure in `BUILD.md`.
 - Expand `Tests/DockishOSCoreTests/` — currently covers 2 pure helpers + 1 source-level regression guard for the menu bar status icon. Move `LauncherHotkey.carbonMask` mapping, `CollapsedTabPosition` migration, Settings JSON round-trip, and WindowStore grouping into `DockishOSCore` and add XCTests.
 - Ship a `.github/FUNDING.yml` + a small GitHub Pages landing at `8bittts.github.io/dockishOS` (hero GIF + download CTA + 3-line pitch).
 - Add `brew install --cask dockishos` path; PR to `homebrew/homebrew-cask` using the current notarized release.

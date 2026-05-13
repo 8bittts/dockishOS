@@ -115,6 +115,26 @@ Writes a private key to the login keychain and prints the public key. Copy the p
 
 ---
 
+## Upgrading the Sparkle framework
+
+The vendored Sparkle framework lives at `tools/sparkle/Sparkle.framework`. It is pinned to a specific upstream release in `tools/sparkle/VERSION`, and `scripts/build-dmg.sh` refuses to proceed if any required helper is missing or the framework binary's SHA-256 doesn't match the pin.
+
+This guards against the 0.014/0.015 regression where `Updater.app` silently disappeared from the framework and shipped a broken in-app updater. Follow this exact procedure when bumping Sparkle:
+
+1. Pick the target release from <https://github.com/sparkle-project/Sparkle/releases> and download the `Sparkle-<version>.tar.xz` archive. Don't use Swift Package Manager artifacts — they're missing the helper apps.
+2. Extract the archive to a scratch directory and replace `tools/sparkle/Sparkle.framework` and `tools/sparkle/bin/` with the new versions. Copy the **entire** `Sparkle.framework/Versions/B/` tree, including `Updater.app`, `Autoupdate`, and both `XPCServices/*.xpc` bundles.
+3. Refresh `tools/sparkle/VERSION`:
+
+   ```bash
+   shasum -a 256 tools/sparkle/Sparkle.framework/Versions/B/Sparkle
+   ```
+
+   Paste the hash into `sparkle_binary_sha256` and update `sparkle_version`, `sparkle_build`, and `sparkle_source`. Leave `required_paths` alone unless Sparkle changed its on-disk layout.
+4. Run `./scripts/build-dmg.sh --build-only` and confirm the preflight prints `Verified vendored Sparkle <version> (binary SHA-256 matches pin)`. If it fails, you missed a file in step 2 or the pin is wrong.
+5. Sanity-check the auto-update path end-to-end on a non-production machine before tagging a release.
+
+---
+
 ## Release notes
 
 Keep user-facing changes under `CHANGELOG.md` → `## [Unreleased]`. The release flow uses that section for Sparkle release notes and GitHub release notes. For one-off appcast generation, override with `SPARKLE_NOTES` when needed.
