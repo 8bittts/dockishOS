@@ -4,10 +4,10 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>DockishOS</title>
         <item>
-            <title>0.020</title>
-            <pubDate>Wed, 13 May 2026 16:42:01 -0700</pubDate>
-            <sparkle:version>20</sparkle:version>
-            <sparkle:shortVersionString>0.020</sparkle:shortVersionString>
+            <title>0.021</title>
+            <pubDate>Wed, 13 May 2026 17:48:47 -0700</pubDate>
+            <sparkle:version>21</sparkle:version>
+            <sparkle:shortVersionString>0.021</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description><![CDATA[<style>
@@ -23,13 +23,13 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </style>
 <h2>What's New</h2>
 <ul>
-    <li>Live verification release for the Sparkle signing fix that shipped in 0.019. No app behavior changes between 0.019 and this build; the purpose is to exercise the 0.019 → next-version Sparkle auto-update path end-to-end now that the helper signing order produces a consistent framework seal.</li></ul>
-<p class="footer">DockishOS 0.020</p>
+    <li>Auto-update finally works end-to-end. The 0.014 → 0.020 builds all shipped without the top-level `Sparkle.framework/Updater.app -> Versions/Current/Updater.app` symlink that `NSBundle.URLForAuxiliaryExecutable()` walks to find the progress/authorization helper. With the symlink absent, Sparkle's installer launcher returned nil for `Updater.app` and aborted with "Cannot retrieve path for auxiliary tool" → "An error occurred while launching the installer." The 0.016/0.019 fixes (re-adding `Updater.app` to `Versions/B/`, then re-ordering the inner-Mach-O signing) were both necessary hygiene but not the actual cause. Vendored framework now matches the official Sparkle 2.9.1 layout exactly. `tools/sparkle/VERSION` lists the symlink in `required_paths` so the build-time preflight refuses to package a framework that's missing it.</li></ul>
+<p class="footer">DockishOS 0.021</p>
 ]]></description>
-            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.020/DockishOS-0.020.dmg" length="6400873" type="application/octet-stream" sparkle:edSignature="1SkLutWP8FnorrnPX409cRG+gjAid3+PxhwrZ3tTD/JKA+5rZoMYTWoETO4iM1qVkjpLolY66oSmwCair712BA=="></enclosure>
+            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.021/DockishOS-0.021.dmg" length="6401012" type="application/octet-stream" sparkle:edSignature="Drm8EVRIIIFNCbiYPP6ye6nUj9KSeB5/HgZmKty3q1J1pOQNxAngplRQJV0oRFCX0SeVvRG6BCW0UHadB5urAA=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: 3Cdkbzem9I7JPWkBvvjb168CIXp9yds6cl/7HN/km0OJ5A97FUrhhT1aVOwi1BTxtQjwvpOUr2Gs03TyjUmjAg==
-length: 2045
+edSignature: QSGHmh9teXj8q6A9Sci/mKiiJhsyaYV2otIMd8crEZEI5mbc07UeElogecT1Od60LITc1I+lBfW0wOmehNITDQ==
+length: 2591
 -->
