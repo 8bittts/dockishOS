@@ -5,6 +5,11 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+### Changed
+- Live auto-update verification release. No app behavior changes between 0.021 and this build; the purpose is to exercise the 0.021 → next-version Sparkle path end-to-end with the missing-symlink, helper-signing-order, and `Updater.app`-present fixes all stacked.
+
+## [0.021]
+
 ### Fixed
 - Auto-update finally works end-to-end. The 0.014 → 0.020 builds all shipped without the top-level `Sparkle.framework/Updater.app -> Versions/Current/Updater.app` symlink that `NSBundle.URLForAuxiliaryExecutable()` walks to find the progress/authorization helper. With the symlink absent, Sparkle's installer launcher returned nil for `Updater.app` and aborted with "Cannot retrieve path for auxiliary tool" → "An error occurred while launching the installer." The 0.016/0.019 fixes (re-adding `Updater.app` to `Versions/B/`, then re-ordering the inner-Mach-O signing) were both necessary hygiene but not the actual cause. Vendored framework now matches the official Sparkle 2.9.1 layout exactly. `tools/sparkle/VERSION` lists the symlink in `required_paths` so the build-time preflight refuses to package a framework that's missing it.
 
