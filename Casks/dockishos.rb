@@ -1,6 +1,6 @@
 cask "dockishos" do
-  version "0.021"
-  sha256 "490e1a4b2720482d2a6035a44785a92f90d54e75f181d13668ef638365efa9d8"
+  version "0.022"
+  sha256 "0ea1b2b185993227c24b0e0d5ec69e55f7b5d02f2e1ff0023afea4affba8c170"
 
   url "https://github.com/8bittts/dockishOS/releases/download/v#{version}/DockishOS-#{version}.dmg",
       verified: "github.com/8bittts/dockishOS/"
