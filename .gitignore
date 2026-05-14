@@ -52,6 +52,8 @@ DerivedData/
 CLAUDE.md
 AGENTS.md
 .claude/
+.codex/
+graphify-out/
 
 # Local environment / secrets
 .env

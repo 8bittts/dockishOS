@@ -108,6 +108,17 @@ swift test
 ./scripts/build-dmg.sh --build-only
 ```
 
+### Codebase Orientation
+
+This repo is set up for [graphify](https://github.com/8bittts/graphify)-based local orientation. Generated graph files live in `graphify-out/` and stay out of git.
+
+```bash
+graphify update .
+graphify query "Where is settings persistence implemented?"
+```
+
+Use the graph for broad navigation, then verify claims against source and tests before changing behavior.
+
 ## Project Layout
 
 - `Sources/DockishOS`: app, menu bar item, bar UI, launcher, switcher, settings, window and Spaces integration.
