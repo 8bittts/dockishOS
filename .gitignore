@@ -35,6 +35,10 @@ DerivedData/
 *.app
 # Sparkle ships Updater.app as the progress/authorization helper inside the
 # vendored framework; without it, in-app updates fail to launch the installer.
+# The top-level Updater.app entry is a symlink to Versions/Current/Updater.app
+# that NSBundle.URLForAuxiliaryExecutable() needs in order to resolve the
+# bundle at runtime.
+!tools/sparkle/Sparkle.framework/Updater.app
 !tools/sparkle/Sparkle.framework/Versions/*/Updater.app
 !tools/sparkle/Sparkle.framework/Versions/*/Updater.app/**
 
