@@ -4,10 +4,10 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>DockishOS</title>
         <item>
-            <title>0.022</title>
-            <pubDate>Wed, 13 May 2026 17:51:30 -0700</pubDate>
-            <sparkle:version>22</sparkle:version>
-            <sparkle:shortVersionString>0.022</sparkle:shortVersionString>
+            <title>0.023</title>
+            <pubDate>Thu, 02 Jul 2026 07:41:16 -0700</pubDate>
+            <sparkle:version>23</sparkle:version>
+            <sparkle:shortVersionString>0.023</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description><![CDATA[<style>
@@ -23,13 +23,16 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </style>
 <h2>What's New</h2>
 <ul>
-    <li>Live auto-update verification release. No app behavior changes between 0.021 and this build; the purpose is to exercise the 0.021 → next-version Sparkle path end-to-end with the missing-symlink, helper-signing-order, and `Updater.app`-present fixes all stacked.</li></ul>
-<p class="footer">DockishOS 0.022</p>
+    <li>Sparkle's update window and its alerts now reliably come to the front. As an accessory (menu-bar) app DockishOS can't foreground itself, so the "update available" window opened behind other apps and was easy to miss. The updater now acts as Sparkle's user-driver delegate: for the duration of an update session it temporarily promotes the app to a regular foreground app and floats the Sparkle windows above everything, then restores both the activation policy and window levels when the session ends.</li>
+    <li>Documented the graphify code-orientation workflow and ignored generated graph artifacts in the repo.</li>
+    <li>Removed the unused `SettingsSnapshot` helper and its tests from `DockishOSCore`; settings persistence now stays owned by the app target's `SettingsStore`.</li>
+    <li>Removed the GitHub Sponsors funding metadata from `.github/FUNDING.yml`.</li></ul>
+<p class="footer">DockishOS 0.023</p>
 ]]></description>
-            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.022/DockishOS-0.022.dmg" length="6400949" type="application/octet-stream" sparkle:edSignature="sF35abN55zjCt6BTsV9eJxw62IdPVJ3qgmRI25uBmBkZCXxrw8YkeZUlM3jghCXAdpBmoujAkGE4TlIxL4RfDQ=="></enclosure>
+            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.023/DockishOS-0.023.dmg" length="6398958" type="application/octet-stream" sparkle:edSignature="1VqgXPMZnpaoCLVajl05dIVktuu6mskmONDDvIeccWu0ZltVo3d/LbxlDHpHVLc1pZUQm2GJKzcldJaHCP6QBw=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: ui+W7utK8k/9H4oykjX8als04qs+9e2unMy/rXfq8vE9p3F6Voa9yKlunAO0fUD9zo/JovSNxS3SToO/kR6iDQ==
-length: 2016
+edSignature: JzdWtFiJWU/XMyMIvm59cpelkGiLU71PvtA0ezyCI6C7uyFmxUf1JwDzU59BAgxhlDYzbWbgSt4R1OUZRzo8DQ==
+length: 2622
 -->
