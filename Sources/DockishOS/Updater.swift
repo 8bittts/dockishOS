@@ -9,23 +9,36 @@ import Sparkle
 /// object to run its scheduled check timer (`SUEnableAutomaticChecks`).
 /// Touching `.shared` from `applicationDidFinishLaunching` is enough to
 /// trigger init and start the timer.
+///
+/// DockishOS runs as an `.accessory` app (`LSUIElement`), so it has no
+/// Dock icon and cannot bring its own windows forward on its own. Left
+/// alone, Sparkle's "update available" window and its modal alerts open
+/// *behind* whatever the user is looking at and are easy to miss. As
+/// Sparkle's user-driver delegate this controller temporarily promotes the
+/// app to a regular foreground app and floats the update windows above
+/// everything for the duration of the session, then restores both the
+/// activation policy and the window levels when Sparkle finishes.
 final class Updater: NSObject {
     static let shared = Updater()
 
-    private let controller: SPUStandardUpdaterController
+    private var controller: SPUStandardUpdaterController?
+    private var activationPolicyBeforeUpdate: NSApplication.ActivationPolicy?
+    private var elevatedWindowLevels: [ObjectIdentifier: NSWindow.Level] = [:]
+    private var windowObserver: Any?
 
     private override init() {
+        super.init()
         controller = SPUStandardUpdaterController(
             startingUpdater: true,
             updaterDelegate: nil,
-            userDriverDelegate: nil
+            userDriverDelegate: self
         )
-        super.init()
     }
 
     /// User-initiated check ("Check for Updates…" menu item).
     @objc func checkForUpdates() {
-        controller.checkForUpdates(nil)
+        presentSparkleUI()
+        controller?.checkForUpdates(nil)
     }
 
     /// True when running from a real `.app` bundle with Sparkle bundled.
@@ -33,5 +46,85 @@ final class Updater: NSObject {
     /// this before exposing update affordances.
     var canUpdate: Bool {
         Bundle.main.infoDictionary?["SUFeedURL"] != nil
+    }
+
+    // MARK: - Foregrounding an accessory app for the update UI
+
+    private func presentSparkleUI() {
+        promoteToForegroundIfNeeded()
+        startFloatingWindows()
+    }
+
+    private func promoteToForegroundIfNeeded() {
+        let currentPolicy = NSApp.activationPolicy()
+        if currentPolicy != .regular, activationPolicyBeforeUpdate == nil {
+            activationPolicyBeforeUpdate = currentPolicy
+            NSApp.setActivationPolicy(.regular)
+        }
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func restoreActivationPolicyIfNeeded() {
+        guard let activationPolicyBeforeUpdate else { return }
+        NSApp.setActivationPolicy(activationPolicyBeforeUpdate)
+        self.activationPolicyBeforeUpdate = nil
+    }
+
+    /// Sparkle creates its windows lazily as the session advances, so we
+    /// float each one as it becomes key rather than trying to find them up
+    /// front. Original levels are saved per-window and restored on teardown,
+    /// so DockishOS's own panels are left exactly as they were.
+    private func startFloatingWindows() {
+        guard windowObserver == nil else { return }
+        windowObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didBecomeKeyNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self, let window = notification.object as? NSWindow else { return }
+            self.floatForUpdateSession(window)
+        }
+    }
+
+    private func floatForUpdateSession(_ window: NSWindow) {
+        let id = ObjectIdentifier(window)
+        if elevatedWindowLevels[id] == nil {
+            elevatedWindowLevels[id] = window.level
+        }
+        window.level = .floating
+    }
+
+    private func stopFloatingWindows() {
+        if let windowObserver {
+            NotificationCenter.default.removeObserver(windowObserver)
+            self.windowObserver = nil
+        }
+        for window in NSApp.windows {
+            let id = ObjectIdentifier(window)
+            if let originalLevel = elevatedWindowLevels[id] {
+                window.level = originalLevel
+            }
+        }
+        elevatedWindowLevels.removeAll()
+    }
+}
+
+extension Updater: SPUStandardUserDriverDelegate {
+    func standardUserDriverWillShowModalAlert() {
+        presentSparkleUI()
+    }
+
+    func standardUserDriverWillHandleShowingUpdate(
+        _ handleShowingUpdate: Bool,
+        forUpdate _: SUAppcastItem,
+        state _: SPUUserUpdateState
+    ) {
+        guard handleShowingUpdate else { return }
+        presentSparkleUI()
+    }
+
+    func standardUserDriverWillFinishUpdateSession() {
+        stopFloatingWindows()
+        restoreActivationPolicyIfNeeded()
     }
 }

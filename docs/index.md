@@ -1,9 +1,3 @@
----
-layout: default
-title: DockishOS
-description: Per-Space window bar for macOS. See and switch only the windows that matter right now.
----
-
 <p align="center">
   <img src="../build/dockishos.png" alt="DockishOS" width="160">
 </p>

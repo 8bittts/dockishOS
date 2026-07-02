@@ -8,7 +8,7 @@
 
 The macOS Dock shows every app on every Space. DockishOS shows what is open on this Space.
 
-DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar for people who use Spaces heavily. The app is built with SwiftUI and AppKit, targets macOS 14+, and ships as an accessory app with no Dock icon.
+DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar for people who use Spaces heavily. The app is built with SwiftUI and AppKit, targets macOS 14+ on Apple Silicon, and ships as an accessory app with no Dock icon.
 
 ## Why DockishOS
 
