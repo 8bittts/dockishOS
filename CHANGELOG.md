@@ -5,6 +5,8 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+## [0.023]
+
 ### Fixed
 - Sparkle's update window and its alerts now reliably come to the front. As an accessory (menu-bar) app DockishOS can't foreground itself, so the "update available" window opened behind other apps and was easy to miss. The updater now acts as Sparkle's user-driver delegate: for the duration of an update session it temporarily promotes the app to a regular foreground app and floats the Sparkle windows above everything, then restores both the activation policy and window levels when the session ends.
 
