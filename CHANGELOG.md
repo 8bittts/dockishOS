@@ -9,7 +9,11 @@ All notable changes to DockishOS live here. Release tooling reads the
 - Documented the graphify code-orientation workflow and ignored generated graph artifacts in the repo.
 - Removed the unused `SettingsSnapshot` helper and its tests from `DockishOSCore`; settings persistence now stays owned by the app target's `SettingsStore`.
 - Removed the GitHub Sponsors funding metadata from `.github/FUNDING.yml`.
-- Live auto-update verification release. No app behavior changes between 0.021 and this build; the purpose is to exercise the 0.021 → next-version Sparkle path end-to-end with the missing-symlink, helper-signing-order, and `Updater.app`-present fixes all stacked.
+
+## [0.022]
+
+### Changed
+- Live auto-update verification release. No app behavior changes between 0.021 and 0.022; the purpose was to exercise the 0.021 → next-version Sparkle path end-to-end with the missing-symlink, helper-signing-order, and `Updater.app`-present fixes all stacked.
 
 ## [0.021]
 

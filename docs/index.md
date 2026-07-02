@@ -33,12 +33,22 @@ A SwiftUI + AppKit menu-bar utility for people who use macOS Spaces heavily. Flo
 
 ## Install
 
+Download the latest signed & notarized DMG, then drag DockishOS to `/Applications`:
+
 ```bash
-# Manual install — download, mount, drag to /Applications:
 open https://github.com/8bittts/dockishOS/releases/latest
 ```
 
-A Homebrew Cask is being prepared; see [`casks/dockishos.rb`](https://github.com/8bittts/dockishOS/blob/main/casks/dockishos.rb) for the in-progress formula.
+Or install with [Homebrew](https://brew.sh) — the repo doubles as a Cask tap:
+
+```bash
+# One-shot install of the latest release:
+brew install --cask https://raw.githubusercontent.com/8bittts/dockishOS/main/Casks/dockishos.rb
+
+# Or tap for ongoing `brew upgrade`:
+brew tap 8bittts/dockishos https://github.com/8bittts/dockishOS
+brew install --cask 8bittts/dockishos/dockishos
+```
 
 ## Auto-update
 
