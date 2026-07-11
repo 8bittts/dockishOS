@@ -111,123 +111,66 @@ final class BarController {
             queuedCollapseTarget = targetCollapsed
             return
         }
-        if targetCollapsed {
-            animateCollapse()
-        } else {
-            animateExpand()
-        }
+        animate(toCollapsed: targetCollapsed)
     }
 
-    private func animateCollapse() {
+    /// Two-phase slide: hide the panel in its current (starting) presentation,
+    /// swap to the target presentation off-screen, then slide it back into view.
+    /// Collapse and expand are structural mirrors — the only differences are the
+    /// start/target `isCollapsed` states and the per-phase animation durations.
+    private func animate(toCollapsed: Bool) {
         isAnimatingCollapse = true
         queuedCollapseTarget = nil
-        let expandedVisible = Self.visibleFrame(
-            for: screen,
-            settings: SettingsStore.shared,
-            collapsed: false,
-            collapsedTabWidth: collapsedTabWidth,
-            expandedHorizontalInset: expandedHorizontalInset,
-            collapsedTabInset: collapsedTabInset
-        )
-        let expandedHidden = Self.hiddenFrame(
-            for: screen,
-            settings: SettingsStore.shared,
-            collapsed: false,
-            collapsedTabWidth: collapsedTabWidth,
-            expandedHorizontalInset: expandedHorizontalInset,
-            collapsedTabInset: collapsedTabInset
-        )
-        let collapsedHidden = Self.hiddenFrame(
-            for: screen,
-            settings: SettingsStore.shared,
-            collapsed: true,
-            collapsedTabWidth: collapsedTabWidth,
-            expandedHorizontalInset: expandedHorizontalInset,
-            collapsedTabInset: collapsedTabInset
-        )
-        let collapsedVisible = Self.visibleFrame(
-            for: screen,
-            settings: SettingsStore.shared,
-            collapsed: true,
-            collapsedTabWidth: collapsedTabWidth,
-            expandedHorizontalInset: expandedHorizontalInset,
-            collapsedTabInset: collapsedTabInset
-        )
-        presentation.isCollapsed = false
-        panel.setFrame(expandedVisible, display: true)
+        let startCollapsed = !toCollapsed
+        let initialVisible = visibleFrame(collapsed: startCollapsed)
+        let initialHidden = hiddenFrame(collapsed: startCollapsed)
+        let finalHidden = hiddenFrame(collapsed: toCollapsed)
+        let finalVisible = visibleFrame(collapsed: toCollapsed)
+        // Collapse uses 0.16/0.16; expand uses 0.14/0.18.
+        let hideDuration: TimeInterval = toCollapsed ? 0.16 : 0.14
+        let revealDuration: TimeInterval = toCollapsed ? 0.16 : 0.18
+
+        presentation.isCollapsed = startCollapsed
+        panel.setFrame(initialVisible, display: true)
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.16
+            context.duration = hideDuration
             context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            panel.animator().setFrame(expandedHidden, display: true)
+            panel.animator().setFrame(initialHidden, display: true)
         } completionHandler: { [weak self] in
             guard let self else { return }
-            self.presentation.isCollapsed = true
-            self.panel.setFrame(collapsedHidden, display: true)
+            self.presentation.isCollapsed = toCollapsed
+            self.panel.setFrame(finalHidden, display: true)
             self.panel.orderFrontRegardless()
             NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.16
+                context.duration = revealDuration
                 context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                self.panel.animator().setFrame(collapsedVisible, display: true)
+                self.panel.animator().setFrame(finalVisible, display: true)
             } completionHandler: { [weak self] in
                 self?.finishCollapseAnimation()
             }
         }
     }
 
-    private func animateExpand() {
-        isAnimatingCollapse = true
-        queuedCollapseTarget = nil
-        let collapsedVisible = Self.visibleFrame(
+    private func visibleFrame(collapsed: Bool) -> NSRect {
+        Self.visibleFrame(
             for: screen,
             settings: SettingsStore.shared,
-            collapsed: true,
+            collapsed: collapsed,
             collapsedTabWidth: collapsedTabWidth,
             expandedHorizontalInset: expandedHorizontalInset,
             collapsedTabInset: collapsedTabInset
         )
-        let collapsedHidden = Self.hiddenFrame(
+    }
+
+    private func hiddenFrame(collapsed: Bool) -> NSRect {
+        Self.hiddenFrame(
             for: screen,
             settings: SettingsStore.shared,
-            collapsed: true,
+            collapsed: collapsed,
             collapsedTabWidth: collapsedTabWidth,
             expandedHorizontalInset: expandedHorizontalInset,
             collapsedTabInset: collapsedTabInset
         )
-        let expandedHidden = Self.hiddenFrame(
-            for: screen,
-            settings: SettingsStore.shared,
-            collapsed: false,
-            collapsedTabWidth: collapsedTabWidth,
-            expandedHorizontalInset: expandedHorizontalInset,
-            collapsedTabInset: collapsedTabInset
-        )
-        let expandedVisible = Self.visibleFrame(
-            for: screen,
-            settings: SettingsStore.shared,
-            collapsed: false,
-            collapsedTabWidth: collapsedTabWidth,
-            expandedHorizontalInset: expandedHorizontalInset,
-            collapsedTabInset: collapsedTabInset
-        )
-        presentation.isCollapsed = true
-        panel.setFrame(collapsedVisible, display: true)
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.14
-            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            panel.animator().setFrame(collapsedHidden, display: true)
-        } completionHandler: { [weak self] in
-            guard let self else { return }
-            self.presentation.isCollapsed = false
-            self.panel.setFrame(expandedHidden, display: true)
-            self.panel.orderFrontRegardless()
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.18
-                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                self.panel.animator().setFrame(expandedVisible, display: true)
-            } completionHandler: { [weak self] in
-                self?.finishCollapseAnimation()
-            }
-        }
     }
 
     private func finishCollapseAnimation() {
@@ -235,11 +178,7 @@ final class BarController {
         let currentTarget = SettingsStore.shared.barCollapsed
         if let queuedCollapseTarget, queuedCollapseTarget != presentation.isCollapsed {
             self.queuedCollapseTarget = nil
-            if queuedCollapseTarget {
-                animateCollapse()
-            } else {
-                animateExpand()
-            }
+            animate(toCollapsed: queuedCollapseTarget)
             return
         }
         if currentTarget != presentation.isCollapsed {
