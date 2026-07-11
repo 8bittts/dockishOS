@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import DockishOSCore
 
 /// Observable state for the app launcher panel.
 @MainActor
@@ -39,7 +40,11 @@ final class LauncherStore: ObservableObject {
             results = allApps
         } else {
             let scored: [(AppEntry, Int)] = allApps.compactMap { app in
-                AppIndex.score(query: q, name: app.name).map { (app, $0) }
+                AppSearchScorer.score(
+                    query: q,
+                    lowercasedName: app.lowercasedName,
+                    lowercasedWords: app.lowercasedWords
+                ).map { (app, $0) }
             }
             results = scored.sorted { $0.1 > $1.1 }.map(\.0)
         }

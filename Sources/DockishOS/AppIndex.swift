@@ -6,6 +6,10 @@ struct AppEntry: Identifiable, Hashable {
     let name: String
     let bundleID: String?
     let path: URL
+    /// Precomputed once at scan time so per-keystroke scoring avoids
+    /// repeating `lowercased()` / word-splitting for every candidate.
+    let lowercasedName: String
+    let lowercasedWords: [String]
 }
 
 enum AppIndex {
@@ -41,11 +45,14 @@ enum AppIndex {
                 let plain = bundle?.infoDictionary?["CFBundleName"] as? String
                 let name = display ?? plain ?? url.deletingPathExtension().lastPathComponent
                 let stableID = pathKey
+                let lowercasedName = name.lowercased()
                 entries.append(AppEntry(
                     id: stableID,
                     name: name,
                     bundleID: bundle?.bundleIdentifier,
-                    path: url
+                    path: url,
+                    lowercasedName: lowercasedName,
+                    lowercasedWords: AppSearchScorer.lowercasedWords(of: lowercasedName)
                 ))
             }
         }

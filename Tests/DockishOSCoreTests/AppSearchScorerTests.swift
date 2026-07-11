@@ -42,4 +42,23 @@ final class AppSearchScorerTests: XCTestCase {
     func testNoMatchReturnsNil() {
         XCTAssertNil(AppSearchScorer.score(query: "xyz", name: "Safari"))
     }
+
+    func testPrecomputedPathMatchesNamePath() {
+        let names = [
+            "Safari", "Open Safari", "Visual Studio Code", "Terminal",
+            "1Password 7", "Final Cut Pro", "System Settings", "",
+        ]
+        let queries = ["", "saf", "co", "sfr", "TER", "xyz", "1", "pro", "system"]
+        for name in names {
+            let lower = name.lowercased()
+            let words = AppSearchScorer.lowercasedWords(of: lower)
+            for query in queries {
+                XCTAssertEqual(
+                    AppSearchScorer.score(query: query, name: name),
+                    AppSearchScorer.score(query: query, lowercasedName: lower, lowercasedWords: words),
+                    "Mismatch for query \(query) name \(name)"
+                )
+            }
+        }
+    }
 }
