@@ -25,6 +25,5 @@ Not active work. Promote only one item at a time into `#### Phase N` in `### Wor
 
 The full-codebase audit is implemented — see git history. Only items needing a real product/design decision remain; the net-neutral/net-negative micro-opts were considered and dropped (they'd trade correctness or add state for no measurable gain).
 
-- [ ] **Manual verify (needs the running GUI app):** with "group windows by app" on, repeatedly clicking a 3-window app chip advances through all three windows in a fixed order (validates the shipped `activateNext` round-robin fix).
 - [ ] **`NotificationBadge` offset `x:4` vs `x:6`** between `WindowChip` and `WindowGroupChip` — pick the intended value and align both (needs a design call).
 - [ ] **`MenuBarController` menu-state: keep the live-while-open Combine sinks or not?** They update menu-item titles live if collapse is toggled via hotkey while the menu is open; `menuNeedsUpdate` alone would only refresh on open. Decide whether live-while-open matters before touching it.

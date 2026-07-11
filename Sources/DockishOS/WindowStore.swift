@@ -93,15 +93,13 @@ final class WindowStore: ObservableObject {
     /// Activate the next window in the group (round-robin). Used when
     /// "group windows by app" is on and the user clicks an app chip.
     func activateNext(in group: WindowGroup) {
-        guard !group.windows.isEmpty else { return }
         // Cycle over a stable order (by window ID) that does not reshuffle as
-        // windows are raised, and track the last-activated CGWindowID rather
-        // than a positional index into the z-ordered, per-refresh-rebuilt list.
-        let ordered = group.windows.sorted { $0.id < $1.id }
-        let currentIndex = lastActivatedWindowID[group.key]
-            .flatMap { id in ordered.firstIndex { $0.id == id } } ?? -1
-        let next = (currentIndex + 1) % ordered.count
-        let target = ordered[next]
+        // windows are raised, tracking the last-activated CGWindowID rather than
+        // a positional index into the z-ordered, per-refresh-rebuilt list.
+        guard let nextID = WindowCycle.next(
+            ids: group.windows.map(\.id),
+            after: lastActivatedWindowID[group.key]
+        ), let target = group.windows.first(where: { $0.id == nextID }) else { return }
         lastActivatedWindowID[group.key] = target.id
         activate(target)
     }
