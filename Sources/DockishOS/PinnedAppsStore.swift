@@ -32,11 +32,6 @@ final class PinnedAppsStore: ObservableObject {
         NSWorkspace.shared.runningApplications.first { $0.bundleIdentifier == pin.bundleID }
     }
 
-    func icon(for pin: PinnedApp) -> NSImage {
-        let path = resolvedBundleURL(for: pin)?.path ?? pin.path
-        return NSWorkspace.shared.icon(forFile: path)
-    }
-
     // MARK: Mutations
 
     func pin(window: WindowInfo) {
@@ -66,11 +61,6 @@ final class PinnedAppsStore: ObservableObject {
         let next = StableIDReordering.moving(pins, itemID: pin.id, by: delta)
         guard next != pins else { return }
         pins = next
-        save()
-    }
-
-    func reorder(from source: IndexSet, to destination: Int) {
-        pins.move(fromOffsets: source, toOffset: destination)
         save()
     }
 

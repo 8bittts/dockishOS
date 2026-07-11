@@ -56,13 +56,6 @@ final class LauncherStore: ObservableObject {
         return results[selectedIndex]
     }
 
-    @discardableResult
-    func activateSelected() -> Bool {
-        guard let app = selectedApp() else { return false }
-        activate(app)
-        return true
-    }
-
     func activate(_ app: AppEntry) {
         if
             let bundleID = app.bundleID,

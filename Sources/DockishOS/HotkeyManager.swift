@@ -49,16 +49,6 @@ final class HotkeyManager {
         return noErr
     }
 
-    /// Convenience for the launcher (default-name slot).
-    @discardableResult
-    func register(
-        keyCode: UInt32 = UInt32(kVK_Space),
-        modifiers: UInt32 = UInt32(optionKey),
-        onFire: @escaping () -> Void
-    ) -> OSStatus {
-        register(name: "launcher", keyCode: keyCode, modifiers: modifiers, onFire: onFire)
-    }
-
     func unregister(name: String) {
         if let r = registrations.removeValue(forKey: name) {
             UnregisterEventHotKey(r.ref)

@@ -33,7 +33,6 @@ final class BarController {
         )
         self.panel = BarPanel(contentRect: frame)
         self.host = NSHostingView(rootView: BarView(
-            screen: screen,
             windowStore: WindowStore.shared,
             pinnedStore: PinnedAppsStore.shared,
             badgeStore: BadgeStore.shared,

@@ -80,14 +80,6 @@ enum BarSize: String, CaseIterable, Codable, Identifiable {
         }
     }
 
-    var spaceChipSize: CGFloat {
-        switch self {
-        case .small:  return 20
-        case .medium: return 24
-        case .large:  return 30
-        }
-    }
-
     var pinnedChipSize: CGFloat {
         switch self {
         case .small:  return 26

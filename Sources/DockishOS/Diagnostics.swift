@@ -12,7 +12,6 @@ enum Diagnostics {
     private static let subsystem = "com.8bittts.dockishos"
 
     static let lifecycle   = Logger(subsystem: subsystem, category: "lifecycle")
-    static let bar         = Logger(subsystem: subsystem, category: "bar")
     static let windows     = Logger(subsystem: subsystem, category: "windows")
     static let spaces      = Logger(subsystem: subsystem, category: "spaces")
     static let badges      = Logger(subsystem: subsystem, category: "badges")

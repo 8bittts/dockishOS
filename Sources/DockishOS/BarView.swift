@@ -17,7 +17,6 @@ final class BarPresentationState: ObservableObject {
 /// Accepts a `.fileURL` drop anywhere on the bar so the user can drag
 /// `.app` bundles from Finder to pin them.
 struct BarView: View {
-    let screen: NSScreen
     @ObservedObject var windowStore: WindowStore
     @ObservedObject var pinnedStore: PinnedAppsStore
     @ObservedObject var badgeStore: BadgeStore
