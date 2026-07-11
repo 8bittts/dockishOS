@@ -150,7 +150,7 @@ private struct WindowChip: View {
             .padding(.vertical, 4)
             .frame(height: size.chipHeight)
             .frame(maxWidth: showTitle ? 220 : nil)
-            .background(chipChrome)
+            .background(ChipChrome(isFrontmost: isFrontmost, hover: hover, size: size))
             .overlay(alignment: .leading) {
                 if isFrontmost {
                     RoundedRectangle(cornerRadius: 1.5)
@@ -181,50 +181,6 @@ private struct WindowChip: View {
                 Button("Pin App to Bar") { onTogglePin() }
             }
         }
-    }
-
-    private var chipFill: Color {
-        if isFrontmost { return ChipStyle.frontmostFill }
-        return hover ? ChipStyle.hoverFill : ChipStyle.inactiveFill
-    }
-
-    private var chipChrome: some View {
-        RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
-            .fill(chipFill)
-            .overlay {
-                RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
-                    .strokeBorder(ChipStyle.border.opacity(borderOpacity), lineWidth: 0.65)
-            }
-            .overlay(alignment: .top) {
-                RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(nsColor: .highlightColor).opacity(topHighlightOpacity),
-                                Color(nsColor: .highlightColor).opacity(0)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(height: size.chipHeight * 0.42)
-                    .clipShape(RoundedRectangle(cornerRadius: ChipStyle.cornerRadius))
-            }
-            .shadow(
-                color: .black.opacity(hover ? ChipStyle.hoverShadowOpacity : 0),
-                radius: hover ? ChipStyle.hoverShadowRadius : 0,
-                y: hover ? ChipStyle.hoverShadowYOffset : 0
-            )
-    }
-
-    private var borderOpacity: Double {
-        if hover { return ChipStyle.hoverBorderOpacity }
-        if isFrontmost { return ChipStyle.frontmostBorderOpacity }
-        return ChipStyle.borderOpacity
-    }
-
-    private var topHighlightOpacity: Double {
-        hover ? ChipStyle.hoverTopHighlightOpacity : ChipStyle.topHighlightOpacity
     }
 }
 
@@ -272,7 +228,7 @@ private struct WindowGroupChip: View {
             .padding(.vertical, 4)
             .frame(height: size.chipHeight)
             .frame(maxWidth: showTitle ? 220 : nil)
-            .background(chipChrome)
+            .background(ChipChrome(isFrontmost: isFrontmost, hover: hover, size: size))
             .overlay(alignment: .leading) {
                 if isFrontmost {
                     RoundedRectangle(cornerRadius: 1.5)
@@ -311,13 +267,31 @@ private struct WindowGroupChip: View {
             }
         }
     }
+}
+
+/// Shared chip background (fill + border + top highlight + hover shadow) used
+/// by both `WindowChip` and `WindowGroupChip` so the look stays in one place.
+private struct ChipChrome: View {
+    let isFrontmost: Bool
+    let hover: Bool
+    let size: BarSize
 
     private var chipFill: Color {
         if isFrontmost { return ChipStyle.frontmostFill }
         return hover ? ChipStyle.hoverFill : ChipStyle.inactiveFill
     }
 
-    private var chipChrome: some View {
+    private var borderOpacity: Double {
+        if hover { return ChipStyle.hoverBorderOpacity }
+        if isFrontmost { return ChipStyle.frontmostBorderOpacity }
+        return ChipStyle.borderOpacity
+    }
+
+    private var topHighlightOpacity: Double {
+        hover ? ChipStyle.hoverTopHighlightOpacity : ChipStyle.topHighlightOpacity
+    }
+
+    var body: some View {
         RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
             .fill(chipFill)
             .overlay {
@@ -344,15 +318,5 @@ private struct WindowGroupChip: View {
                 radius: hover ? ChipStyle.hoverShadowRadius : 0,
                 y: hover ? ChipStyle.hoverShadowYOffset : 0
             )
-    }
-
-    private var borderOpacity: Double {
-        if hover { return ChipStyle.hoverBorderOpacity }
-        if isFrontmost { return ChipStyle.frontmostBorderOpacity }
-        return ChipStyle.borderOpacity
-    }
-
-    private var topHighlightOpacity: Double {
-        hover ? ChipStyle.hoverTopHighlightOpacity : ChipStyle.topHighlightOpacity
     }
 }

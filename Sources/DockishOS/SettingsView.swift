@@ -10,7 +10,7 @@ struct SettingsView: View {
         TabView {
             AppearanceTab(settings: settings)
                 .tabItem { Label("Appearance", systemImage: "slider.horizontal.3") }
-            BehaviorTab()
+            BehaviorTab(settings: settings)
                 .tabItem { Label("Behavior", systemImage: "gearshape.2") }
             PinnedTab(pinned: pinned)
                 .tabItem { Label("Pinned", systemImage: "pin") }
@@ -69,7 +69,7 @@ private struct AppearanceTab: View {
 }
 
 private struct BehaviorTab: View {
-    @ObservedObject var settings: SettingsStore = SettingsStore.shared
+    @ObservedObject var settings: SettingsStore
     @State private var loginItemEnabled: Bool = LoginItem.isEnabled
     @State private var loginItemMessage: String = LoginItem.statusDescription
     @State private var screens: [ScreenItem] = []
