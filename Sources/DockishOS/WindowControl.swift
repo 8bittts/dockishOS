@@ -31,15 +31,24 @@ enum WindowControl {
             return
         }
         guard let axWin = axWindow(for: window) else { return }
-        AXUIElementPerformAction(axWin, kAXRaiseAction as CFString)
-        AXUIElementSetAttributeValue(axWin, kAXMainAttribute as CFString, kCFBooleanTrue)
+        let raiseErr = AXUIElementPerformAction(axWin, kAXRaiseAction as CFString)
+        if raiseErr != .success {
+            Diagnostics.windows.debug("raise action failed: \(raiseErr.rawValue, privacy: .public)")
+        }
+        let mainErr = AXUIElementSetAttributeValue(axWin, kAXMainAttribute as CFString, kCFBooleanTrue)
+        if mainErr != .success {
+            Diagnostics.windows.debug("set-main failed: \(mainErr.rawValue, privacy: .public)")
+        }
     }
 
     /// Close a specific window via the AX close button.
     static func close(_ window: WindowInfo) {
         guard Permissions.ensureAccessibility(prompt: true), let axWin = axWindow(for: window) else { return }
         guard let button = AX.element(axWin, kAXCloseButtonAttribute as CFString) else { return }
-        AXUIElementPerformAction(button, kAXPressAction as CFString)
+        let pressErr = AXUIElementPerformAction(button, kAXPressAction as CFString)
+        if pressErr != .success {
+            Diagnostics.windows.debug("close press failed: \(pressErr.rawValue, privacy: .public)")
+        }
     }
 
     /// Walk the AX windows of the owning app and find the one whose
@@ -47,6 +56,9 @@ enum WindowControl {
     private static func axWindow(for window: WindowInfo) -> AXUIElement? {
         guard let getWindowID else { return nil }
         let axApp = AXUIElementCreateApplication(window.pid)
+        // Bound the synchronous AX round-trips so a hung target app cannot
+        // block the main run loop for the ~6s default AX messaging timeout.
+        AXUIElementSetMessagingTimeout(axApp, 0.5)
         guard let axWindows: [AXUIElement] = AX.value(axApp, kAXWindowsAttribute as CFString) else {
             return nil
         }

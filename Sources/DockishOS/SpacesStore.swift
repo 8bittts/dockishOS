@@ -35,16 +35,26 @@ final class SpacesStore: ObservableObject {
         if current != currentByDisplay { currentByDisplay = current }
     }
 
+    /// Deterministic fallback display (lowest first-space index) used when a
+    /// screen's UUID isn't keyed. Both `spaces(for:)` and `currentSpaceID(for:)`
+    /// resolve through the SAME display so the scroll-to-switch index lookup in
+    /// `BarController.handleVerticalScroll` can't silently miss.
+    private var fallbackDisplayUUID: String? {
+        spacesByDisplay.min { ($0.value.first?.index ?? 0) < ($1.value.first?.index ?? 0) }?.key
+    }
+
     func spaces(for screen: NSScreen) -> [SpaceInfo] {
         let uuid = SpacesAPI.displayUUID(for: screen)
         if let s = spacesByDisplay[uuid], !s.isEmpty { return s }
-        // Fallback when Spaces don't separate per display: use first display.
-        return spacesByDisplay.values.sorted { ($0.first?.index ?? 0) < ($1.first?.index ?? 0) }.first ?? []
+        guard let fallback = fallbackDisplayUUID else { return [] }
+        return spacesByDisplay[fallback] ?? []
     }
 
     func currentSpaceID(for screen: NSScreen) -> CGSSpaceID? {
         let uuid = SpacesAPI.displayUUID(for: screen)
-        return currentByDisplay[uuid] ?? currentByDisplay.values.first
+        if let id = currentByDisplay[uuid] { return id }
+        guard let fallback = fallbackDisplayUUID else { return currentByDisplay.values.first }
+        return currentByDisplay[fallback]
     }
 
     func switchTo(_ space: SpaceInfo) {

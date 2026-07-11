@@ -81,9 +81,22 @@ final class Updater: NSObject {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            guard let self, let window = notification.object as? NSWindow else { return }
+            guard let self, let window = notification.object as? NSWindow,
+                  Self.isSparkleWindow(window) else { return }
             self.floatForUpdateSession(window)
         }
+    }
+
+    private static let sparkleBundle = Bundle(identifier: "org.sparkle-project.Sparkle")
+
+    /// Only elevate windows that belong to the Sparkle framework, so opening
+    /// the launcher/Settings mid-update doesn't transiently mis-level our own
+    /// panels. Falls back to floating any window if the Sparkle bundle can't
+    /// be resolved (preserves prior best-effort behavior).
+    private static func isSparkleWindow(_ window: NSWindow) -> Bool {
+        guard let sparkleBundle else { return true }
+        let owners: [AnyClass] = [type(of: window), window.windowController.map { type(of: $0) }].compactMap { $0 }
+        return owners.contains { Bundle(for: $0) == sparkleBundle }
     }
 
     private func floatForUpdateSession(_ window: NSWindow) {

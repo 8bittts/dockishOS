@@ -21,7 +21,7 @@ final class WindowStore: ObservableObject {
     @Published private(set) var frontmostPID: pid_t = 0
     private let reorderAnimation = Animation.spring(response: 0.30, dampingFraction: 0.82)
     private let focusAnimation = Animation.easeInOut(duration: 0.18)
-    private var lastActivatedIndex: [String: Int] = [:]
+    private var lastActivatedWindowID: [String: CGWindowID] = [:]
     private var timer: Timer?
     private var activationObserver: NSObjectProtocol?
 
@@ -94,10 +94,16 @@ final class WindowStore: ObservableObject {
     /// "group windows by app" is on and the user clicks an app chip.
     func activateNext(in group: WindowGroup) {
         guard !group.windows.isEmpty else { return }
-        let last = lastActivatedIndex[group.key] ?? -1
-        let next = (last + 1) % group.windows.count
-        lastActivatedIndex[group.key] = next
-        activate(group.windows[next])
+        // Cycle over a stable order (by window ID) that does not reshuffle as
+        // windows are raised, and track the last-activated CGWindowID rather
+        // than a positional index into the z-ordered, per-refresh-rebuilt list.
+        let ordered = group.windows.sorted { $0.id < $1.id }
+        let currentIndex = lastActivatedWindowID[group.key]
+            .flatMap { id in ordered.firstIndex { $0.id == id } } ?? -1
+        let next = (currentIndex + 1) % ordered.count
+        let target = ordered[next]
+        lastActivatedWindowID[group.key] = target.id
+        activate(target)
     }
 
     private func setFrontmostPID(_ pid: pid_t, animated: Bool) {

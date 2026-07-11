@@ -72,7 +72,12 @@ final class LauncherStore: ObservableObject {
             return
         }
         let config = NSWorkspace.OpenConfiguration()
-        NSWorkspace.shared.openApplication(at: app.path, configuration: config) { _, _ in }
+        NSWorkspace.shared.openApplication(at: app.path, configuration: config) { _, error in
+            if let error {
+                Diagnostics.lifecycle.error("launch failed for \(app.path.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                NSSound.beep()
+            }
+        }
     }
 
     func reset() {

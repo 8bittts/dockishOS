@@ -74,8 +74,8 @@ final class SwitcherController {
         let view = SwitcherView(
             store: WindowStore.shared,
             selectedIndex: Binding(
-                get: { self.selectedIndex },
-                set: { self.selectedIndex = $0 }
+                get: { [weak self] in self?.selectedIndex ?? 0 },
+                set: { [weak self] in self?.selectedIndex = $0 }
             ),
             onActivate: { [weak self] in self?.activate($0) },
             onDismiss: { [weak self] in self?.hide() }

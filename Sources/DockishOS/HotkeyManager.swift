@@ -99,12 +99,12 @@ final class HotkeyManager {
             eventClass: OSType(kEventClassKeyboard),
             eventKind: UInt32(kEventHotKeyPressed)
         )
-        InstallEventHandler(
+        let installStatus = InstallEventHandler(
             GetApplicationEventTarget(),
             { (_, event, userData) -> OSStatus in
                 guard let userData, let event else { return noErr }
                 var hkID = EventHotKeyID()
-                GetEventParameter(
+                let paramStatus = GetEventParameter(
                     event,
                     EventParamName(kEventParamDirectObject),
                     EventParamType(typeEventHotKeyID),
@@ -113,6 +113,10 @@ final class HotkeyManager {
                     nil,
                     &hkID
                 )
+                guard paramStatus == noErr else {
+                    Diagnostics.lifecycle.fault("hotkey GetEventParameter failed: \(paramStatus)")
+                    return noErr
+                }
                 let mgr = Unmanaged<HotkeyManager>.fromOpaque(userData).takeUnretainedValue()
                 let id = hkID.id
                 DispatchQueue.main.async { mgr.dispatch(id) }
@@ -123,5 +127,8 @@ final class HotkeyManager {
             Unmanaged.passUnretained(self).toOpaque(),
             &handlerRef
         )
+        if installStatus != noErr {
+            Diagnostics.lifecycle.fault("InstallEventHandler failed: \(installStatus); hotkeys will not fire")
+        }
     }
 }

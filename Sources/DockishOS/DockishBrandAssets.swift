@@ -111,10 +111,14 @@ enum DockishBrandAssets {
         )
         background.addClip()
 
-        NSGradient(
-            starting: NSColor(calibratedRed: 0.10, green: 0.13, blue: 0.20, alpha: 1.0),
-            ending: NSColor(calibratedRed: 0.04, green: 0.06, blue: 0.10, alpha: 1.0)
-        )!.draw(in: canvas, angle: -90)
+        let topColor = NSColor(calibratedRed: 0.10, green: 0.13, blue: 0.20, alpha: 1.0)
+        let bottomColor = NSColor(calibratedRed: 0.04, green: 0.06, blue: 0.10, alpha: 1.0)
+        if let gradient = NSGradient(starting: topColor, ending: bottomColor) {
+            gradient.draw(in: canvas, angle: -90)
+        } else {
+            bottomColor.setFill()
+            canvas.fill()
+        }
 
         let dockRect = NSRect(
             x: canvas.minX + side * 0.11,

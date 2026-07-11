@@ -104,7 +104,12 @@ final class PinnedAppsStore: ObservableObject {
         }
         guard let url = resolvedBundleURL(for: pin) else { return }
         refreshStoredPathIfNeeded(for: pin, resolvedURL: url)
-        NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) { _, _ in }
+        NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) { _, error in
+            if let error {
+                Diagnostics.lifecycle.error("pinned launch failed for \(url.path, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                NSSound.beep()
+            }
+        }
     }
 
     // MARK: Persistence
