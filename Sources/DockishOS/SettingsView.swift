@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import DockishOSCore
 
 struct SettingsView: View {
     @ObservedObject var settings: SettingsStore
@@ -164,21 +165,13 @@ private struct ScreenItem: Identifiable, Hashable {
     let name: String
 
     static func snapshot() -> [ScreenItem] {
-        let rawScreens = NSScreen.screens.map { screen in
-            ScreenItem(
+        let items = NSScreen.screens.map { screen in
+            DisplayNameDisambiguator.Item(
                 id: SpacesAPI.displayUUID(for: screen),
                 name: screen.localizedName
             )
         }
-        let counts = rawScreens.reduce(into: [String: Int]()) { result, screen in
-            result[screen.name, default: 0] += 1
-        }
-        var seen: [String: Int] = [:]
-        return rawScreens.map { screen in
-            guard counts[screen.name, default: 0] > 1 else { return screen }
-            seen[screen.name, default: 0] += 1
-            return ScreenItem(id: screen.id, name: "\(screen.name) \(seen[screen.name]!)")
-        }
+        return DisplayNameDisambiguator.disambiguate(items).map { ScreenItem(id: $0.id, name: $0.name) }
     }
 }
 
