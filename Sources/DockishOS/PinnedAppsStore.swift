@@ -109,9 +109,23 @@ final class PinnedAppsStore: ObservableObject {
             let data = UserDefaults.standard.data(forKey: storageKey),
             let decoded = try? JSONDecoder().decode([PinnedApp].self, from: data)
         else { return }
-        let resolved = decoded.compactMap { resolvedPinnedApp(from: $0) }
-        pins = resolved
-        if resolved != decoded { save() }
+        // Render pins immediately from their persisted paths so app launch is
+        // never blocked by synchronous LaunchServices / filesystem lookups.
+        pins = decoded
+        // Resolve/validate bundle URLs off the main thread, then publish any
+        // path corrections (and prune unresolvable pins) back on the main actor.
+        Task.detached(priority: .utility) { [weak self] in
+            let resolved = decoded.compactMap { Self.resolvedPinnedApp(from: $0) }
+            guard resolved != decoded else { return }
+            await MainActor.run {
+                guard let self else { return }
+                // Only apply corrections if the persisted list hasn't changed
+                // out from under us (e.g. a pin/unpin during resolution).
+                guard self.pins == decoded else { return }
+                self.pins = resolved
+                self.save()
+            }
+        }
     }
 
     private func save() {
@@ -121,6 +135,12 @@ final class PinnedAppsStore: ObservableObject {
     }
 
     private func resolvedBundleURL(for pin: PinnedApp) -> URL? {
+        Self.resolvedBundleURL(for: pin)
+    }
+
+    /// Synchronous LaunchServices + filesystem resolution. `static` so it can be
+    /// invoked off the main thread without touching mutable instance state.
+    private static func resolvedBundleURL(for pin: PinnedApp) -> URL? {
         if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: pin.bundleID) {
             return url.standardizedFileURL
         }
@@ -132,7 +152,7 @@ final class PinnedAppsStore: ObservableObject {
         return nil
     }
 
-    private func resolvedPinnedApp(from pin: PinnedApp) -> PinnedApp? {
+    private static func resolvedPinnedApp(from pin: PinnedApp) -> PinnedApp? {
         guard let url = resolvedBundleURL(for: pin) else { return nil }
         if url.path == pin.path { return pin }
         return PinnedApp(bundleID: pin.bundleID, name: pin.name, path: url.path)
