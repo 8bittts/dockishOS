@@ -136,7 +136,7 @@ private struct WindowChip: View {
                 AppIconView(pid: window.pid)
                     .frame(width: size.chipIconSize, height: size.chipIconSize)
                     .overlay(alignment: .topTrailing) {
-                        if let badge { NotificationBadge(text: badge).offset(x: 4, y: -4) }
+                        if let badge { NotificationBadge(text: badge).offset(x: 6, y: -4) }
                     }
                 if showTitle {
                     Text(window.displayTitle)

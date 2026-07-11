@@ -122,6 +122,10 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         }
     }
 
+    // These sinks are intentionally NOT redundant with `menuNeedsUpdate`:
+    // `menuNeedsUpdate` refreshes the item titles when the menu OPENS, while
+    // these keep them correct LIVE if state changes while the menu is already
+    // open (e.g. the collapse hotkey fires with the menu showing). Keep both.
     private func bindMenuState() {
         SettingsStore.shared.$launcherHotkey
             .map(Self.launcherMenuTitle(for:))
