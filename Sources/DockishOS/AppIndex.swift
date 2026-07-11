@@ -1,4 +1,4 @@
-import AppKit
+import Foundation
 import DockishOSCore
 
 struct AppEntry: Identifiable, Hashable {
@@ -61,11 +61,5 @@ enum AppIndex {
             if primary != .orderedSame { return primary == .orderedAscending }
             return $0.path.path.localizedCaseInsensitiveCompare($1.path.path) == .orderedAscending
         }
-    }
-
-    /// Spotlight-ish weighted match. Higher score = better fit.
-    /// nil = no match.
-    static func score(query: String, name: String) -> Int? {
-        AppSearchScorer.score(query: query, name: name)
     }
 }
