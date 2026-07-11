@@ -63,12 +63,32 @@ enum WindowEnumerator {
         }
     }
 
+    /// Short-TTL cache for the fullscreen-space-ID computation. `currentSpaceWindows()`
+    /// runs on a 1s WindowStore timer (and on every app-activation notification, which can
+    /// fire in bursts), and each call otherwise re-hits two CGS SPIs per display. The window
+    /// set stays correct because the TTL (< the 1s poll) guarantees a fullscreen-space change
+    /// is picked up within ~1s. Main-thread only, matching WindowStore's documented invariant;
+    /// no locking needed.
+    private static let fullscreenCacheTTL: TimeInterval = 0.75
+    private static var cachedFullscreenSpaceIDs: [CGSSpaceID] = []
+    private static var fullscreenCacheStamp: DispatchTime?
+
     private static func currentFullscreenSpaceIDs() -> [CGSSpaceID] {
+        let now = DispatchTime.now()
+        if let stamp = fullscreenCacheStamp {
+            let age = Double(now.uptimeNanoseconds - stamp.uptimeNanoseconds) / 1_000_000_000
+            if age < fullscreenCacheTTL {
+                return cachedFullscreenSpaceIDs
+            }
+        }
         let allSpaces = SpacesAPI.allSpaces(includeFullscreen: true)
-        return allSpaces.compactMap { displayUUID, spaces in
+        let ids = allSpaces.compactMap { displayUUID, spaces -> CGSSpaceID? in
             let currentID = SpacesAPI.currentSpaceID(for: displayUUID)
             return spaces.first(where: { $0.id == currentID && $0.isFullscreen })?.id
         }
+        cachedFullscreenSpaceIDs = ids
+        fullscreenCacheStamp = now
+        return ids
     }
 
     private static func windowInfo(
