@@ -18,24 +18,13 @@
 
 Promote exactly one Phase into active work at a time. Phase ordering is intentional.
 
-(No active phase. One manual check is still pending from the last batch — see below.)
-
-- [ ] **Manual verify (needs the running GUI app):** with "group windows by app" on, repeatedly clicking a 3-window app chip advances through all three windows in a fixed order (validates the shipped `activateNext` round-robin fix).
+(No active phase.)
 
 ### Follow-On Candidates
 Not active work. Promote only one item at a time into `#### Phase N` in `### Work TODOs` when implementation starts.
 
-Source: full-codebase audit, adversarially re-verified against source, then implemented in batches. **Candidates A, C, F, the whole of the concurrency retain-cycle/off-main work, and the selection-wrap / app-version / grouped()-cache / DisplayNameDisambiguator / dead-param / injected-store refactors are shipped** — see git history (`9aa1cd4`, `d2c7897`, `61af2da`, `d29516e`, `b88fef6`, plus the injected-store fix). The items below are what remains: deliberately deferred as either optional micro-opts or larger refactors that warrant a focused pass with visual/behavioral verification.
+The full-codebase audit is implemented — see git history. Only items needing a real product/design decision remain; the net-neutral/net-negative micro-opts were considered and dropped (they'd trade correctness or add state for no measurable gain).
 
-Nearly the whole audit is now implemented (commits through `7d82c29`). Four more items landed via isolated-worktree agents and were merged: `BarController` animate consolidation (`a41eb1f`), `PinnedAppsStore.load()` off-main resolution (`4a91f28`), fullscreen-space-ID short-TTL cache (`41e59e5`), and launcher-scoring precompute (`7d82c29`). The `ChipChrome` extraction and `BehaviorTab` DI also shipped (`156fb93`).
-
-#### Remaining — needs product judgment or the running app (not mechanical)
-- [ ] **`NotificationBadge` offset `x:4` vs `x:6`** between `WindowChip` and `WindowGroupChip`. A visible position change — pick the intended value and align both.
-- [ ] **`MenuBarController` double menu-state set.** The Combine sinks keep menu-item titles live *while the menu is open* during a hotkey-driven state change; `menuNeedsUpdate` only fires on open. Removing the sinks is a real behavior change, not a dedup — decide whether live-while-open updates matter.
-- [ ] **Manual verify (needs GUI):** grouped-by-app chip cycles through all of an app's windows (validates the shipped `activateNext` fix).
-
-#### Remaining — genuinely optional / net-neutral (documented; act only with a real driver)
-- [ ] **`SwitcherTile` icon per render** — codebase documents the `NSRunningApplication` PID lookup as constant-time (`BarSupport.swift:22`); caching adds state for no measurable win.
-- [ ] **`runningApplications` dict rebuilt every 1s** (`WindowEnumerator.swift:27-32`). Not taken: an event-driven `RunningAppsStore` map can briefly miss a just-launched app's bundleID — correctness caveat outweighs the tiny allocation saving.
-- [ ] **Badge reader micro-opt** (`BadgeStore.read()`): `Bundle` is internally cached and the AX IPC to the Dock dominates — marginal.
-- [ ] **Constant/enum consistency.** `collapsedTabWidth = 56` (`BarController.swift:17`) vs `CollapsedTabMetrics.clusterWidth` — not merged, to avoid falsely coupling two independently-defined constants. `CollapsedTabPosition`/`CollapsedTabPlacement` duplicate only the two-case list (persist/migration mapping is already single-source in Core, touches persisted values). `LauncherController.resignObserver` never removed (singleton-safe).
+- [ ] **Manual verify (needs the running GUI app):** with "group windows by app" on, repeatedly clicking a 3-window app chip advances through all three windows in a fixed order (validates the shipped `activateNext` round-robin fix).
+- [ ] **`NotificationBadge` offset `x:4` vs `x:6`** between `WindowChip` and `WindowGroupChip` — pick the intended value and align both (needs a design call).
+- [ ] **`MenuBarController` menu-state: keep the live-while-open Combine sinks or not?** They update menu-item titles live if collapse is toggled via hotkey while the menu is open; `menuNeedsUpdate` alone would only refresh on open. Decide whether live-while-open matters before touching it.
