@@ -164,8 +164,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     }
 
     private static var menuTitle: String {
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
-        return "DockishOS - v\(version)"
+        "DockishOS - v\(AppVersion.short)"
     }
 
     private static func barMenuIcon(collapsed: Bool) -> NSImage? {

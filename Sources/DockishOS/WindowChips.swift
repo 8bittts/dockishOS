@@ -26,33 +26,38 @@ struct WindowsRow: View {
         return groups.filter { !pinnedStore.isPinned(bundleID: $0.bundleID) }
     }
 
-    private var layoutAnimationKey: [String] {
+    private func layoutAnimationKey(groups: [WindowGroup], windows: [WindowInfo]) -> [String] {
         if settings.groupWindowsByApp {
-            return visibleGroups.map { group in
+            return groups.map { group in
                 let isFrontmost = group.windows.contains(where: { $0.pid == windowStore.frontmostPID })
                 return "\(group.id):\(isFrontmost ? 1 : 0)"
             }
         }
-        return visibleWindows.map { window in
+        return windows.map { window in
             "\(window.id):\(window.pid == windowStore.frontmostPID ? 1 : 0)"
         }
     }
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        // Compute the derived lists once per body pass — `visibleGroups` runs
+        // the O(n) grouping and was previously recomputed for the ForEach, the
+        // isEmpty check, and the animation key.
+        let groups = settings.groupWindowsByApp ? visibleGroups : []
+        let windows = settings.groupWindowsByApp ? [] : visibleWindows
+        return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
                 if settings.groupWindowsByApp {
-                    ForEach(visibleGroups) { group in groupChip(for: group) }
-                    if visibleGroups.isEmpty { emptyState }
+                    ForEach(groups) { group in groupChip(for: group) }
+                    if groups.isEmpty { emptyState }
                 } else {
-                    ForEach(visibleWindows, id: \.id) { window in
+                    ForEach(windows, id: \.id) { window in
                         chip(for: window)
                     }
-                    if visibleWindows.isEmpty { emptyState }
+                    if windows.isEmpty { emptyState }
                 }
             }
             .padding(.vertical, 10)
-            .animation(reorderAnimation, value: layoutAnimationKey)
+            .animation(reorderAnimation, value: layoutAnimationKey(groups: groups, windows: windows))
         }
     }
 

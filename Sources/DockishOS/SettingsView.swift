@@ -410,12 +410,8 @@ private struct PinnedAppRow: View {
 }
 
 private struct AboutTab: View {
-    private var version: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
-    }
-    private var build: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
-    }
+    private var version: String { AppVersion.short }
+    private var build: String { AppVersion.build }
 
     var body: some View {
         VStack(spacing: 14) {

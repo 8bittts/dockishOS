@@ -1,5 +1,6 @@
 import AppKit
 import Carbon.HIToolbox
+import DockishOSCore
 import SwiftUI
 
 /// Modal-ish app/window switcher panel triggered by a global hotkey
@@ -66,7 +67,7 @@ final class SwitcherController {
     private func advanceSelection(by delta: Int) {
         let count = WindowStore.shared.windows.count
         guard count > 0 else { return }
-        selectedIndex = (selectedIndex + delta + count) % count
+        selectedIndex = SelectionWrap.advance(selectedIndex, by: delta, count: count)
         rebuildView()
     }
 

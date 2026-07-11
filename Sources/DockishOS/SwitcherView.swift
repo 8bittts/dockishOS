@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import DockishOSCore
 
 struct SwitcherView: View {
     @ObservedObject var store: WindowStore
@@ -65,8 +66,7 @@ struct SwitcherView: View {
 
     private func advance(by delta: Int) {
         guard !store.windows.isEmpty else { return }
-        let count = store.windows.count
-        selectedIndex = (selectedIndex + delta + count) % count
+        selectedIndex = SelectionWrap.advance(selectedIndex, by: delta, count: store.windows.count)
     }
 
     private func activate() {

@@ -263,7 +263,6 @@ final class BarController {
                 in: screenFrame,
                 collapsedTabWidth: collapsedTabWidth,
                 collapsedTabInset: collapsedTabInset,
-                exposedWidth: Self.collapsedTabVisibleWidth,
                 position: settings.collapsedTabPosition
             )
             let y = collapsedOriginY(
@@ -294,7 +293,6 @@ final class BarController {
         in screenFrame: NSRect,
         collapsedTabWidth: CGFloat,
         collapsedTabInset: CGFloat,
-        exposedWidth: CGFloat,
         position: CollapsedTabPosition
     ) -> CGFloat {
         if position.isRightEdge {
