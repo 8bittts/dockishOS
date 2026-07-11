@@ -6,7 +6,6 @@ struct AppEntry: Identifiable, Hashable {
     let name: String
     let bundleID: String?
     let path: URL
-    let icon: NSImage
 }
 
 enum AppIndex {
@@ -46,8 +45,7 @@ enum AppIndex {
                     id: stableID,
                     name: name,
                     bundleID: bundle?.bundleIdentifier,
-                    path: url,
-                    icon: NSWorkspace.shared.icon(forFile: url.path)
+                    path: url
                 ))
             }
         }

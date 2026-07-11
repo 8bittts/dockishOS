@@ -111,7 +111,10 @@ private struct AppRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(nsImage: app.icon)
+            // Load the icon on the main thread here rather than materializing
+            // NSImages off-main during the background app scan (LaunchServices
+            // caches, so this is cheap).
+            Image(nsImage: NSWorkspace.shared.icon(forFile: app.path.path))
                 .resizable()
                 .frame(width: 28, height: 28)
             VStack(alignment: .leading, spacing: 1) {
