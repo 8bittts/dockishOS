@@ -105,7 +105,7 @@ struct BarView: View {
             _ = provider.loadObject(ofClass: URL.self) { url, _ in
                 guard let url else { return }
                 DispatchQueue.main.async {
-                    PinnedAppsStore.shared.pinAppBundle(at: url)
+                    pinnedStore.pinAppBundle(at: url)
                 }
             }
         }
