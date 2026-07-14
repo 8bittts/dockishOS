@@ -141,20 +141,6 @@ Keep user-facing changes under `CHANGELOG.md` → `## [Unreleased]`. The release
 
 ---
 
-## Code graph
-
-Use graphify for broad codebase orientation before cross-module refactors:
-
-```bash
-graphify update .
-graphify query "How does the bar rebuild when settings change?"
-graphify explain "BarController"
-```
-
-`graphify update .` rebuilds `graphify-out/graph.json`, `graphify-out/graph.html`, and `graphify-out/GRAPH_REPORT.md` without API cost. Treat those files as local generated artifacts; they are ignored by git.
-
----
-
 ## Common failure modes
 
 | Symptom | Likely cause |
