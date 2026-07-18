@@ -123,6 +123,13 @@ final class Updater: NSObject {
 }
 
 extension Updater: SPUStandardUserDriverDelegate {
+    /// DockishOS handles surfacing scheduled update reminders itself: when
+    /// Sparkle decides to show an update, `standardUserDriverWillHandleShowingUpdate`
+    /// promotes this accessory app to the foreground and floats the update
+    /// window so it can't be missed. Declaring support silences Sparkle's
+    /// "background app does not implement gentle reminders" warning.
+    var supportsGentleScheduledUpdateReminders: Bool { true }
+
     func standardUserDriverWillShowModalAlert() {
         presentSparkleUI()
     }
