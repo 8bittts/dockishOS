@@ -36,10 +36,10 @@ open https://github.com/8bittts/dockishOS/releases/latest
 Or install with [Homebrew](https://brew.sh) — the repo doubles as a Cask tap:
 
 ```bash
-# One-shot install of the latest release:
+# One-shot install of the latest release (no tap):
 brew install --cask https://raw.githubusercontent.com/8bittts/dockishOS/main/Casks/dockishos.rb
 
-# Or tap for ongoing `brew upgrade`:
+# Or tap the repo for ongoing `brew upgrade` updates:
 brew tap 8bittts/dockishos https://github.com/8bittts/dockishOS
 brew install --cask 8bittts/dockishos/dockishos
 ```

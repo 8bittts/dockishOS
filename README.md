@@ -12,11 +12,10 @@ DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar 
 
 ## Why DockishOS
 
-**Current-Space-only:** see and switch the windows that matter right now.
-
-**Scroll-to-switch:** scroll over the bar to move between Spaces without opening Mission Control.
-
-**Finder drag-to-pin:** drop `.app` bundles or right-click windows and launcher results to keep important apps close.
+- **Current-Space only.** See and switch the windows that matter right now, not every app on every desktop.
+- **Scroll-to-switch.** Scroll over the bar to move between Spaces without opening Mission Control.
+- **Drag to pin.** Drop `.app` bundles or right-click windows and launcher results to keep important apps close.
+- **Stays out of the way.** Menu-bar accessory app. No Dock icon. No background polling fanfare.
 
 <p align="center">
   <img src="public/dockishos-bar-preview.png" alt="DockishOS showing a floating current-Space app bar with app chips" width="100%">
@@ -102,10 +101,8 @@ Useful commands:
 
 ```bash
 swift build
-swift test
 ./scripts/build_and_run.sh --verify
 ./scripts/build_and_run.sh --logs
-./scripts/build-dmg.sh --build-only
 ```
 
 See [`BUILD.md`](BUILD.md) for the full signing, notarization, release, and Sparkle re-vendor workflow.

@@ -122,7 +122,7 @@ The vendored Sparkle framework lives at `tools/sparkle/Sparkle.framework`. It is
 This guards against the 0.014/0.015 regression where `Updater.app` silently disappeared from the framework and shipped a broken in-app updater. Follow this exact procedure when bumping Sparkle:
 
 1. Pick the target release from <https://github.com/sparkle-project/Sparkle/releases> and download the `Sparkle-<version>.tar.xz` archive. Don't use Swift Package Manager artifacts — they're missing the helper apps.
-2. Extract the archive to a scratch directory and replace `tools/sparkle/Sparkle.framework` and `tools/sparkle/bin/` with the new versions. Copy the **entire** `Sparkle.framework/Versions/B/` tree, including `Updater.app`, `Autoupdate`, and both `XPCServices/*.xpc` bundles.
+2. Extract the archive to a scratch directory and replace `tools/sparkle/Sparkle.framework` and `tools/sparkle/bin/` with the new versions. Copy the **entire** `Sparkle.framework/Versions/B/` tree, including `Updater.app`, `Autoupdate`, and both `XPCServices/*.xpc` bundles. Then restore the eight top-level framework symlinks (`Autoupdate`, `Headers`, `Modules`, `PrivateHeaders`, `Resources`, `Sparkle`, `Updater.app`, `XPCServices`), each linking to `Versions/Current/<name>` — copying only `Versions/B/` drops them. `Updater.app` is the symlink that bit 0.014-0.020: `NSBundle.URLForAuxiliaryExecutable()` walks the framework root, so without it Sparkle aborts with "Cannot retrieve path for auxiliary tool." It is listed in `tools/sparkle/VERSION` `required_paths`, so the step-4 `verify_sparkle_vendor` preflight fails the build when it is missing.
 3. Refresh `tools/sparkle/VERSION`:
 
    ```bash
@@ -138,6 +138,8 @@ This guards against the 0.014/0.015 regression where `Updater.app` silently disa
 ## Release notes
 
 Keep user-facing changes under `CHANGELOG.md` → `## [Unreleased]`. The release flow uses that section for Sparkle release notes and GitHub release notes. For one-off appcast generation, override with `SPARKLE_NOTES` when needed.
+
+Before running `scripts/release-dockishOS.sh`, move the previous release's entries out of `## [Unreleased]` into a new `## [<prev-version>]` heading, then stage the new release's notes under `## [Unreleased]`. The release script reads the `## [Unreleased]` block verbatim (via `changelog_unreleased_markdown`) and never archives prior entries for you, so anything left under that heading ships as the new version's notes.
 
 ---
 
