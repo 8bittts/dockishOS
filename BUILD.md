@@ -161,3 +161,4 @@ Before running `scripts/release-dockishOS.sh`, move the previous release's entri
 - **Never commit the contents of `build/`** — it's gitignored. Artifacts ship to GitHub Releases via `release-dockishOS.sh`, not into the git tree.
 - **Don't override `DOCKISHOS_VERSION` casually** — the version in `Resources/Info.plist` is the source of truth and `release-dockishOS.sh` bumps it for you.
 - The release script updates the README's `<!-- version-badge -->` and `<!-- download-link -->` markers — never hand-edit those.
+- **Never hand-edit `appcast.xml`** — it carries an embedded Sparkle EdDSA feed signature over its exact byte length. Any edit (even removing one `<li>`) invalidates it, so every user's Check-for-Updates fails with "The update feed is improperly signed and could not be validated" (Sparkle logs a `length` mismatch). Regenerate + re-sign via `scripts/generate-appcast.sh` or the release flow instead.
