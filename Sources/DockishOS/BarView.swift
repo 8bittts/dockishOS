@@ -223,6 +223,7 @@ private struct CollapsedTabCluster: View {
     let action: () -> Void
     @State private var hover = false
     @State private var sheenPhase: CGFloat = -1.2
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack(alignment: metrics.containerAlignment) {
@@ -245,7 +246,8 @@ private struct CollapsedTabCluster: View {
         )
         .contentShape(Rectangle())
         .onHover { hover = $0 }
-        .task {
+        .task(id: reduceMotion) {
+            guard !reduceMotion else { return }
             sheenPhase = -1.2
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             while !Task.isCancelled {

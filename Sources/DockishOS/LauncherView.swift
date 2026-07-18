@@ -133,7 +133,10 @@ private struct AppRow: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 6)
         .background(
-            isSelected ? Color.accentColor.opacity(0.25) : Color.clear
+            isSelected ? ChipStyle.accent.opacity(0.25) : Color.clear
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(app.name)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
     }
 }

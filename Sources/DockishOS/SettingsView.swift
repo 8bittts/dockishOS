@@ -48,9 +48,7 @@ private struct AppearanceTab: View {
             } header: {
                 Text("Bar")
             } footer: {
-                Text("Size and position changes apply immediately to every connected display.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                FooterText("Size and position changes apply immediately to every connected display.")
             }
 
             Section {
@@ -58,9 +56,7 @@ private struct AppearanceTab: View {
             } header: {
                 Text("Notifications")
             } footer: {
-                Text("Reads badge counts from the macOS Dock's accessibility tree (every 2.5 s). Uses an undocumented Dock attribute that may break in future macOS releases — disable here if it misbehaves.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                FooterText("Reads badge counts from the macOS Dock's accessibility tree (every 2.5 s). Uses an undocumented Dock attribute that may break in future macOS releases — disable here if it misbehaves.")
             }
         }
         .formStyle(.grouped)
@@ -278,7 +274,7 @@ private struct FooterText: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 11))
+            .font(.subheadline)
             .foregroundStyle(.secondary)
     }
 }
@@ -316,19 +312,11 @@ private struct PinnedTab: View {
 
 private struct EmptyPinnedState: View {
     var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "pin.slash")
-                .font(.system(size: 36, weight: .light))
-                .foregroundStyle(.tertiary)
-            Text("No pinned apps yet")
-                .font(.headline)
+        ContentUnavailableView {
+            Label("No pinned apps yet", systemImage: "pin.slash")
+        } description: {
             Text("Right-click any window chip on the bar and choose **Pin App to Bar**, or right-click a result in the launcher to pin it.")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -359,7 +347,7 @@ private struct PinnedList: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
         )
     }
 }
@@ -378,9 +366,9 @@ private struct PinnedAppRow: View {
                 .resizable()
                 .frame(width: 28, height: 28)
             VStack(alignment: .leading, spacing: 1) {
-                Text(app.name).font(.system(size: 13, weight: .medium))
+                Text(app.name).font(.body.weight(.medium))
                 Text(app.bundleID)
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(.system(.caption2, design: .monospaced))
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -411,9 +399,9 @@ private struct AboutTab: View {
             Image(nsImage: DockishBrandAssets.applicationIcon(size: NSSize(width: 112, height: 112)))
                 .interpolation(.high)
             Text("DockishOS")
-                .font(.system(size: 22, weight: .semibold))
+                .font(.title.weight(.semibold))
             Text("v\(version) (build \(build))")
-                .font(.system(size: 12, design: .monospaced))
+                .font(.system(.callout, design: .monospaced))
                 .foregroundStyle(.secondary)
             Text("A Dock alternative for power users of macOS Spaces.")
                 .multilineTextAlignment(.center)
@@ -424,7 +412,7 @@ private struct AboutTab: View {
                 Link("Releases", destination: URL(string: "https://github.com/8bittts/dockishOS/releases")!)
                 Link("MIT License", destination: URL(string: "https://github.com/8bittts/dockishOS/blob/main/LICENSE")!)
             }
-            .font(.system(size: 12))
+            .font(.callout)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(20)

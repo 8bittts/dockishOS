@@ -212,7 +212,7 @@ private struct WindowGroupChip: View {
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 4)
                                 .padding(.vertical, 1)
-                                .background(Capsule().fill(Color.accentColor))
+                                .background(Capsule().fill(ChipStyle.accent))
                                 .offset(x: 6, y: -4)
                         }
                     }
