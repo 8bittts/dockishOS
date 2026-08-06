@@ -8,7 +8,7 @@
 4. Keep clear separation of concerns with phase-based checklists and zero task duplication.
 5. Validate, review, and test each phase before moving to the next phase.
 6. Stage and commit only files touched for the active phase. Ignore unrelated edits from other agents.
-7. Review and update local `CLAUDE.md` / `AGENTS.md` only when those files exist or when a finding will materially help future agents; these files are gitignored local notes.
+7. Review and update `CLAUDE.md` / `AGENTS.md` when a finding will materially help future agents; both are tracked (`CLAUDE.md` symlinks to `AGENTS.md`).
 8. Update `README.md` / `BUILD.md` when user-facing behavior or developer workflow changes. Re-run signing/notarization only for release, packaging, entitlement, or distribution changes.
 
 ---

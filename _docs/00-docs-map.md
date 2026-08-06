@@ -20,7 +20,3 @@ This repo uses `docs/` for the public landing mirror and root markdown for engin
 ## Release engineering
 
 Authoritative path: **`BUILD.md`**, not `docs/index.md`.
-
-## Known doc drift (audit 2026-08-06)
-
-- `AGENTS.md` and `CLAUDE.md` are gitignored local agent notes (see `todos.md` rule 7) — `_docs/00-docs-map.md` is the tracked doc index.

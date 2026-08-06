@@ -48,9 +48,7 @@ DerivedData/
 *.swp
 *.swo
 
-# Agent docs / local tool state
-CLAUDE.md
-AGENTS.md
+# Agent local runtime (AGENTS.md / CLAUDE.md are tracked; CLAUDE.md → AGENTS.md)
 .claude/
 .codex/
 
