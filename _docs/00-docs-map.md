@@ -23,4 +23,4 @@ Authoritative path: **`BUILD.md`**, not `docs/index.md`.
 
 ## Known doc drift (audit 2026-08-06)
 
-- `todos.md` rule 7 may claim `AGENTS.md`/`CLAUDE.md` are gitignored — both are tracked with symlink.
+- `AGENTS.md` and `CLAUDE.md` are gitignored local agent notes (see `todos.md` rule 7) — `_docs/00-docs-map.md` is the tracked doc index.
