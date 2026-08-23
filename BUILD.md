@@ -153,6 +153,7 @@ Before running `scripts/release-dockishOS.sh`, move the previous release's entri
 | `Notarization rejected` | Inspect `build/DockishOS-<version>.notary-submission.json`; the script also fetches the notary log when a submission ID is available. |
 | Signing retry loops | Apple's timestamp server is slow. The script auto-retries 5×. |
 | `xcrun stapler staple` fails | Notarization succeeded but propagation is slow. The script auto-retries 10×. |
+| In-app update aborts before the installer launches | Probe `Bundle(path: ".../Sparkle.framework").url(forAuxiliaryExecutable: "Updater.app")` in a one-shot Swift script — nil means the framework-root `Updater.app` symlink is missing or the bundle root is wrong. |
 
 ---
 
