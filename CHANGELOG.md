@@ -5,6 +5,15 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+### Changed
+- Collapse and expand ignore mouse events while the bar is sliding, so a click cannot land on a moving panel.
+- Vertical scroll over the collapsed edge tab no longer switches Spaces. Scroll-to-switch stays on the expanded bar.
+- The collapsed edge tab is one hit target, including the hover headroom above the icon, not only the inner icon button.
+- Dragging a Finder `.app` onto the expanded bar shows an accent drop highlight.
+
+### Tests
+- Extracted bar panel placement into `DockishOSCore.BarGeometry` with tests for expanded, collapsed, and hidden frames.
+
 ## [0.023]
 
 ### Fixed

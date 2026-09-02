@@ -64,7 +64,7 @@ xattr -dr com.apple.quarantine /Applications/DockishOS.app
 - Optional grouping of windows by app.
 - Click a chip to activate that app and raise the selected window.
 - Right-click chips to close windows or pin/unpin apps.
-- Vertical scroll over the bar to switch Spaces.
+- Vertical scroll over the expanded bar to switch Spaces.
 - Collapse the bar into a bottom-left or bottom-right edge tab.
 - Launcher hotkey, default `Option-Space`, for fuzzy-searching installed apps.
 - Window switcher hotkey, default `Option-Tab`, for cycling windows in the current Space with Tab, Shift-Tab, arrow keys, Return, and Escape.

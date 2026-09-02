@@ -1,4 +1,5 @@
 import AppKit
+import DockishOSCore
 import QuartzCore
 import SwiftUI
 
@@ -13,24 +14,11 @@ final class BarController {
     private var isAnimatingCollapse = false
     private var queuedCollapseTarget: Bool?
     private let scrollCooldown: TimeInterval = 0.25
-    private let expandedHorizontalInset: CGFloat = 0
-    private let collapsedTabWidth: CGFloat = 56
-    private let collapsedTabInset: CGFloat = 6
-    private static let collapsedTabHoverHeadroom: CGFloat = 6
-    private static let collapsedTabVisibleHeight: CGFloat = 40
-    private static let collapsedTabVisibleWidth: CGFloat = 44
 
     init(screen: NSScreen) {
         self.screen = screen
         self.presentation = BarPresentationState(isCollapsed: SettingsStore.shared.barCollapsed)
-        let frame = Self.visibleFrame(
-            for: screen,
-            settings: SettingsStore.shared,
-            collapsed: presentation.isCollapsed,
-            collapsedTabWidth: collapsedTabWidth,
-            expandedHorizontalInset: expandedHorizontalInset,
-            collapsedTabInset: collapsedTabInset
-        )
+        let frame = BarGeometry.visibleFrame(Self.geometryInput(screen: screen, collapsed: presentation.isCollapsed))
         self.panel = BarPanel(contentRect: frame)
         self.host = NSHostingView(rootView: BarView(
             windowStore: WindowStore.shared,
@@ -54,6 +42,7 @@ final class BarController {
     }
 
     func show() {
+        panel.ignoresMouseEvents = false
         panel.orderFrontRegardless()
         installScrollMonitor()
     }
@@ -67,6 +56,7 @@ final class BarController {
             NotificationCenter.default.removeObserver(observer)
             collapseObserver = nil
         }
+        panel.ignoresMouseEvents = false
         panel.orderOut(nil)
         panel.close()
     }
@@ -80,6 +70,9 @@ final class BarController {
         scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
             guard let self, event.window === self.panel else { return event }
             if abs(event.scrollingDeltaY) > abs(event.scrollingDeltaX) {
+                if self.presentation.isCollapsed || self.isAnimatingCollapse {
+                    return nil
+                }
                 self.handleVerticalScroll(deltaY: event.scrollingDeltaY)
                 return nil
             }
@@ -121,6 +114,7 @@ final class BarController {
     private func animate(toCollapsed: Bool) {
         isAnimatingCollapse = true
         queuedCollapseTarget = nil
+        panel.ignoresMouseEvents = true
         let startCollapsed = !toCollapsed
         let initialVisible = visibleFrame(collapsed: startCollapsed)
         let initialHidden = hiddenFrame(collapsed: startCollapsed)
@@ -140,6 +134,8 @@ final class BarController {
             guard let self else { return }
             self.presentation.isCollapsed = toCollapsed
             self.panel.setFrame(finalHidden, display: true)
+            self.host.layoutSubtreeIfNeeded()
+            self.panel.layoutIfNeeded()
             self.panel.orderFrontRegardless()
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = revealDuration
@@ -152,24 +148,26 @@ final class BarController {
     }
 
     private func visibleFrame(collapsed: Bool) -> NSRect {
-        Self.visibleFrame(
-            for: screen,
-            settings: SettingsStore.shared,
-            collapsed: collapsed,
-            collapsedTabWidth: collapsedTabWidth,
-            expandedHorizontalInset: expandedHorizontalInset,
-            collapsedTabInset: collapsedTabInset
-        )
+        BarGeometry.visibleFrame(geometryInput(collapsed: collapsed))
     }
 
     private func hiddenFrame(collapsed: Bool) -> NSRect {
-        Self.hiddenFrame(
-            for: screen,
-            settings: SettingsStore.shared,
+        BarGeometry.hiddenFrame(geometryInput(collapsed: collapsed))
+    }
+
+    private func geometryInput(collapsed: Bool) -> BarGeometryInput {
+        Self.geometryInput(screen: screen, collapsed: collapsed)
+    }
+
+    private static func geometryInput(screen: NSScreen, collapsed: Bool) -> BarGeometryInput {
+        let settings = SettingsStore.shared
+        return BarGeometryInput(
+            screenFrame: screen.frame,
+            visibleFrame: screen.visibleFrame,
             collapsed: collapsed,
-            collapsedTabWidth: collapsedTabWidth,
-            expandedHorizontalInset: expandedHorizontalInset,
-            collapsedTabInset: collapsedTabInset
+            barOnTop: settings.barPosition == .top,
+            tabOnRight: settings.collapsedTabPosition.isRightEdge,
+            barHeight: settings.barSize.height
         )
     }
 
@@ -183,94 +181,8 @@ final class BarController {
         }
         if currentTarget != presentation.isCollapsed {
             handleCollapsePreferenceChange()
+            return
         }
-    }
-
-    private static func visibleFrame(
-        for screen: NSScreen,
-        settings: SettingsStore,
-        collapsed: Bool,
-        collapsedTabWidth: CGFloat,
-        expandedHorizontalInset: CGFloat,
-        collapsedTabInset: CGFloat
-    ) -> NSRect {
-        let screenFrame = screen.frame
-        let visible = screen.visibleFrame
-        if collapsed {
-            let tabHeight = collapsedTabHeight(for: settings)
-            let x = collapsedOriginX(
-                in: screenFrame,
-                collapsedTabWidth: collapsedTabWidth,
-                collapsedTabInset: collapsedTabInset,
-                position: settings.collapsedTabPosition
-            )
-            let y = collapsedOriginY(
-                visibleFrame: visible,
-                tabHeight: tabHeight,
-                exposedHeight: max(Self.collapsedTabVisibleHeight, settings.barSize.height * 0.78) + Self.collapsedTabHoverHeadroom
-            )
-            return NSRect(x: x, y: y, width: collapsedTabWidth, height: tabHeight)
-        }
-
-        let height = settings.barSize.height
-        let y: CGFloat = settings.barPosition == .top
-            ? visible.maxY - height
-            : visible.minY
-        return NSRect(
-            x: screenFrame.minX + expandedHorizontalInset,
-            y: y,
-            width: screenFrame.width - expandedHorizontalInset * 2,
-            height: height
-        )
-    }
-
-    private static func collapsedTabHeight(for settings: SettingsStore) -> CGFloat {
-        return max(70, settings.barSize.height + 10) + Self.collapsedTabHoverHeadroom
-    }
-
-    private static func collapsedOriginX(
-        in screenFrame: NSRect,
-        collapsedTabWidth: CGFloat,
-        collapsedTabInset: CGFloat,
-        position: CollapsedTabPosition
-    ) -> CGFloat {
-        if position.isRightEdge {
-            return screenFrame.maxX - collapsedTabWidth - collapsedTabInset
-        }
-        return screenFrame.minX + collapsedTabInset
-    }
-
-    private static func collapsedOriginY(
-        visibleFrame: NSRect,
-        tabHeight: CGFloat,
-        exposedHeight: CGFloat
-    ) -> CGFloat {
-        return visibleFrame.minY - (tabHeight - exposedHeight)
-    }
-
-    private static func hiddenFrame(
-        for screen: NSScreen,
-        settings: SettingsStore,
-        collapsed: Bool,
-        collapsedTabWidth: CGFloat,
-        expandedHorizontalInset: CGFloat,
-        collapsedTabInset: CGFloat
-    ) -> NSRect {
-        var frame = visibleFrame(
-            for: screen,
-            settings: settings,
-            collapsed: collapsed,
-            collapsedTabWidth: collapsedTabWidth,
-            expandedHorizontalInset: expandedHorizontalInset,
-            collapsedTabInset: collapsedTabInset
-        )
-        if collapsed {
-            frame.origin.y = screen.frame.minY - frame.height
-        } else if settings.barPosition == .top {
-            frame.origin.y = screen.frame.maxY
-        } else {
-            frame.origin.y = screen.frame.minY - frame.height
-        }
-        return frame
+        panel.ignoresMouseEvents = false
     }
 }

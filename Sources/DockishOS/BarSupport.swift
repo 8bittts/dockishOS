@@ -57,14 +57,9 @@ struct VisualEffectView: NSViewRepresentable {
 /// Constants reused across chip components so the look stays consistent.
 enum ChipStyle {
     static let cornerRadius: CGFloat = 8
-    static let hoverLift: CGFloat = 0
-    static let hoverScale: CGFloat = 1.0
     static let borderOpacity: Double = 0.05
     static let hoverBorderOpacity: Double = 0.12
     static let frontmostBorderOpacity: Double = 0.10
-    static let hoverShadowOpacity: Double = 0
-    static let hoverShadowRadius: CGFloat = 0
-    static let hoverShadowYOffset: CGFloat = 0
     static let topHighlightOpacity: Double = 0.08
     static let hoverTopHighlightOpacity: Double = 0.14
     static let hoverAnimation = Animation.easeOut(duration: 0.10)

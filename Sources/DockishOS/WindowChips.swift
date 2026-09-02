@@ -159,8 +159,6 @@ private struct WindowChip: View {
                         .padding(.vertical, 7)
                 }
             }
-            .scaleEffect(hover ? ChipStyle.hoverScale : 1)
-            .offset(y: hover ? -ChipStyle.hoverLift : 0)
         }
         .buttonStyle(.plain)
         .onHover { hover = $0 }
@@ -237,8 +235,6 @@ private struct WindowGroupChip: View {
                         .padding(.vertical, 7)
                 }
             }
-            .scaleEffect(hover ? ChipStyle.hoverScale : 1)
-            .offset(y: hover ? -ChipStyle.hoverLift : 0)
         }
         .buttonStyle(.plain)
         .onHover { hover = $0 }
@@ -269,8 +265,8 @@ private struct WindowGroupChip: View {
     }
 }
 
-/// Shared chip background (fill + border + top highlight + hover shadow) used
-/// by both `WindowChip` and `WindowGroupChip` so the look stays in one place.
+/// Shared chip background (fill + border + top highlight) used by both
+/// `WindowChip` and `WindowGroupChip` so the look stays in one place.
 private struct ChipChrome: View {
     let isFrontmost: Bool
     let hover: Bool
@@ -313,10 +309,5 @@ private struct ChipChrome: View {
                     .frame(height: size.chipHeight * 0.42)
                     .clipShape(RoundedRectangle(cornerRadius: ChipStyle.cornerRadius))
             }
-            .shadow(
-                color: .black.opacity(hover ? ChipStyle.hoverShadowOpacity : 0),
-                radius: hover ? ChipStyle.hoverShadowRadius : 0,
-                y: hover ? ChipStyle.hoverShadowYOffset : 0
-            )
     }
 }
