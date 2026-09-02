@@ -202,6 +202,55 @@ fi
 [ -f "$SHA_FILE" ]     || fail "Missing checksum at ${SHA_FILE}"
 [ -f "$APPCAST_FILE" ] || fail "Missing appcast at ${APPCAST_FILE} — Sparkle pipeline broken"
 
+verify_release_artifacts() {
+    local version="$1" build="$2"
+    local dmg_name dmg_bytes expected actual
+    dmg_name="$(basename "$DMG_FILE")"
+    dmg_bytes="$(stat -f%z "$DMG_FILE")"
+
+    # A notary profile that is absent only warns inside build-dmg.sh, so an
+    # un-notarized DMG would otherwise ship. Validating the stapled ticket is
+    # what makes that failure loud.
+    xcrun stapler validate "$DMG_FILE" >/dev/null 2>&1 \
+        || fail "DMG has no valid notarization ticket: ${DMG_FILE}"
+    step "Verified stapled notarization ticket"
+
+    spctl -a -vv -t open --context context:primary-signature "$DMG_FILE" >/dev/null 2>&1 \
+        || fail "DMG rejected by Gatekeeper: ${DMG_FILE}"
+    step "Verified Gatekeeper acceptance"
+
+    expected="$(awk '{print $1}' "$SHA_FILE")"
+    actual="$(shasum -a 256 "$DMG_FILE" | awk '{print $1}')"
+    [ -n "$expected" ] || fail "Empty checksum in ${SHA_FILE}"
+    [ "$expected" = "$actual" ] || fail "DMG checksum mismatch for ${dmg_name}"
+    step "Verified DMG checksum"
+
+    grep -Fq -- "<sparkle:shortVersionString>${version}</sparkle:shortVersionString>" "$APPCAST_FILE" \
+        || fail "Appcast does not advertise version ${version}"
+    grep -Fq -- "<sparkle:version>${build}</sparkle:version>" "$APPCAST_FILE" \
+        || fail "Appcast does not advertise build ${build}"
+    grep -Fq -- "$dmg_name" "$APPCAST_FILE" \
+        || fail "Appcast does not reference ${dmg_name}"
+    grep -Fq -- "length=\"${dmg_bytes}\"" "$APPCAST_FILE" \
+        || fail "Appcast enclosure length does not match ${dmg_bytes} bytes"
+    step "Verified appcast metadata"
+
+    # The embedded EdDSA signature covers the exact byte length, so verify it
+    # rather than only grepping for the marker comment.
+    [ -x tools/sparkle/bin/sign_update ] \
+        || fail "Missing tools/sparkle/bin/sign_update; cannot verify feed signature"
+    tools/sparkle/bin/sign_update --verify "$APPCAST_FILE" >/dev/null 2>&1 \
+        || fail "Sparkle appcast signature verification failed"
+    step "Verified signed appcast"
+}
+
+info "Running automated tests"
+swift test
+step "Tests passed"
+
+info "Verifying release artifacts"
+verify_release_artifacts "$RELEASE_VERSION" "$RELEASE_BUILD"
+
 if [ "$RESUME_RELEASE" != true ]; then
     cp "$APPCAST_FILE" "$ROOT_APPCAST_FILE"
     step "Updated ${ROOT_APPCAST_FILE} from generated appcast"
