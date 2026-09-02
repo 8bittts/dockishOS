@@ -13,7 +13,7 @@ DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar 
 ## Why DockishOS
 
 - **Current-Space only.** See and switch the windows that matter right now, not every app on every desktop.
-- **Scroll-to-switch.** Scroll over the bar to move between Spaces without opening Mission Control.
+- **Scroll-to-switch.** Scroll over the expanded bar to move between Spaces without opening Mission Control.
 - **Drag to pin.** Drop `.app` bundles or right-click windows and launcher results to keep important apps close.
 - **Stays out of the way.** Menu-bar accessory app. No Dock icon. No background polling fanfare.
 
