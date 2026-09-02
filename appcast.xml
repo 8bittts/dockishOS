@@ -4,10 +4,10 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>DockishOS</title>
         <item>
-            <title>0.024</title>
-            <pubDate>Wed, 02 Sep 2026 15:32:24 -0700</pubDate>
-            <sparkle:version>24</sparkle:version>
-            <sparkle:shortVersionString>0.024</sparkle:shortVersionString>
+            <title>0.025</title>
+            <pubDate>Wed, 02 Sep 2026 15:44:38 -0700</pubDate>
+            <sparkle:version>25</sparkle:version>
+            <sparkle:shortVersionString>0.025</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description><![CDATA[<style>
@@ -23,17 +23,15 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </style>
 <h2>What's New</h2>
 <ul>
-    <li>Collapse and expand ignore mouse events while the bar is sliding, so a click cannot land on a moving panel.</li>
-    <li>Vertical scroll over the collapsed edge tab no longer switches Spaces. Scroll-to-switch stays on the expanded bar.</li>
-    <li>The collapsed edge tab is one hit target, including the hover headroom above the icon, not only the inner icon button.</li>
-    <li>Dragging a Finder `.app` onto the expanded bar shows an accent drop highlight.</li>
-    <li>Extracted bar panel placement into `DockishOSCore.BarGeometry` with tests for expanded, collapsed, and hidden frames.</li></ul>
-<p class="footer">DockishOS 0.024</p>
+    <li>The bar's collapse control no longer draws an outline, a lighter fill, or a top highlight. It sits flat on the bar and shows only a subtle wash on hover.</li>
+    <li>The collapse chevron and app icon are smaller, so both sit just under the size of the bar's labels instead of dominating them.</li>
+    <li>Added a smoke-test gate that verifies the tests, signature, notarization ticket, checksum, and signed appcast before a release publishes.</li></ul>
+<p class="footer">DockishOS 0.025</p>
 ]]></description>
-            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.024/DockishOS-0.024.dmg" length="6408289" type="application/octet-stream" sparkle:edSignature="zR8fSBRyGK5qCZ4IWN20l2cOxJleKLd+zVFDAY8SyoP68kcJXdTE8QG9pExPGWgwrB41hYjxgSwjw+yN5ExZBQ=="></enclosure>
+            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.025/DockishOS-0.025.dmg" length="6407361" type="application/octet-stream" sparkle:edSignature="cZHMTs5rvlDbWoxClVlEEE4NIW/EFxATUosqwuA/PfgUwmz3UqyCsFS3CH+VXWHFTRamszHgTGjSo8VO8y+1Bg=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: g8IUqsthVeHfz1jcMowxCYFVSpawyPpHwKQ+gx3sGU5DK9yYyxyje8LwpbwBUG5sDaXsMkuc30Agzzh2wkRdAA==
-length: 2343
+edSignature: L65SH5LhUbImPYZL+7o1d3e7DeFT1TlNtqI9IZBnknpXKInAerEyL9mWINaXAsKTuTFzPnRDiPob/mAxZIrEAw==
+length: 2197
 -->

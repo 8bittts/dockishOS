@@ -5,6 +5,8 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+## [0.025]
+
 ### Changed
 - The bar's collapse control no longer draws an outline, a lighter fill, or a top highlight. It sits flat on the bar and shows only a subtle wash on hover.
 - The collapse chevron and app icon are smaller, so both sit just under the size of the bar's labels instead of dominating them.
