@@ -60,13 +60,11 @@ enum ChipStyle {
     /// Inset of the highlighted label pill inside a chip.
     static let labelHorizontalPadding: CGFloat = 7
     static let labelVerticalPadding: CGFloat = 3
-    static let borderOpacity: Double = 0.05
     static let hoverBorderOpacity: Double = 0.12
     static let frontmostBorderOpacity: Double = 0.10
     static let topHighlightOpacity: Double = 0.08
     static let hoverTopHighlightOpacity: Double = 0.14
     static let hoverAnimation = Animation.easeOut(duration: 0.10)
-    static let inactiveFill = Color(nsColor: .separatorColor).opacity(0.20)
     static let hoverFill = Color(nsColor: .selectedContentBackgroundColor).opacity(0.22)
     static let frontmostFill = Color(nsColor: .selectedContentBackgroundColor).opacity(0.34)
     static let border = Color(nsColor: .separatorColor)
