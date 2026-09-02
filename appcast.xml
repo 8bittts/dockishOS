@@ -4,10 +4,10 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>DockishOS</title>
         <item>
-            <title>0.023</title>
-            <pubDate>Thu, 02 Jul 2026 07:41:16 -0700</pubDate>
-            <sparkle:version>23</sparkle:version>
-            <sparkle:shortVersionString>0.023</sparkle:shortVersionString>
+            <title>0.024</title>
+            <pubDate>Wed, 02 Sep 2026 15:32:24 -0700</pubDate>
+            <sparkle:version>24</sparkle:version>
+            <sparkle:shortVersionString>0.024</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description><![CDATA[<style>
@@ -23,15 +23,17 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </style>
 <h2>What's New</h2>
 <ul>
-    <li>Sparkle's update window and its alerts now reliably come to the front. As an accessory (menu-bar) app DockishOS can't foreground itself, so the "update available" window opened behind other apps and was easy to miss. The updater now acts as Sparkle's user-driver delegate: for the duration of an update session it temporarily promotes the app to a regular foreground app and floats the Sparkle windows above everything, then restores both the activation policy and window levels when the session ends.</li>
-    <li>Removed the unused `SettingsSnapshot` helper and its tests from `DockishOSCore`; settings persistence now stays owned by the app target's `SettingsStore`.</li>
-    <li>Removed the GitHub Sponsors funding metadata from `.github/FUNDING.yml`.</li></ul>
-<p class="footer">DockishOS 0.023</p>
+    <li>Collapse and expand ignore mouse events while the bar is sliding, so a click cannot land on a moving panel.</li>
+    <li>Vertical scroll over the collapsed edge tab no longer switches Spaces. Scroll-to-switch stays on the expanded bar.</li>
+    <li>The collapsed edge tab is one hit target, including the hover headroom above the icon, not only the inner icon button.</li>
+    <li>Dragging a Finder `.app` onto the expanded bar shows an accent drop highlight.</li>
+    <li>Extracted bar panel placement into `DockishOSCore.BarGeometry` with tests for expanded, collapsed, and hidden frames.</li></ul>
+<p class="footer">DockishOS 0.024</p>
 ]]></description>
-            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.023/DockishOS-0.023.dmg" length="6398958" type="application/octet-stream" sparkle:edSignature="1VqgXPMZnpaoCLVajl05dIVktuu6mskmONDDvIeccWu0ZltVo3d/LbxlDHpHVLc1pZUQm2GJKzcldJaHCP6QBw=="></enclosure>
+            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.024/DockishOS-0.024.dmg" length="6408289" type="application/octet-stream" sparkle:edSignature="zR8fSBRyGK5qCZ4IWN20l2cOxJleKLd+zVFDAY8SyoP68kcJXdTE8QG9pExPGWgwrB41hYjxgSwjw+yN5ExZBQ=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: CXgOjDl017wgoku26yfqZPbNonhBwI/yqy7BcXwDZs4CWP+pVZqUaOHeWKAetrhy8wm2g8frJHCkyx6rinHmCw==
-length: 2508
+edSignature: g8IUqsthVeHfz1jcMowxCYFVSpawyPpHwKQ+gx3sGU5DK9yYyxyje8LwpbwBUG5sDaXsMkuc30Agzzh2wkRdAA==
+length: 2343
 -->
