@@ -6,6 +6,15 @@ All notable changes to DockishOS live here. Release tooling reads the
 ## [Unreleased]
 
 ### Changed
+- The bar's collapse control no longer draws an outline, a lighter fill, or a top highlight. It sits flat on the bar and shows only a subtle wash on hover.
+- The collapse chevron and app icon are smaller, so both sit just under the size of the bar's labels instead of dominating them.
+
+### Build
+- Added a smoke-test gate that verifies the tests, signature, notarization ticket, checksum, and signed appcast before a release publishes.
+
+## [0.024]
+
+### Changed
 - Collapse and expand ignore mouse events while the bar is sliding, so a click cannot land on a moving panel.
 - Vertical scroll over the collapsed edge tab no longer switches Spaces. Scroll-to-switch stays on the expanded bar.
 - The collapsed edge tab is one hit target, including the hover headroom above the icon, not only the inner icon button.

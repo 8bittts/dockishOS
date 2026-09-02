@@ -98,6 +98,16 @@ changelog_unreleased_items() {
         | sed '/^[[:space:]]*$/d'
 }
 
+roll_changelog() {
+    local version="$1"
+    [ -f "$CHANGELOG_FILE" ] || return 0
+    grep -q '^## \[Unreleased\]' "$CHANGELOG_FILE" || return 0
+    # Nothing to roll when Unreleased is empty; leave the file untouched so a
+    # resumed or notes-less release does not create a hollow version heading.
+    [ -n "$CHANGELOG_ITEMS" ] || return 0
+    perl -0pi -e "s|## \\[Unreleased\\]\\n|## [Unreleased]\\n\\n## [${version}]\\n|" "$CHANGELOG_FILE"
+}
+
 tag_exists() {
     git rev-parse -q --verify "refs/tags/$1" >/dev/null
 }
@@ -219,7 +229,13 @@ if [ "$RESUME_RELEASE" != true ]; then
     update_readme "$RELEASE_VERSION"
     step "Updated release metadata"
 
+    roll_changelog "$RELEASE_VERSION"
+    step "Rolled ${CHANGELOG_FILE} Unreleased into ${RELEASE_VERSION}"
+
     git add "$PLIST_FILE" "$README_FILE" "$ROOT_APPCAST_FILE"
+    if [ -f "$CHANGELOG_FILE" ]; then
+        git add "$CHANGELOG_FILE"
+    fi
     git commit -m "release: ${APP_NAME} v${RELEASE_VERSION}"
     step "Committed release metadata"
 
