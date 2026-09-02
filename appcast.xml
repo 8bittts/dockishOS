@@ -4,10 +4,10 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>DockishOS</title>
         <item>
-            <title>0.025</title>
-            <pubDate>Wed, 02 Sep 2026 15:44:38 -0700</pubDate>
-            <sparkle:version>25</sparkle:version>
-            <sparkle:shortVersionString>0.025</sparkle:shortVersionString>
+            <title>0.026</title>
+            <pubDate>Wed, 02 Sep 2026 15:53:03 -0700</pubDate>
+            <sparkle:version>26</sparkle:version>
+            <sparkle:shortVersionString>0.026</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description><![CDATA[<style>
@@ -23,15 +23,15 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </style>
 <h2>What's New</h2>
 <ul>
-    <li>The bar's collapse control no longer draws an outline, a lighter fill, or a top highlight. It sits flat on the bar and shows only a subtle wash on hover.</li>
-    <li>The collapse chevron and app icon are smaller, so both sit just under the size of the bar's labels instead of dominating them.</li>
-    <li>Added a smoke-test gate that verifies the tests, signature, notarization ticket, checksum, and signed appcast before a release publishes.</li></ul>
-<p class="footer">DockishOS 0.025</p>
+    <li>Chip hover and frontmost highlighting now sits behind the app name only, not behind the icon, and the highlight is shorter.</li>
+    <li>Idle chips draw no fill or border, so the bar reads as icons and labels instead of a row of pills.</li>
+    <li>The chip row starts further from the bar's left edge, so the first icon no longer bleeds into the rounded corner.</li></ul>
+<p class="footer">DockishOS 0.026</p>
 ]]></description>
-            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.025/DockishOS-0.025.dmg" length="6407361" type="application/octet-stream" sparkle:edSignature="cZHMTs5rvlDbWoxClVlEEE4NIW/EFxATUosqwuA/PfgUwmz3UqyCsFS3CH+VXWHFTRamszHgTGjSo8VO8y+1Bg=="></enclosure>
+            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.026/DockishOS-0.026.dmg" length="6406662" type="application/octet-stream" sparkle:edSignature="8MzqD1rXLWFDIlIZmlHwtLukFdPuO09GzmeDee2Uisb1PgtRL1BBk4+UB62/hJdRnh9qBQhgvJthasBqd4KFAA=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: L65SH5LhUbImPYZL+7o1d3e7DeFT1TlNtqI9IZBnknpXKInAerEyL9mWINaXAsKTuTFzPnRDiPob/mAxZIrEAw==
-length: 2197
+edSignature: y5Dj6MFT0hrwQHIbiZNkhCMzBh8kJzHXynpw5c0qj9K2r4/7IblVjXx+Pz9E0lbdYnW7Jt0EgXt6tRzH9w8dBA==
+length: 2115
 -->
