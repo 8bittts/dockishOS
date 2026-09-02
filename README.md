@@ -103,7 +103,10 @@ Useful commands:
 swift build
 ./scripts/build_and_run.sh --verify
 ./scripts/build_and_run.sh --logs
+./scripts/smoke-test.sh
 ```
+
+`smoke-test.sh` runs the tests and checks the bundle shape. When a release build is present, it also verifies the signature, notarization ticket, checksum, and signed appcast; `--production` makes those checks fail rather than warn.
 
 See [`BUILD.md`](BUILD.md) for the full signing, notarization, release, and Sparkle re-vendor workflow.
 
@@ -119,7 +122,7 @@ See [`BUILD.md`](BUILD.md) for the full signing, notarization, release, and Spar
 
 ## Contributing
 
-Keep changes native to macOS APIs where possible. Run `swift build` and `swift test` before publishing changes, and use the real bundle script for changes involving Accessibility, login items, app metadata, icons, or updates.
+Keep changes native to macOS APIs where possible. Run `./scripts/smoke-test.sh` before publishing changes, and use the real bundle script for changes involving Accessibility, login items, app metadata, icons, or updates.
 
 ## License
 

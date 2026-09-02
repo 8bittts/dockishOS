@@ -144,6 +144,7 @@ struct UtilitySectionsToggle: View {
     @State private var hover = false
     /// Sized to sit just under the 12pt chip label rather than dominating it.
     private static let iconSize: CGFloat = 13
+    private static let hoverWashOpacity: Double = 0.08
     private let logo = DockishBrandAssets.applicationIcon(
         size: NSSize(width: iconSize, height: iconSize)
     )
@@ -161,22 +162,23 @@ struct UtilitySectionsToggle: View {
                     .frame(width: Self.iconSize, height: Self.iconSize)
             }
             .frame(width: 60, height: 34)
-            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: ChipStyle.cornerRadius, style: .continuous))
             .background(buttonChrome)
         }
         .buttonStyle(.plain)
         .onHover { hover = $0 }
-        .animation(.easeOut(duration: 0.10), value: hover)
+        .animation(ChipStyle.hoverAnimation, value: hover)
         .help("Collapse bar into edge tab")
         .accessibilityLabel("Collapse bar")
     }
 
     /// Chromeless by default. The control reads as part of the bar, so it
-    /// carries no outline, fill, or top highlight — only a faint hover wash
-    /// for feedback.
+    /// carries no outline, fill, or top highlight. Hover uses a neutral wash
+    /// rather than `ChipStyle.hoverFill` because this control sits on the bar
+    /// surface itself, not among the accent-tinted chips.
     private var buttonChrome: some View {
-        RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(Color.primary.opacity(hover ? 0.08 : 0))
+        RoundedRectangle(cornerRadius: ChipStyle.cornerRadius, style: .continuous)
+            .fill(Color.primary.opacity(hover ? Self.hoverWashOpacity : 0))
     }
 }
 
