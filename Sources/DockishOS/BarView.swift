@@ -69,7 +69,7 @@ struct BarView: View {
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.leading, 12)
+            .padding(.leading, 18)
             .padding(.trailing, collapseControlReservation)
 
             HStack {

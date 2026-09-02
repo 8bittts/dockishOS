@@ -144,19 +144,21 @@ private struct WindowChip: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .foregroundStyle(.primary)
+                        .padding(.horizontal, ChipStyle.labelHorizontalPadding)
+                        .padding(.vertical, ChipStyle.labelVerticalPadding)
+                        .background(ChipChrome(isFrontmost: isFrontmost, hover: hover))
                 }
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .frame(height: size.chipHeight)
             .frame(maxWidth: showTitle ? 220 : nil)
-            .background(ChipChrome(isFrontmost: isFrontmost, hover: hover, size: size))
-            .overlay(alignment: .leading) {
-                if isFrontmost {
-                    RoundedRectangle(cornerRadius: 1.5)
-                        .fill(ChipStyle.accent)
-                        .frame(width: 2)
-                        .padding(.vertical, 7)
+            .background {
+                // With titles on, the hover and frontmost fill sits behind the
+                // label only. With titles off there is no label to carry it,
+                // so the whole chip keeps the chrome.
+                if !showTitle {
+                    ChipChrome(isFrontmost: isFrontmost, hover: hover)
                 }
             }
         }
@@ -220,19 +222,18 @@ private struct WindowGroupChip: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .foregroundStyle(.primary)
+                        .padding(.horizontal, ChipStyle.labelHorizontalPadding)
+                        .padding(.vertical, ChipStyle.labelVerticalPadding)
+                        .background(ChipChrome(isFrontmost: isFrontmost, hover: hover))
                 }
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .frame(height: size.chipHeight)
             .frame(maxWidth: showTitle ? 220 : nil)
-            .background(ChipChrome(isFrontmost: isFrontmost, hover: hover, size: size))
-            .overlay(alignment: .leading) {
-                if isFrontmost {
-                    RoundedRectangle(cornerRadius: 1.5)
-                        .fill(ChipStyle.accent)
-                        .frame(width: 2)
-                        .padding(.vertical, 7)
+            .background {
+                if !showTitle {
+                    ChipChrome(isFrontmost: isFrontmost, hover: hover)
                 }
             }
         }
@@ -270,21 +271,25 @@ private struct WindowGroupChip: View {
 private struct ChipChrome: View {
     let isFrontmost: Bool
     let hover: Bool
-    let size: BarSize
+
+    /// Only hover and frontmost draw chrome. An idle chip stays plain so the
+    /// bar reads as icons and labels rather than a row of pills.
+    private var isHighlighted: Bool { isFrontmost || hover }
 
     private var chipFill: Color {
         if isFrontmost { return ChipStyle.frontmostFill }
-        return hover ? ChipStyle.hoverFill : ChipStyle.inactiveFill
+        return hover ? ChipStyle.hoverFill : .clear
     }
 
     private var borderOpacity: Double {
         if hover { return ChipStyle.hoverBorderOpacity }
         if isFrontmost { return ChipStyle.frontmostBorderOpacity }
-        return ChipStyle.borderOpacity
+        return 0
     }
 
     private var topHighlightOpacity: Double {
-        hover ? ChipStyle.hoverTopHighlightOpacity : ChipStyle.topHighlightOpacity
+        guard isHighlighted else { return 0 }
+        return hover ? ChipStyle.hoverTopHighlightOpacity : ChipStyle.topHighlightOpacity
     }
 
     var body: some View {
@@ -294,20 +299,20 @@ private struct ChipChrome: View {
                 RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
                     .strokeBorder(ChipStyle.border.opacity(borderOpacity), lineWidth: 0.65)
             }
-            .overlay(alignment: .top) {
+            .overlay {
+                // Gradient stops rather than a fixed height, so the highlight
+                // scales with the label pill instead of the chip.
                 RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
                     .fill(
                         LinearGradient(
-                            colors: [
-                                Color(nsColor: .highlightColor).opacity(topHighlightOpacity),
-                                Color(nsColor: .highlightColor).opacity(0)
+                            stops: [
+                                .init(color: Color(nsColor: .highlightColor).opacity(topHighlightOpacity), location: 0),
+                                .init(color: Color(nsColor: .highlightColor).opacity(0), location: 0.45)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
-                    .frame(height: size.chipHeight * 0.42)
-                    .clipShape(RoundedRectangle(cornerRadius: ChipStyle.cornerRadius))
             }
     }
 }

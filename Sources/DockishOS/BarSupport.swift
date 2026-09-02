@@ -57,6 +57,9 @@ struct VisualEffectView: NSViewRepresentable {
 /// Constants reused across chip components so the look stays consistent.
 enum ChipStyle {
     static let cornerRadius: CGFloat = 8
+    /// Inset of the highlighted label pill inside a chip.
+    static let labelHorizontalPadding: CGFloat = 7
+    static let labelVerticalPadding: CGFloat = 3
     static let borderOpacity: Double = 0.05
     static let hoverBorderOpacity: Double = 0.12
     static let frontmostBorderOpacity: Double = 0.10

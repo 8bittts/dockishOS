@@ -5,6 +5,11 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+### Changed
+- Chip hover and frontmost highlighting now sits behind the app name only, not behind the icon, and the highlight is shorter.
+- Idle chips draw no fill or border, so the bar reads as icons and labels instead of a row of pills.
+- The chip row starts further from the bar's left edge, so the first icon no longer bleeds into the rounded corner.
+
 ## [0.025]
 
 ### Changed
