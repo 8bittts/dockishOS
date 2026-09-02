@@ -86,7 +86,18 @@ pgrep -x DockishOS >/dev/null && echo "OK app launched" && pkill -x DockishOS
 
 # Confirm the DMG is readable:
 hdiutil verify build/DockishOS-*.dmg | tail -3
+
+# Verify tests plus the built artifacts (signature, notarization ticket,
+# checksum, and the signed appcast) in one pass:
+./scripts/smoke-test.sh --production
 ```
+
+`smoke-test.sh` fails closed: an empty test run, a missing stapled
+notarization ticket, a checksum mismatch, or an appcast whose EdDSA
+signature does not verify is an error, not a warning.
+Without `--production` the signing and notarization checks warn instead, so
+use the flag for anything you intend to ship.
+The release flow runs it automatically as its production gate.
 
 ---
 

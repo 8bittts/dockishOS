@@ -4,6 +4,7 @@
 
 SwiftPM macOS 14+ menu-bar app (`Package.swift`): `DockishOSCore` is the AppKit/Carbon-free testable target, `DockishOS` is the app.
 Validate with `swift build` and `swift test`; `./scripts/build-dmg.sh --build-only` assembles the `.app` without a DMG.
+`./scripts/smoke-test.sh` runs the tests and verifies any built release artifacts; `--production` makes the signing, notarization, and appcast checks fail rather than warn.
 There is no CI, so these local gates are the only gates.
 
 [BUILD.md](BUILD.md) is authoritative for every build, sign, notarize, release, and Sparkle-vendoring procedure — read it before touching `scripts/`.
