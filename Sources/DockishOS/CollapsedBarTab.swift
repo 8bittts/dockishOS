@@ -142,21 +142,25 @@ struct CollapsedTabCluster: View {
 struct UtilitySectionsToggle: View {
     let action: () -> Void
     @State private var hover = false
-    private let logo = DockishBrandAssets.applicationIcon(size: NSSize(width: 16, height: 16))
+    /// Sized to sit just under the 12pt chip label rather than dominating it.
+    private static let iconSize: CGFloat = 13
+    private let logo = DockishBrandAssets.applicationIcon(
+        size: NSSize(width: iconSize, height: iconSize)
+    )
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 7) {
+            HStack(spacing: 6) {
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.primary)
 
                 Image(nsImage: logo)
                     .resizable()
                     .interpolation(.high)
-                    .frame(width: 16, height: 16)
+                    .frame(width: Self.iconSize, height: Self.iconSize)
             }
-            .frame(width: 68, height: 34)
+            .frame(width: 60, height: 34)
             .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .background(buttonChrome)
         }
@@ -167,28 +171,12 @@ struct UtilitySectionsToggle: View {
         .accessibilityLabel("Collapse bar")
     }
 
+    /// Chromeless by default. The control reads as part of the bar, so it
+    /// carries no outline, fill, or top highlight — only a faint hover wash
+    /// for feedback.
     private var buttonChrome: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .fill(Color(nsColor: .windowBackgroundColor).opacity(hover ? 0.88 : 0.42))
-            .overlay {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(Color(nsColor: .separatorColor).opacity(hover ? 0.70 : 0.32), lineWidth: 0.8)
-            }
-            .overlay(alignment: .top) {
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(nsColor: .highlightColor).opacity(hover ? 0.28 : 0.12),
-                                Color(nsColor: .highlightColor).opacity(0)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(height: 12)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            }
+            .fill(Color.primary.opacity(hover ? 0.08 : 0))
     }
 }
 
