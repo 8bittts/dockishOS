@@ -4,12 +4,12 @@
 # truncation of the vendored framework. Update whenever Sparkle is re-vendored
 # (see BUILD.md "Upgrading the Sparkle framework").
 
-sparkle_version=2.9.1
-sparkle_build=2054
-sparkle_source=https://github.com/sparkle-project/Sparkle/releases/download/2.9.1/Sparkle-2.9.1.tar.xz
+sparkle_version=2.9.6
+sparkle_build=2061
+sparkle_source=https://github.com/sparkle-project/Sparkle/releases/download/2.9.6/Sparkle-2.9.6.tar.xz
 
 # SHA-256 of the main framework Mach-O. Stable per Sparkle release.
-sparkle_binary_sha256=0275cf16eee3c4f3d6fb1bdb4c72dd5515ac94e36b52f185c2831df7ff30864b
+sparkle_binary_sha256=af5e78fd89e26dedda1bbbe96221fd7e87abdbc58b4802e470f3157d5966bc5a
 
 # Required helpers that must be present after vendoring. Missing any of these
 # breaks in-app updates at runtime (the 0.014/0.015 regression that lost
