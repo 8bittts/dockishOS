@@ -2,31 +2,30 @@ import XCTest
 
 /// Regression guard for the v0.014 → v0.015 menu bar icon bug.
 ///
-/// In v0.014 the status item icon source was swapped from the bundled
-/// DockishOS.icns (`DockishBrandAssets.applicationIcon`) to the generic
-/// `dock.rectangle` SF Symbol (`DockishBrandAssets.menuBarIcon`). The
-/// SF Symbol read as "icon missing" in the menu bar.
+/// In v0.014 the status item icon source was swapped from the branded
+/// mark to the generic `dock.rectangle` SF Symbol. The SF Symbol read as
+/// "icon missing" in the menu bar.
 ///
-/// This test fails if anyone re-introduces the swap, or if the icon source
-/// silently changes to a different SF Symbol path. If you intentionally
-/// change the menu bar icon strategy, update both this test and CHANGELOG.
+/// The status item now uses a template silhouette of the branded mark so
+/// the system can tint it on light and dark menu bars. This test fails if
+/// the source reverts to `dock.rectangle` or to the full-color app icon.
 final class MenuBarIconRegressionTests: XCTestCase {
-    func testStatusItemUsesBundledApplicationIcon() throws {
+    func testStatusItemUsesTemplateBrandedMark() throws {
         let source = try Self.menuBarControllerSource()
 
         XCTAssertTrue(
-            source.contains("DockishBrandAssets.applicationIcon(size: DockishBrandAssets.menuBarIconSize)"),
-            "MenuBarController must source the status item icon from the bundled DockishOS.icns via DockishBrandAssets.applicationIcon — see CHANGELOG v0.015."
+            source.contains("DockishBrandAssets.menuBarTemplateIcon(size: DockishBrandAssets.menuBarIconSize)"),
+            "MenuBarController must source the status item from DockishBrandAssets.menuBarTemplateIcon."
         )
 
         XCTAssertFalse(
-            source.contains("DockishBrandAssets.menuBarIcon(size: DockishBrandAssets.menuBarIconSize)"),
-            "MenuBarController must not assign the generic SF Symbol menuBarIcon to the status item — that regressed in v0.014 and shipped a placeholder-looking icon."
+            source.contains("DockishBrandAssets.applicationIcon(size: DockishBrandAssets.menuBarIconSize)"),
+            "The status item must not use the full-color application icon; HIG menu-bar extras are black-and-clear templates."
         )
 
         XCTAssertFalse(
             source.contains("dock.rectangle"),
-            "MenuBarController must not reference the dock.rectangle SF Symbol for the status item — keep the branded .icns."
+            "MenuBarController must not reference the dock.rectangle SF Symbol for the status item."
         )
     }
 

@@ -19,6 +19,17 @@ struct LauncherView: View {
                     .font(.system(size: 18, weight: .regular))
                     .focused($queryFocused)
                     .onSubmit { activateSelected() }
+                if !store.query.isEmpty {
+                    Button {
+                        store.query = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Clear")
+                    .accessibilityLabel("Clear")
+                }
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 14)

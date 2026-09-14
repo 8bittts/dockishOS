@@ -12,7 +12,7 @@ struct NotificationBadge: View {
             .foregroundStyle(.white)
             .padding(.horizontal, 4)
             .padding(.vertical, 1)
-            .background(Capsule().fill(Color.red))
+            .background(Capsule().fill(Color(nsColor: .systemRed)))
             .overlay(Capsule().stroke(Color(nsColor: .separatorColor).opacity(0.65), lineWidth: 0.5))
             .accessibilityHidden(true)
     }

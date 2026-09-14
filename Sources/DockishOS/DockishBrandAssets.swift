@@ -10,6 +10,17 @@ enum DockishBrandAssets {
         return renderedFallbackIcon(size: size)
     }
 
+    /// Black-and-clear silhouette for the status item so the system can tint
+    /// it on light and dark menu bars. Not the color app icon.
+    static func menuBarTemplateIcon(size: NSSize) -> NSImage {
+        let image = NSImage(size: size, flipped: false) { rect in
+            drawTemplateMark(in: rect)
+            return true
+        }
+        image.isTemplate = true
+        return image
+    }
+
     private static func resolvedApplicationIcon() -> NSImage? {
         guard let appIcon = NSApp.applicationIconImage else {
             return nil
@@ -55,13 +66,6 @@ enum DockishBrandAssets {
     private static func drawIcon(in rect: NSRect) {
         let side = min(rect.width, rect.height)
         let canvas = NSRect(x: rect.minX, y: rect.minY, width: side, height: side)
-
-        let background = NSBezierPath(
-            roundedRect: canvas,
-            xRadius: side * 0.23,
-            yRadius: side * 0.23
-        )
-        background.addClip()
 
         let topColor = NSColor(calibratedRed: 0.10, green: 0.13, blue: 0.20, alpha: 1.0)
         let bottomColor = NSColor(calibratedRed: 0.04, green: 0.06, blue: 0.10, alpha: 1.0)
@@ -139,5 +143,23 @@ enum DockishBrandAssets {
         )
         NSColor.white.setFill()
         NSBezierPath(ovalIn: dotRect).fill()
+    }
+
+    /// Dock silhouette only — no filled square — so the menu bar shows through.
+    private static func drawTemplateMark(in rect: NSRect) {
+        let side = min(rect.width, rect.height)
+        let canvas = NSRect(x: rect.minX, y: rect.minY, width: side, height: side)
+        let dockRect = NSRect(
+            x: canvas.minX + side * 0.08,
+            y: canvas.minY + side * 0.32,
+            width: side * 0.84,
+            height: side * 0.36
+        )
+        NSColor.black.setFill()
+        NSBezierPath(
+            roundedRect: dockRect,
+            xRadius: dockRect.height * 0.32,
+            yRadius: dockRect.height * 0.32
+        ).fill()
     }
 }

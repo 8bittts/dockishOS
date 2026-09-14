@@ -29,7 +29,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         nextSpaceItem = NSMenuItem(title: "Next Space", action: nil, keyEquivalent: "")
         super.init()
         if let button = statusItem.button {
-            let icon = DockishBrandAssets.applicationIcon(size: DockishBrandAssets.menuBarIconSize)
+            let icon = DockishBrandAssets.menuBarTemplateIcon(size: DockishBrandAssets.menuBarIconSize)
             icon.accessibilityDescription = "DockishOS"
             button.image = icon
             button.imageScaling = .scaleProportionallyDown

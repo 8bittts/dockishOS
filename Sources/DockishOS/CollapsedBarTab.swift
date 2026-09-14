@@ -187,7 +187,7 @@ private struct CollapsedTabBackdrop: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: metrics.backgroundCornerRadius, style: .continuous)
-            .fill(Color.black.opacity(metrics.backgroundFillOpacity))
+            .fill(Color(nsColor: .windowBackgroundColor).opacity(metrics.backgroundFillOpacity))
             .overlay {
                 RoundedRectangle(cornerRadius: metrics.backgroundCornerRadius, style: .continuous)
                     .stroke(Color(nsColor: .separatorColor).opacity(metrics.backgroundStrokeOpacity), lineWidth: 0.55)
@@ -267,7 +267,7 @@ private struct CollapsedBarTab: View {
             .fill(Color(nsColor: .windowBackgroundColor).opacity(hover ? 0.985 : 0.96))
             .overlay {
                 RoundedRectangle(cornerRadius: metrics.buttonCornerRadius, style: .continuous)
-                    .stroke(Color.black.opacity(hover ? 0.13 : 0.08), lineWidth: 0.55)
+                    .stroke(Color(nsColor: .separatorColor).opacity(hover ? 0.55 : 0.35), lineWidth: 0.55)
             }
             .overlay(alignment: .top) {
                 RoundedRectangle(cornerRadius: metrics.buttonCornerRadius, style: .continuous)

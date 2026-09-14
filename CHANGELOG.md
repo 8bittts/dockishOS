@@ -12,6 +12,11 @@ All notable changes to DockishOS live here. Release tooling reads the
 - Bar, launcher, and switcher HUDs use an opaque window material when Reduce Transparency is on.
 - Settings pinned-list reorder and unpin controls meet the 20 pt minimum hit target and have VoiceOver labels.
 - The Accessibility purpose string now names Dock badge reading as well as raise/close.
+- The menu-bar extra is a template silhouette of the DockishOS mark, so it tints with the menu bar.
+- The app icon asset is a full-bleed square; macOS applies the icon mask.
+- Notification badges use system red. The collapsed tab uses window background and separator colors.
+- The Settings window no longer miniaturizes or zooms.
+- The launcher search field has a Clear button.
 
 ## [0.026]
 

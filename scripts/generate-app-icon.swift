@@ -38,14 +38,7 @@ func makeImage(size: Int) -> NSBitmapImageRep {
     ctx.imageInterpolation = .high
     let s = CGFloat(size)
 
-    let cornerRadius = s * 0.225
-    let bgPath = NSBezierPath(
-        roundedRect: NSRect(x: 0, y: 0, width: s, height: s),
-        xRadius: cornerRadius,
-        yRadius: cornerRadius
-    )
-    bgPath.addClip()
-
+    // Full-bleed square. The system applies the app-icon mask; do not bake a squircle.
     let topColor = NSColor(calibratedRed: 0.10, green: 0.13, blue: 0.20, alpha: 1)
     let bottomColor = NSColor(calibratedRed: 0.04, green: 0.06, blue: 0.10, alpha: 1)
     NSGradient(starting: topColor, ending: bottomColor)!
