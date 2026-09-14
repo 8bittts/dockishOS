@@ -318,7 +318,7 @@ private struct EmptyPinnedState: View {
         ContentUnavailableView {
             Label("No pinned apps yet", systemImage: "pin.slash")
         } description: {
-            Text("Right-click any window chip on the bar and choose **Pin App to Bar**, or right-click a result in the launcher to pin it.")
+            Text("Right-click any window chip on the bar and choose **Pin to Bar**, or right-click a result in the launcher to pin it.")
         }
     }
 }
@@ -391,7 +391,7 @@ private struct PinnedAppRow: View {
             )
             PinnedListIconButton(
                 systemName: "xmark.circle.fill",
-                label: "Unpin",
+                label: "Unpin from Bar",
                 disabled: false,
                 action: onRemove
             )
@@ -434,6 +434,11 @@ private struct AboutTab: View {
             Text("v\(version) (build \(build))")
                 .font(.system(.callout, design: .monospaced))
                 .foregroundStyle(.secondary)
+            if !AppVersion.copyright.isEmpty {
+                Text(AppVersion.copyright)
+                    .font(.footnote)
+                    .foregroundStyle(.tertiary)
+            }
             Text("A Dock alternative for power users of macOS Spaces.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)

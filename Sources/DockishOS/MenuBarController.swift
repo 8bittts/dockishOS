@@ -221,7 +221,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         if status == eventHotKeyExistsErr {
             return "\(label) hotkey unavailable - conflict detected"
         }
-        return "\(label) hotkey unavailable - OSStatus \(status)"
+        return "\(label) hotkey unavailable"
     }
 
     private func updateCollapsedTabPositionState() {

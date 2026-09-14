@@ -17,6 +17,9 @@ All notable changes to DockishOS live here. Release tooling reads the
 - Notification badges use system red. The collapsed tab uses window background and separator colors.
 - The Settings window no longer miniaturizes or zooms.
 - The launcher search field has a Clear button.
+- Pin and unpin commands use one pair of labels. Unpin is not a destructive action.
+- Grouped chips keep a square window-count mark when a notification badge is also showing.
+- The About tab shows the copyright string. Empty window titles read as Untitled.
 
 ## [0.026]
 

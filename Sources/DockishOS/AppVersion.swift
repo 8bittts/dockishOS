@@ -8,4 +8,8 @@ enum AppVersion {
     static var build: String {
         Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
     }
+
+    static var copyright: String {
+        Bundle.main.infoDictionary?["NSHumanReadableCopyright"] as? String ?? ""
+    }
 }

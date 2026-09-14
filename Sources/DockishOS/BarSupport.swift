@@ -18,6 +18,22 @@ struct NotificationBadge: View {
     }
 }
 
+/// Window count uses a rounded square so it stays distinct from the
+/// capsule notification badge when both appear on a grouped chip.
+struct WindowCountMark: View {
+    let count: Int
+
+    var body: some View {
+        Text("\(count)")
+            .font(.system(size: 9, weight: .bold, design: .monospaced))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 1)
+            .background(RoundedRectangle(cornerRadius: 3, style: .continuous).fill(ChipStyle.accent))
+            .accessibilityHidden(true)
+    }
+}
+
 /// SwiftUI wrapper around `NSImageView` that displays an app's icon by PID.
 /// Cheap to render — `NSRunningApplication` lookup is constant-time.
 struct AppIconView: NSViewRepresentable {

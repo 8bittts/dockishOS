@@ -18,14 +18,7 @@
 
 Promote exactly one Phase into active work at a time. Phase ordering is intentional.
 
-#### Phase 3 — Writing and menus
-Source: Apple HIG menus, context menus, writing, and notifications.
-
-- [ ] One Pin to Bar / Unpin from Bar pair; do not mark Unpin destructive.
-- [ ] Use a real ellipsis and Untitled; show copyright on the About tab.
-- [ ] Hide Move Left / Move Right at the ends of the pinned context menu.
-- [ ] Stop showing raw `OSStatus` in hotkey-conflict menu copy.
-- [ ] Keep a non-color window-count cue when the notification badge wins.
+(No active phase.)
 
 ### Follow-On Candidates
 Not active work. Promote only one item at a time into `#### Phase N` in `### Work TODOs` when implementation starts.

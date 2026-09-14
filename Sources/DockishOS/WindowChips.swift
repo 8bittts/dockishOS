@@ -63,7 +63,7 @@ struct WindowsRow: View {
 
     @ViewBuilder
     private var emptyState: some View {
-        Text("No open apps in this space...")
+        Text("No open apps in this space…")
             .font(.system(size: 12, weight: .medium))
             .foregroundStyle(.secondary)
             .padding(.horizontal, 8)
@@ -175,11 +175,9 @@ private struct WindowChip: View {
             }
             Divider()
             if isPinned {
-                Button(role: .destructive) { onTogglePin() } label: {
-                    Text("Unpin App from Bar")
-                }
+                Button("Unpin from Bar") { onTogglePin() }
             } else {
-                Button("Pin App to Bar") { onTogglePin() }
+                Button("Pin to Bar") { onTogglePin() }
             }
         }
     }
@@ -204,17 +202,14 @@ private struct WindowGroupChip: View {
                 AppIconView(pid: group.pid)
                     .frame(width: size.chipIconSize, height: size.chipIconSize)
                     .overlay(alignment: .topTrailing) {
-                        // Notification badge wins over window count when both apply.
                         if let badge {
                             NotificationBadge(text: badge).offset(x: 6, y: -4)
-                        } else if group.windows.count > 1 {
-                            Text("\(group.windows.count)")
-                                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(Capsule().fill(ChipStyle.accent))
-                                .offset(x: 6, y: -4)
+                        }
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        if group.windows.count > 1 {
+                            WindowCountMark(count: group.windows.count)
+                                .offset(x: 6, y: 4)
                         }
                     }
                 if showTitle {
@@ -246,7 +241,7 @@ private struct WindowGroupChip: View {
         .accessibilityLabel("\(group.ownerName), \(group.windows.count) windows\(isFrontmost ? ", frontmost" : "")\(badge.map { ", \($0) notifications" } ?? "")")
         .contextMenu {
             ForEach(group.windows, id: \.id) { window in
-                Button(window.displayTitle.isEmpty ? "(untitled)" : window.displayTitle) {
+                Button(window.displayTitle.isEmpty ? "Untitled" : window.displayTitle) {
                     onActivate(window)
                 }
             }
@@ -258,11 +253,9 @@ private struct WindowGroupChip: View {
             }
             Divider()
             if isPinned {
-                Button(role: .destructive) { onTogglePin() } label: {
-                    Text("Unpin App from Bar")
-                }
+                Button("Unpin from Bar") { onTogglePin() }
             } else {
-                Button("Pin App to Bar") { onTogglePin() }
+                Button("Pin to Bar") { onTogglePin() }
             }
         }
     }

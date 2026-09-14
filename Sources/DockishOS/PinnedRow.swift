@@ -15,13 +15,15 @@ struct PinnedRow: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            ForEach(pins) { app in
+            ForEach(Array(pins.enumerated()), id: \.element.id) { index, app in
                 PinnedChip(
                     app: app,
                     size: size,
                     isRunning: runningApps.contains(app.bundleID),
                     isFrontmost: runningApps.isFrontmost(app.bundleID),
                     badge: badgeStore.badge(for: app.bundleID),
+                    isFirst: index == 0,
+                    isLast: index == pins.count - 1,
                     action: { onLaunch(app) },
                     onUnpin: { onUnpin(app) },
                     onMoveLeft: { onMove(app, -1) },
@@ -59,6 +61,8 @@ private struct PinnedChip: View {
     let isRunning: Bool
     let isFrontmost: Bool
     let badge: String?
+    let isFirst: Bool
+    let isLast: Bool
     let action: () -> Void
     let onUnpin: () -> Void
     let onMoveLeft: () -> Void
@@ -92,11 +96,13 @@ private struct PinnedChip: View {
         .accessibilityLabel("\(app.name)\(isFrontmost ? ", frontmost" : isRunning ? ", running" : "")\(badge.map { ", \($0) notifications" } ?? "")")
         .contextMenu {
             Button("Activate \(app.name)") { action() }
+            if !isFirst || !isLast {
+                Divider()
+                if !isFirst { Button("Move Left") { onMoveLeft() } }
+                if !isLast { Button("Move Right") { onMoveRight() } }
+            }
             Divider()
-            Button("Move Left")  { onMoveLeft()  }
-            Button("Move Right") { onMoveRight() }
-            Divider()
-            Button("Unpin") { onUnpin() }
+            Button("Unpin from Bar") { onUnpin() }
         }
     }
 }
