@@ -14,7 +14,7 @@ This repo uses `docs/` for the public landing mirror and root markdown for engin
 | `BUILD.md` | **Developers (canonical release path)** | Sign, notarize, Sparkle, release scripts |
 | `CHANGELOG.md` | Users | Version history |
 | `docs/index.md` | Web/download landing | Short product mirror of README |
-| `todos.md` | Operator | Backlog (currently empty — stable utility) |
+| `todos.md` | Operator | Backlog (no active phase) |
 | `AGENTS.md` | Agents | Sparkle vendoring, release caveats → points to `BUILD.md` |
 
 ## Release engineering
