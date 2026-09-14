@@ -18,11 +18,33 @@
 
 Promote exactly one Phase into active work at a time. Phase ordering is intentional.
 
-(No active phase.)
+#### Phase 1 — Accessibility (HIG)
+Source: Apple HIG Accessibility, Mobility, VoiceOver, and menu-bar extras.
+
+- [ ] Let the bar panel become key so VoiceOver and Full Keyboard Access can reach chips (`BarPanel.canBecomeKey`).
+- [ ] Add Previous Space / Next Space to the status menu so Space switching is not scroll-only.
+- [ ] Honor Reduce Motion on bar collapse/expand (`BarController.animate`).
+- [ ] Honor Reduce Transparency on HUD materials (`VisualEffectView`).
+- [ ] Treat each chip as one accessibility element; hide nested badge labels from VoiceOver.
+- [ ] Include frontmost in the grouped-chip accessibility label.
+- [ ] Make launcher rows and switcher tiles real `Button`s, not tap gestures.
+- [ ] Expose the hotkey recorder to VoiceOver (label, value, recording state).
+- [ ] Give Settings pinned-list up/down/unpin controls 20x20 pt hits and accessibility labels.
+- [ ] Name badge polling in `NSAccessibilityUsageDescription`.
 
 ### Follow-On Candidates
 Not active work. Promote only one item at a time into `#### Phase N` in `### Work TODOs` when implementation starts.
 
-The full-codebase audit is fully implemented — see git history. The net-neutral/net-negative micro-opts were considered and dropped (they'd trade correctness or add state for no measurable gain).
+#### Phase 2 — Native chrome
+- Template menu-bar extra from the branded mark (`isTemplate = true`); keep the color icon for About/Finder.
+- Stop baking a squircle into `scripts/generate-app-icon.swift`; ship a square 1024 asset and let the system mask it.
+- Use `systemRed` for notification badges; drop hardcoded black fills on the collapsed tab.
+- Dim or remove Settings miniaturize and zoom.
+- Add a Clear button to the launcher search field.
 
-(No items.)
+#### Phase 3 — Writing and menus
+- One Pin to Bar / Unpin from Bar pair; do not mark Unpin destructive.
+- Use a real ellipsis and Untitled; show copyright on the About tab.
+- Hide Move Left / Move Right at the ends of the pinned context menu.
+- Stop showing raw `OSStatus` in hotkey-conflict menu copy.
+- Keep a non-color window-count cue when the notification badge wins.
