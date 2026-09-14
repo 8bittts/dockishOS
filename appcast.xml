@@ -4,10 +4,10 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>DockishOS</title>
         <item>
-            <title>0.026</title>
-            <pubDate>Wed, 02 Sep 2026 15:53:03 -0700</pubDate>
-            <sparkle:version>26</sparkle:version>
-            <sparkle:shortVersionString>0.026</sparkle:shortVersionString>
+            <title>0.027</title>
+            <pubDate>Mon, 14 Sep 2026 13:37:46 -0700</pubDate>
+            <sparkle:version>27</sparkle:version>
+            <sparkle:shortVersionString>0.027</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <description><![CDATA[<style>
@@ -23,15 +23,26 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </style>
 <h2>What's New</h2>
 <ul>
-    <li>Chip hover and frontmost highlighting now sits behind the app name only, not behind the icon, and the highlight is shorter.</li>
-    <li>Idle chips draw no fill or border, so the bar reads as icons and labels instead of a row of pills.</li>
-    <li>The chip row starts further from the bar's left edge, so the first icon no longer bleeds into the rounded corner.</li></ul>
-<p class="footer">DockishOS 0.026</p>
+    <li>The bar can become the key window so VoiceOver and Full Keyboard Access can reach chips, without activating the app on mouse clicks.</li>
+    <li>Previous Space and Next Space are in the status menu, so Space switching is not scroll-only.</li>
+    <li>Collapse/expand skips its slide when Reduce Motion is on.</li>
+    <li>Bar, launcher, and switcher HUDs use an opaque window material when Reduce Transparency is on.</li>
+    <li>Settings pinned-list reorder and unpin controls meet the 20 pt minimum hit target and have VoiceOver labels.</li>
+    <li>The Accessibility purpose string now names Dock badge reading as well as raise/close.</li>
+    <li>The menu-bar extra is a template silhouette of the DockishOS mark, so it tints with the menu bar.</li>
+    <li>The app icon asset is a full-bleed square; macOS applies the icon mask.</li>
+    <li>Notification badges use system red. The collapsed tab uses window background and separator colors.</li>
+    <li>The Settings window no longer miniaturizes or zooms.</li>
+    <li>The launcher search field has a Clear button.</li>
+    <li>Pin and unpin commands use one pair of labels. Unpin is not a destructive action.</li>
+    <li>Grouped chips keep a square window-count mark when a notification badge is also showing.</li>
+    <li>The About tab shows the copyright string. Empty window titles read as Untitled.</li></ul>
+<p class="footer">DockishOS 0.027</p>
 ]]></description>
-            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.026/DockishOS-0.026.dmg" length="6406662" type="application/octet-stream" sparkle:edSignature="8MzqD1rXLWFDIlIZmlHwtLukFdPuO09GzmeDee2Uisb1PgtRL1BBk4+UB62/hJdRnh9qBQhgvJthasBqd4KFAA=="></enclosure>
+            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.027/DockishOS-0.027.dmg" length="6387666" type="application/octet-stream" sparkle:edSignature="WfuUblDtsOjAYDITen6sPc8uu+YgU3nhmzXBXiiPB/oSLczT/oGXgD4jLlURsB2QH7LX7IgL7ceCg0DY/Y1qCA=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: y5Dj6MFT0hrwQHIbiZNkhCMzBh8kJzHXynpw5c0qj9K2r4/7IblVjXx+Pz9E0lbdYnW7Jt0EgXt6tRzH9w8dBA==
-length: 2115
+edSignature: QwMQe6L7A/xJecjEBV3a5KPPxIKm6ONCUbIMZAvGoMFtY95Sb0EBNgHtbUcYbvmzqhdRuRaU60KfTvcvfXC1CA==
+length: 3114
 -->

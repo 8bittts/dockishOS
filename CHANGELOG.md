@@ -5,6 +5,8 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+## [0.027]
+
 ### Changed
 - The bar can become the key window so VoiceOver and Full Keyboard Access can reach chips, without activating the app on mouse clicks.
 - Previous Space and Next Space are in the status menu, so Space switching is not scroll-only.
