@@ -100,14 +100,30 @@ struct LauncherHotkey: Codable, Equatable {
 /// NSView that records the next key chord pressed while focused.
 final class HotkeyRecorderView: NSView {
     var hotkey: LauncherHotkey = .default {
-        didSet { needsDisplay = true }
+        didSet {
+            needsDisplay = true
+            NSAccessibility.post(element: self, notification: .valueChanged)
+        }
+    }
+    var recorderLabel: String = "Hotkey" {
+        didSet { NSAccessibility.post(element: self, notification: .titleChanged) }
     }
     var onChange: ((LauncherHotkey) -> Void)?
 
-    private var recording = false { didSet { needsDisplay = true } }
+    private var recording = false {
+        didSet {
+            needsDisplay = true
+            NSAccessibility.post(element: self, notification: .valueChanged)
+        }
+    }
 
     override var acceptsFirstResponder: Bool { true }
     override var intrinsicContentSize: NSSize { NSSize(width: 160, height: 26) }
+
+    override func isAccessibilityElement() -> Bool { true }
+    override func accessibilityRole() -> NSAccessibility.Role? { .textField }
+    override func accessibilityLabel() -> String? { recorderLabel }
+    override func accessibilityValue() -> Any? { recording ? "Recording" : hotkey.displayString }
 
     override func mouseDown(with event: NSEvent) {
         recording = true

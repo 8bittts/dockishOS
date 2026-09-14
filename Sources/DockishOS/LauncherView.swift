@@ -72,26 +72,27 @@ private struct ResultsList: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(Array(store.results.enumerated()), id: \.element.id) { index, app in
-                        AppRow(app: app, isSelected: index == store.selectedIndex)
-                            .id(index)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                store.selectedIndex = index
-                                onActivateSelected()
-                            }
-                            .contextMenu {
-                                if pinnedStore.isPinned(bundleID: app.bundleID) {
-                                    Button("Unpin from Bar") {
-                                        if let bid = app.bundleID {
-                                            pinnedStore.unpin(bundleID: bid)
-                                        }
-                                    }
-                                } else {
-                                    Button("Pin to Bar") {
-                                        pinnedStore.pin(app)
+                        Button {
+                            store.selectedIndex = index
+                            onActivateSelected()
+                        } label: {
+                            AppRow(app: app, isSelected: index == store.selectedIndex)
+                        }
+                        .buttonStyle(.plain)
+                        .id(index)
+                        .contextMenu {
+                            if pinnedStore.isPinned(bundleID: app.bundleID) {
+                                Button("Unpin from Bar") {
+                                    if let bid = app.bundleID {
+                                        pinnedStore.unpin(bundleID: bid)
                                     }
                                 }
+                            } else {
+                                Button("Pin to Bar") {
+                                    pinnedStore.pin(app)
+                                }
                             }
+                        }
                     }
                 }
                 .padding(.vertical, 6)
@@ -137,6 +138,6 @@ private struct AppRow: View {
         )
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(app.name)
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

@@ -14,17 +14,18 @@ struct SwitcherView: View {
                 ScrollViewReader { proxy in
                     HStack(spacing: 14) {
                         ForEach(Array(store.windows.enumerated()), id: \.element.id) { index, window in
-                            SwitcherTile(
-                                window: window,
-                                isSelected: index == selectedIndex,
-                                isFirst: index == 0
-                            )
-                            .id(index)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
+                            Button {
                                 selectedIndex = index
                                 onActivate(window)
+                            } label: {
+                                SwitcherTile(
+                                    window: window,
+                                    isSelected: index == selectedIndex,
+                                    isFirst: index == 0
+                                )
                             }
+                            .buttonStyle(.plain)
+                            .id(index)
                         }
                     }
                     .padding(20)
@@ -110,7 +111,7 @@ private struct SwitcherTile: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(window.ownerName), \(window.displayTitle)")
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityHint(isFirst ? "Use Tab or arrow keys to choose a window, then press Return." : "")
     }
 }

@@ -12,6 +12,8 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     private let hotkeyWarningItem: NSMenuItem
     private let utilitySectionsItem: NSMenuItem
     private let collapsedTabPositionItem: NSMenuItem
+    private let previousSpaceItem: NSMenuItem
+    private let nextSpaceItem: NSMenuItem
     private let collapsedTabPositionMenu = NSMenu()
     private var collapsedTabPositionOptions: [CollapsedTabPosition: NSMenuItem] = [:]
     private var cancellables: Set<AnyCancellable> = []
@@ -23,6 +25,8 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         hotkeyWarningItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
         utilitySectionsItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
         collapsedTabPositionItem = NSMenuItem(title: "Collapsed Tab Position", action: nil, keyEquivalent: "")
+        previousSpaceItem = NSMenuItem(title: "Previous Space", action: nil, keyEquivalent: "")
+        nextSpaceItem = NSMenuItem(title: "Next Space", action: nil, keyEquivalent: "")
         super.init()
         if let button = statusItem.button {
             let icon = DockishBrandAssets.applicationIcon(size: DockishBrandAssets.menuBarIconSize)
@@ -72,6 +76,16 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         collapsedTabPositionItem.image = Self.menuIcon(systemName: "arrow.left.and.right")
         collapsedTabPositionItem.submenu = collapsedTabPositionMenu
         menu.addItem(collapsedTabPositionItem)
+
+        previousSpaceItem.image = Self.menuIcon(systemName: "chevron.up")
+        previousSpaceItem.action = #selector(previousSpace)
+        previousSpaceItem.target = self
+        menu.addItem(previousSpaceItem)
+
+        nextSpaceItem.image = Self.menuIcon(systemName: "chevron.down")
+        nextSpaceItem.action = #selector(nextSpace)
+        nextSpaceItem.target = self
+        menu.addItem(nextSpaceItem)
 
         menu.addItem(.separator())
 
@@ -188,6 +202,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         utilitySectionsItem.image = Self.barMenuIcon(collapsed: SettingsStore.shared.barCollapsed)
         updateHotkeyWarning()
         updateCollapsedTabPositionState()
+        updateSpaceSwitchState()
     }
 
     private func updateHotkeyWarning() {
@@ -216,9 +231,32 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         }
     }
 
+    private func updateSpaceSwitchState() {
+        let screen = NSScreen.containing(NSEvent.mouseLocation) ?? NSScreen.screens.first
+        guard let screen else {
+            previousSpaceItem.isEnabled = false
+            nextSpaceItem.isEnabled = false
+            return
+        }
+        let store = SpacesStore.shared
+        previousSpaceItem.isEnabled = store.adjacentSpace(for: screen, direction: -1) != nil
+        nextSpaceItem.isEnabled = store.adjacentSpace(for: screen, direction: 1) != nil
+    }
+
     @MainActor @objc private func openLauncher()  { LauncherController.shared.toggle() }
     @objc private func openSettings()  { SettingsController.shared.show() }
     @objc private func toggleUtilitySections() { SettingsStore.shared.barCollapsed.toggle() }
+    @objc private func previousSpace() { switchSpace(direction: -1) }
+    @objc private func nextSpace() { switchSpace(direction: 1) }
+
+    private func switchSpace(direction: Int) {
+        let screen = NSScreen.containing(NSEvent.mouseLocation) ?? NSScreen.screens.first
+        guard let screen else { return }
+        let store = SpacesStore.shared
+        guard let space = store.adjacentSpace(for: screen, direction: direction) else { return }
+        store.switchTo(space)
+        updateSpaceSwitchState()
+    }
     @objc private func selectCollapsedTabPosition(_ sender: NSMenuItem) {
         guard
             let rawValue = sender.representedObject as? String,

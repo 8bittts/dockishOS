@@ -24,6 +24,8 @@ final class BarPanel: NSPanel {
         isReleasedWhenClosed = false
     }
 
-    override var canBecomeKey: Bool { false }
+    /// VoiceOver and Full Keyboard Access need a key window to reach chips.
+    /// `.nonactivatingPanel` still keeps mouse clicks from activating the app.
+    override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 }

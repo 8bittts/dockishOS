@@ -5,6 +5,14 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+### Changed
+- The bar can become the key window so VoiceOver and Full Keyboard Access can reach chips, without activating the app on mouse clicks.
+- Previous Space and Next Space are in the status menu, so Space switching is not scroll-only.
+- Collapse/expand skips its slide when Reduce Motion is on.
+- Bar, launcher, and switcher HUDs use an opaque window material when Reduce Transparency is on.
+- Settings pinned-list reorder and unpin controls meet the 20 pt minimum hit target and have VoiceOver labels.
+- The Accessibility purpose string now names Dock badge reading as well as raise/close.
+
 ## [0.026]
 
 ### Changed

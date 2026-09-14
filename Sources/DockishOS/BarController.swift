@@ -85,15 +85,8 @@ final class BarController {
         guard now - lastSpaceSwitchAt > scrollCooldown else { return }
         let direction = deltaY > 0 ? -1 : 1
         let store = SpacesStore.shared
-        let spaces = store.spaces(for: screen)
-        guard
-            !spaces.isEmpty,
-            let currentID = store.currentSpaceID(for: screen),
-            let idx = spaces.firstIndex(where: { $0.id == currentID })
-        else { return }
-        let next = idx + direction
-        guard spaces.indices.contains(next) else { return }
-        store.switchTo(spaces[next])
+        guard let next = store.adjacentSpace(for: screen, direction: direction) else { return }
+        store.switchTo(next)
         lastSpaceSwitchAt = now
     }
 
@@ -123,6 +116,13 @@ final class BarController {
         // Collapse uses 0.16/0.16; expand uses 0.14/0.18.
         let hideDuration: TimeInterval = toCollapsed ? 0.16 : 0.14
         let revealDuration: TimeInterval = toCollapsed ? 0.16 : 0.18
+
+        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            presentation.isCollapsed = toCollapsed
+            panel.setFrame(finalVisible, display: true)
+            finishCollapseAnimation()
+            return
+        }
 
         presentation.isCollapsed = startCollapsed
         panel.setFrame(initialVisible, display: true)

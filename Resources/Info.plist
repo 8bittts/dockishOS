@@ -23,7 +23,7 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAccessibilityUsageDescription</key>
-	<string>DockishOS uses Accessibility to raise and close specific windows when you click their chips on the bar.</string>
+	<string>DockishOS uses Accessibility to raise and close specific windows when you click their chips on the bar, and to read Dock notification badge counts when that setting is on.</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>

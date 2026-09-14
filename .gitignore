@@ -52,6 +52,9 @@ DerivedData/
 .claude/
 .codex/
 
+# Nested git worktrees (a second checkout; tree-walking tools must skip them)
+.worktrees/
+
 # Local environment / secrets
 .env
 .env.local

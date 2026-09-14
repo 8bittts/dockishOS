@@ -14,7 +14,7 @@ struct NotificationBadge: View {
             .padding(.vertical, 1)
             .background(Capsule().fill(Color.red))
             .overlay(Capsule().stroke(Color(nsColor: .separatorColor).opacity(0.65), lineWidth: 0.5))
-            .accessibilityLabel("\(text) notifications")
+            .accessibilityHidden(true)
     }
 }
 
@@ -42,15 +42,54 @@ struct VisualEffectView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSVisualEffectView {
         let v = NSVisualEffectView()
-        v.material = material
-        v.blendingMode = blending
-        v.state = .active
+        context.coordinator.view = v
+        apply(to: v)
         return v
     }
 
     func updateNSView(_ v: NSVisualEffectView, context: Context) {
-        v.material = material
-        v.blendingMode = blending
+        context.coordinator.parent = self
+        context.coordinator.view = v
+        apply(to: v)
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    func apply(to view: NSVisualEffectView) {
+        if NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency {
+            view.material = .windowBackground
+            view.blendingMode = .withinWindow
+        } else {
+            view.material = material
+            view.blendingMode = blending
+        }
+        view.state = .active
+    }
+
+    final class Coordinator {
+        var parent: VisualEffectView
+        weak var view: NSVisualEffectView?
+        private var observer: NSObjectProtocol?
+
+        init(_ parent: VisualEffectView) {
+            self.parent = parent
+            observer = NSWorkspace.shared.notificationCenter.addObserver(
+                forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                guard let self, let view = self.view else { return }
+                self.parent.apply(to: view)
+            }
+        }
+
+        deinit {
+            if let observer {
+                NSWorkspace.shared.notificationCenter.removeObserver(observer)
+            }
+        }
     }
 }
 

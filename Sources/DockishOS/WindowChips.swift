@@ -166,6 +166,7 @@ private struct WindowChip: View {
         .onHover { hover = $0 }
         .animation(ChipStyle.hoverAnimation, value: hover)
         .help(window.displayTitle)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(window.displayTitle)\(isFrontmost ? ", frontmost" : "")\(badge.map { ", \($0) notifications" } ?? "")")
         .contextMenu {
             Button("Activate") { onActivate() }
@@ -241,7 +242,8 @@ private struct WindowGroupChip: View {
         .onHover { hover = $0 }
         .animation(ChipStyle.hoverAnimation, value: hover)
         .help("\(group.ownerName) — \(group.windows.count) window\(group.windows.count == 1 ? "" : "s")")
-        .accessibilityLabel("\(group.ownerName), \(group.windows.count) windows\(badge.map { ", \($0) notifications" } ?? "")")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(group.ownerName), \(group.windows.count) windows\(isFrontmost ? ", frontmost" : "")\(badge.map { ", \($0) notifications" } ?? "")")
         .contextMenu {
             ForEach(group.windows, id: \.id) { window in
                 Button(window.displayTitle.isEmpty ? "(untitled)" : window.displayTitle) {

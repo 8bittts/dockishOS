@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import DockishOSCore
 
 /// Observable model of Spaces grouped by display.
 /// Refreshes on `activeSpaceDidChangeNotification` plus a 5s polling
@@ -55,6 +56,18 @@ final class SpacesStore: ObservableObject {
         if let id = currentByDisplay[uuid] { return id }
         guard let fallback = fallbackDisplayUUID else { return currentByDisplay.values.first }
         return currentByDisplay[fallback]
+    }
+
+    /// Next or previous Space on `screen`. `direction` is `+1` (next) or `-1`
+    /// (previous). Returns `nil` at the ends — Space switching does not wrap.
+    func adjacentSpace(for screen: NSScreen, direction: Int) -> SpaceInfo? {
+        let spaces = spaces(for: screen)
+        guard
+            let currentID = currentSpaceID(for: screen),
+            let idx = spaces.firstIndex(where: { $0.id == currentID }),
+            let next = BoundedIndex.moving(idx, by: direction, count: spaces.count)
+        else { return nil }
+        return spaces[next]
     }
 
     func switchTo(_ space: SpaceInfo) {

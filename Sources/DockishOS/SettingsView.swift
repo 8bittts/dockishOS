@@ -200,7 +200,7 @@ private struct HotkeyRecorderRow: View {
         HStack {
             Text(title)
             Spacer()
-            HotkeyRecorder(hotkey: $hotkey)
+            HotkeyRecorder(title: title, hotkey: $hotkey)
                 .frame(width: 160, height: 26)
             Button("Reset") { hotkey = resetValue }
                 .controlSize(.small)
@@ -280,17 +280,20 @@ private struct FooterText: View {
 }
 
 private struct HotkeyRecorder: NSViewRepresentable {
+    let title: String
     @Binding var hotkey: LauncherHotkey
 
     func makeNSView(context: Context) -> HotkeyRecorderView {
         let v = HotkeyRecorderView()
         v.hotkey = hotkey
+        v.recorderLabel = title
         v.onChange = { hotkey = $0 }
         return v
     }
 
     func updateNSView(_ nsView: HotkeyRecorderView, context: Context) {
         nsView.hotkey = hotkey
+        nsView.recorderLabel = title
     }
 }
 
@@ -374,19 +377,47 @@ private struct PinnedAppRow: View {
                     .truncationMode(.middle)
             }
             Spacer()
-            Button(action: onUp) { Image(systemName: "chevron.up") }
-                .buttonStyle(.borderless)
-                .disabled(isFirst)
-            Button(action: onDown) { Image(systemName: "chevron.down") }
-                .buttonStyle(.borderless)
-                .disabled(isLast)
-            Button(action: onRemove) { Image(systemName: "xmark.circle.fill") }
-                .buttonStyle(.borderless)
-                .foregroundStyle(.secondary)
-                .help("Unpin")
+            PinnedListIconButton(
+                systemName: "chevron.up",
+                label: "Move Up",
+                disabled: isFirst,
+                action: onUp
+            )
+            PinnedListIconButton(
+                systemName: "chevron.down",
+                label: "Move Down",
+                disabled: isLast,
+                action: onDown
+            )
+            PinnedListIconButton(
+                systemName: "xmark.circle.fill",
+                label: "Unpin",
+                disabled: false,
+                action: onRemove
+            )
+            .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+    }
+}
+
+private struct PinnedListIconButton: View {
+    let systemName: String
+    let label: String
+    let disabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .frame(width: 20, height: 20)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .disabled(disabled)
+        .help(label)
+        .accessibilityLabel(label)
     }
 }
 
