@@ -324,9 +324,8 @@ DMG_FINAL="${BUILD_DIR}/${APP_NAME}-${VERSION}.dmg"
 DMG_BG_1X="${BUILD_DIR}/dmg-background.png"
 DMG_BG_2X="${BUILD_DIR}/dmg-background@2x.png"
 # Finder stores the background image at content-view pixel size, not full
-# window bounds including title bar/chrome. Using kindred-macOS's pattern,
-# we size the 1x/@2x background to the content area and persist the outer
-# window bounds separately.
+# window bounds including title bar/chrome. Size the 1x/@2x background to
+# the content area and persist the outer window bounds separately.
 DMG_CONTENT_WIDTH=1280
 DMG_CONTENT_HEIGHT=720
 DMG_WINDOW_WIDTH=$((DMG_CONTENT_WIDTH + 15))
