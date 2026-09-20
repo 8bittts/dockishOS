@@ -132,7 +132,9 @@ The vendored Sparkle framework lives at `tools/sparkle/Sparkle.framework`. It is
 
 This guards against the 0.014/0.015 regression where `Updater.app` silently disappeared from the framework and shipped a broken in-app updater. Follow this exact procedure when bumping Sparkle:
 
-1. Pick the target release from <https://github.com/sparkle-project/Sparkle/releases> and download the `Sparkle-<version>.tar.xz` archive. Don't use Swift Package Manager artifacts — they're missing the helper apps.
+1. Resolve the target release with `gh api repos/sparkle-project/Sparkle/releases/latest --jq .tag_name`, then download that tag's `Sparkle-<version>.tar.xz` archive. Don't use Swift Package Manager artifacts — they're missing the helper apps.
+
+   [CRITICAL] Sparkle publishes betas ahead of stable, so never resolve the version with `gh api repos/sparkle-project/Sparkle/releases --jq '.[0]'`. That list is newest-first across **all** release kinds and would have returned `2.10.0-beta.1` while `2.9.6` was the current stable — vendoring a beta into a signed, notarized app. Only `releases/latest` excludes prereleases by definition. An empty or failing `latest` response is lost coverage, not "already on the newest release": stop and re-run rather than skipping the bump.
 2. Extract the archive to a scratch directory and replace `tools/sparkle/Sparkle.framework` and `tools/sparkle/bin/` with the new versions. Copy the **entire** `Sparkle.framework/Versions/B/` tree, including `Updater.app`, `Autoupdate`, and both `XPCServices/*.xpc` bundles. Then restore the eight top-level framework symlinks (`Autoupdate`, `Headers`, `Modules`, `PrivateHeaders`, `Resources`, `Sparkle`, `Updater.app`, `XPCServices`), each linking to `Versions/Current/<name>` — copying only `Versions/B/` drops them. `Updater.app` is the symlink that bit 0.014-0.020: `NSBundle.URLForAuxiliaryExecutable()` walks the framework root, so without it Sparkle aborts with "Cannot retrieve path for auxiliary tool." It is listed in `tools/sparkle/VERSION` `required_paths`, so the step-4 `verify_sparkle_vendor` preflight fails the build when it is missing.
 3. Refresh `tools/sparkle/VERSION`:
 
@@ -170,7 +172,7 @@ Before running `scripts/release-dockishOS.sh`, move the previous release's entri
 
 ## Safety
 
-- **Never commit the contents of `build/`** — it's gitignored. Artifacts ship to GitHub Releases via `release-dockishOS.sh`, not into the git tree.
+- **Never commit the contents of `build/`** — `.gitignore` excludes `build/*`. Artifacts ship to GitHub Releases via `release-dockishOS.sh`, not into the git tree. The two exceptions are `build/dockishos.png` and `build/yen.png`, which `.gitignore` re-includes because `README.md` embeds them — never delete them while clearing `build/`.
 - **Don't override `DOCKISHOS_VERSION` casually** — the version in `Resources/Info.plist` is the source of truth and `release-dockishOS.sh` bumps it for you.
 - The release script updates the README's `<!-- version-badge -->` and `<!-- download-link -->` markers — never hand-edit those.
 - **Never hand-edit `appcast.xml`** — it carries an embedded Sparkle EdDSA feed signature over its exact byte length. Any edit (even removing one `<li>`) invalidates it, so every user's Check-for-Updates fails with "The update feed is improperly signed and could not be validated" (Sparkle logs a `length` mismatch). Regenerate + re-sign via `scripts/generate-appcast.sh` or the release flow instead.
