@@ -244,7 +244,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     }
 
     @MainActor @objc private func openLauncher()  { LauncherController.shared.toggle() }
-    @objc private func openSettings()  { SettingsController.shared.show() }
+    @MainActor @objc private func openSettings()  { SettingsController.shared.show() }
     @objc private func toggleUtilitySections() { SettingsStore.shared.barCollapsed.toggle() }
     @objc private func previousSpace() { switchSpace(direction: -1) }
     @objc private func nextSpace() { switchSpace(direction: 1) }

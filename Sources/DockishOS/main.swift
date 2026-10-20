@@ -1,7 +1,8 @@
 import AppKit
 
 let app = NSApplication.shared
-let delegate = AppDelegate()
+// Top-level code runs on the main thread.
+let delegate = MainActor.assumeIsolated { AppDelegate() }
 app.delegate = delegate
 app.setActivationPolicy(.accessory)
 app.run()

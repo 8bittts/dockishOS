@@ -1,5 +1,6 @@
 import AppKit
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var bars: [BarController] = []
     private var menuBar: MenuBarController?
@@ -32,23 +33,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Diagnostics.updater.info("Running unbundled (no SUFeedURL); auto-update disabled")
         }
 
+        // These observers are delivered on `queue: .main`.
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil,
             queue: .main
-        ) { [weak self] _ in self?.rebuildBars() }
+        ) { [weak self] _ in MainActor.assumeIsolated { self?.rebuildBars() } }
 
         layoutObserver = NotificationCenter.default.addObserver(
             forName: .dockishBarLayoutDidChange,
             object: nil,
             queue: .main
-        ) { [weak self] _ in self?.rebuildBars() }
+        ) { [weak self] _ in MainActor.assumeIsolated { self?.rebuildBars() } }
 
         hotkeyObserver = NotificationCenter.default.addObserver(
             forName: .dockishHotkeyDidChange,
             object: nil,
             queue: .main
-        ) { [weak self] _ in self?.registerLauncherHotkey() }
+        ) { [weak self] _ in MainActor.assumeIsolated { self?.registerLauncherHotkey() } }
 
         spaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.activeSpaceDidChangeNotification,

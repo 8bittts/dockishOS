@@ -3,6 +3,7 @@ import SwiftUI
 
 /// Single-instance Settings window. The first call to `show()` creates it;
 /// subsequent calls focus the existing window.
+@MainActor
 final class SettingsController {
     static let shared = SettingsController()
 

@@ -3,6 +3,7 @@ import DockishOSCore
 import QuartzCore
 import SwiftUI
 
+@MainActor
 final class BarController {
     private let screen: NSScreen
     private let panel: BarPanel
@@ -37,7 +38,10 @@ final class BarController {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleCollapsePreferenceChange()
+            // Delivered on `queue: .main`.
+            MainActor.assumeIsolated {
+                self?.handleCollapsePreferenceChange()
+            }
         }
     }
 
@@ -131,18 +135,23 @@ final class BarController {
             context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             panel.animator().setFrame(initialHidden, display: true)
         } completionHandler: { [weak self] in
-            guard let self else { return }
-            self.presentation.isCollapsed = toCollapsed
-            self.panel.setFrame(finalHidden, display: true)
-            self.host.layoutSubtreeIfNeeded()
-            self.panel.layoutIfNeeded()
-            self.panel.orderFrontRegardless()
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = revealDuration
-                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                self.panel.animator().setFrame(finalVisible, display: true)
-            } completionHandler: { [weak self] in
-                self?.finishCollapseAnimation()
+            // AppKit runs animation completion handlers on the main thread.
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.presentation.isCollapsed = toCollapsed
+                self.panel.setFrame(finalHidden, display: true)
+                self.host.layoutSubtreeIfNeeded()
+                self.panel.layoutIfNeeded()
+                self.panel.orderFrontRegardless()
+                NSAnimationContext.runAnimationGroup { context in
+                    context.duration = revealDuration
+                    context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                    self.panel.animator().setFrame(finalVisible, display: true)
+                } completionHandler: { [weak self] in
+                    MainActor.assumeIsolated {
+                        self?.finishCollapseAnimation()
+                    }
+                }
             }
         }
     }
