@@ -2,7 +2,7 @@
 #
 # Used by scripts/build-dmg.sh preflight to detect tampering or accidental
 # truncation of the vendored framework. Update whenever Sparkle is re-vendored
-# (see BUILD.md "Upgrading the Sparkle framework").
+# (see _docs/05-infrastructure.md "Upgrading the Sparkle framework").
 
 sparkle_version=2.10.0
 sparkle_build=2064

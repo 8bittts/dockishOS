@@ -1,8 +1,8 @@
-# Building DockishOS
+# Infrastructure
 
-Build, sign, and (optionally) notarize a DockishOS `.dmg` for distribution.
+Build, sign, notarize, release and distribute DockishOS, and keep the vendored Sparkle framework pinned.
 
-All commands below are wrappers around scripts in [`scripts/`](scripts/). Run them from the repo root.
+All commands below are wrappers around scripts in [`scripts/`](../scripts/). Run them from the repo root.
 
 ---
 
@@ -176,3 +176,17 @@ Before running `scripts/release-dockishOS.sh`, move the previous release's entri
 - **Don't override `DOCKISHOS_VERSION` casually** — the version in `Resources/Info.plist` is the source of truth and `release-dockishOS.sh` bumps it for you.
 - The release script updates the README's `<!-- version-badge -->` and `<!-- download-link -->` markers — never hand-edit those.
 - **Never hand-edit `appcast.xml`** — it carries an embedded Sparkle EdDSA feed signature over its exact byte length. Any edit (even removing one `<li>`) invalidates it, so every user's Check-for-Updates fails with "The update feed is improperly signed and could not be validated" (Sparkle logs a `length` mismatch). Regenerate + re-sign via `scripts/generate-appcast.sh` or the release flow instead.
+
+---
+
+## Distribution
+
+- Direct download: the signed and notarized DMG attached to each GitHub release; older builds stay available on the Releases page.
+- Homebrew: the repository doubles as a tap, so `brew install --cask` works from the raw `Casks/dockishos.rb` URL or after `brew tap 8bittts/dockishos`; the Cask is pinned to the current release.
+- In-app: Sparkle checks the feed at `appcast.xml` in this repository, served through raw.githubusercontent.com.
+- `docs/index.md` is the GitHub Pages landing and mirrors the README's product copy.
+
+## Appcast propagation
+
+The live appcast is served with `cache-control: max-age=300`, which Sparkle's `URLCache.shared` honors, so an interactive Check for Updates can report a stale "you're up to date" for up to five minutes after a release; the feed URL is deliberately not cache-busted.
+`scripts/release-dockishOS.sh` polls the live appcast for about 30 seconds (10 attempts, 3 seconds apart), and the raw.githubusercontent.com CDN can take longer to invalidate, so a failure at that step alone does not mean the release failed; check `git log` and the GitHub release page before re-running anything.

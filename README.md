@@ -108,17 +108,11 @@ swift build
 
 `smoke-test.sh` runs the tests and checks the bundle shape. When a release build is present, it also verifies the signature, notarization ticket, checksum, and signed appcast; `--production` makes those checks fail rather than warn.
 
-See [`BUILD.md`](BUILD.md) for the full signing, notarization, release, and Sparkle re-vendor workflow.
+See [`_docs/05-infrastructure.md`](_docs/05-infrastructure.md) for the full signing, notarization, release, and Sparkle re-vendor workflow.
 
 ## Project Layout
 
-- `Sources/DockishOS`: app, menu bar item, bar UI, launcher, switcher, settings, window and Spaces integration.
-- `Sources/DockishOSCore`: testable utility logic.
-- `Tests/DockishOSCoreTests`: unit tests.
-- `Resources/Info.plist`: app bundle metadata and Sparkle settings.
-- `public`: README and product media assets.
-- `scripts`: local build, DMG, appcast, and release helpers.
-- `tools/sparkle`: vendored Sparkle framework used by bundled app builds.
+The targets, modules and data flow are in [`_docs/01-architecture.md`](_docs/01-architecture.md).
 
 ## Contributing
 

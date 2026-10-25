@@ -185,7 +185,7 @@ verify_sparkle_vendor() {
     local rel actual expected
     for rel in "${required_paths[@]}"; do
         [ -e "tools/sparkle/${rel}" ] \
-            || fail "Vendored Sparkle is missing ${rel} — re-vendor per BUILD.md"
+            || fail "Vendored Sparkle is missing ${rel} — re-vendor per _docs/05-infrastructure.md"
     done
 
     expected="$sparkle_binary_sha256"
