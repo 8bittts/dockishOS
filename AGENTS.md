@@ -8,7 +8,7 @@ Validate with `swift build` and `swift test`; `./scripts/build-dmg.sh --build-on
 There is no CI, so these local gates are the only gates.
 
 [_docs/05-infrastructure.md](_docs/05-infrastructure.md) is authoritative for every build, sign, notarize, release, and Sparkle-vendoring procedure — read it before touching `scripts/`.
-Owner-doc index: [_docs/00-docs-map.md](_docs/00-docs-map.md).
+Owner-doc index: [_docs/00-docs-map.md](_docs/00-docs-map.md), which follows the fleet documentation standard.
 [README.md](README.md) and [docs/index.md](docs/index.md) are user-facing; update them when shipped behavior or developer workflow changes.
 
 ## Sparkle vendoring

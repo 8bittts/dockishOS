@@ -29,5 +29,3 @@ Promote exactly one Phase into active work at a time. Phase ordering is intentio
 Not active work. Promote only one item at a time into `#### Phase N` in `### Work TODOs` when implementation starts.
 
 (No items.)
-
-Fleet documentation normalization: this repo's slice is recorded in [8leeai `_docs/todos.md`](../../8leeai/_docs/todos.md#fleet-documentation-normalization).
