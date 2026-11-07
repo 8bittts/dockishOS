@@ -5,6 +5,8 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+## [0.028]
+
 ### Changed
 - VoiceOver names the launcher search field after you type, and names each Settings Reset button by the row it clears.
 - A badge of one reads as "notification", and a single grouped window reads as "window".
