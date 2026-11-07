@@ -167,7 +167,7 @@ private struct WindowChip: View {
         .animation(ChipStyle.hoverAnimation, value: hover)
         .help(window.displayTitle)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(window.displayTitle)\(isFrontmost ? ", frontmost" : "")\(badge.map { ", \($0) notifications" } ?? "")")
+        .accessibilityLabel("\(window.displayTitle)\(isFrontmost ? ", frontmost" : "")\(badge.map { ", \($0) notification\($0 == "1" ? "" : "s")" } ?? "")")
         .contextMenu {
             Button("Activate") { onActivate() }
             Button(role: .destructive) { onClose() } label: {
@@ -238,7 +238,7 @@ private struct WindowGroupChip: View {
         .animation(ChipStyle.hoverAnimation, value: hover)
         .help("\(group.ownerName) — \(group.windows.count) window\(group.windows.count == 1 ? "" : "s")")
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(group.ownerName), \(group.windows.count) windows\(isFrontmost ? ", frontmost" : "")\(badge.map { ", \($0) notifications" } ?? "")")
+        .accessibilityLabel("\(group.ownerName), \(group.windows.count) \(group.windows.count == 1 ? "window" : "windows")\(isFrontmost ? ", frontmost" : "")\(badge.map { ", \($0) notification\($0 == "1" ? "" : "s")" } ?? "")")
         .contextMenu {
             ForEach(group.windows, id: \.id) { window in
                 Button(window.displayTitle.isEmpty ? "Untitled" : window.displayTitle) {

@@ -204,6 +204,7 @@ private struct HotkeyRecorderRow: View {
                 .frame(width: 160, height: 26)
             Button("Reset") { hotkey = resetValue }
                 .controlSize(.small)
+                .accessibilityLabel("Reset \(title)")
         }
     }
 }
@@ -368,6 +369,7 @@ private struct PinnedAppRow: View {
             Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
                 .resizable()
                 .frame(width: 28, height: 28)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 1) {
                 Text(app.name).font(.body.weight(.medium))
                 Text(app.bundleID)
@@ -429,6 +431,7 @@ private struct AboutTab: View {
         VStack(spacing: 14) {
             Image(nsImage: DockishBrandAssets.applicationIcon(size: NSSize(width: 112, height: 112)))
                 .interpolation(.high)
+                .accessibilityHidden(true)
             Text("DockishOS")
                 .font(.title.weight(.semibold))
             Text("v\(version) (build \(build))")

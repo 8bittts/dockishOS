@@ -93,7 +93,7 @@ private struct PinnedChip: View {
         .onHover { hover = $0 }
         .help(app.name)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(app.name)\(isFrontmost ? ", frontmost" : isRunning ? ", running" : "")\(badge.map { ", \($0) notifications" } ?? "")")
+        .accessibilityLabel("\(app.name)\(isFrontmost ? ", frontmost" : isRunning ? ", running" : "")\(badge.map { ", \($0) notification\($0 == "1" ? "" : "s")" } ?? "")")
         .contextMenu {
             Button("Activate \(app.name)") { action() }
             if !isFirst || !isLast {

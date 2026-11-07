@@ -125,6 +125,9 @@ final class SwitcherPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 
+    /// Borderless, so VoiceOver has no visible title to read.
+    override func accessibilityTitle() -> String? { "App switcher" }
+
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         if handleTab(event) {
             return true

@@ -23,4 +23,7 @@ final class LauncherPanel: NSPanel {
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+
+    /// Borderless, so VoiceOver has no visible title to read.
+    override func accessibilityTitle() -> String? { "Launcher" }
 }

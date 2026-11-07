@@ -28,4 +28,7 @@ final class BarPanel: NSPanel {
     /// `.nonactivatingPanel` still keeps mouse clicks from activating the app.
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+
+    /// Borderless, so VoiceOver has no visible title to read.
+    override func accessibilityTitle() -> String? { "DockishOS bar" }
 }

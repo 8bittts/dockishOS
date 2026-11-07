@@ -14,10 +14,12 @@ struct LauncherView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
                     .font(.system(size: 16, weight: .medium))
+                    .accessibilityHidden(true)
                 TextField("Open application…", text: $store.query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 18, weight: .regular))
                     .focused($queryFocused)
+                    .accessibilityLabel("Open application")
                     .onSubmit { activateSelected() }
                 if !store.query.isEmpty {
                     Button {
