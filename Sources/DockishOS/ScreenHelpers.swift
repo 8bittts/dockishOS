@@ -12,8 +12,8 @@ extension NSScreen {
     /// server uses to key per-display Spaces. Falls back to "Main".
     var displayUUID: String {
         guard
-            let number = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber,
-            let uuid = CGDisplayCreateUUIDFromDisplayID(number.uint32Value)?.takeRetainedValue()
+            let displayID = cgDirectDisplayID,
+            let uuid = CGDisplayCreateUUIDFromDisplayID(displayID)?.takeRetainedValue()
         else { return "Main" }
         return CFUUIDCreateString(nil, uuid) as String
     }

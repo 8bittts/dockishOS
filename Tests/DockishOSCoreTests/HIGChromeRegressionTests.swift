@@ -42,13 +42,14 @@ final class HIGChromeRegressionTests: XCTestCase {
         }
     }
 
-    /// Liquid Glass needs macOS 26, so every place that declares the minimum
-    /// must agree, or Sparkle offers the update to a Mac that cannot run it.
-    func testMinimumSystemVersionIsMacOS26Everywhere() throws {
-        XCTAssertTrue(try RepositorySource.read("Package.swift").contains("platforms: [.macOS(.v26)]"))
+    /// The app supports macOS 27 only, the one release its design is checked
+    /// on. Every place that declares the minimum must agree, or Sparkle
+    /// offers the update to a Mac that cannot run it.
+    func testMinimumSystemVersionIsMacOS27Everywhere() throws {
+        XCTAssertTrue(try RepositorySource.read("Package.swift").contains("platforms: [.macOS(.v27)]"))
         XCTAssertTrue(
             try RepositorySource.read("Resources/Info.plist")
-                .contains("<key>LSMinimumSystemVersion</key>\n\t<string>26.0</string>"),
+                .contains("<key>LSMinimumSystemVersion</key>\n\t<string>27.0</string>"),
             "Sparkle's generate_appcast reads the appcast's minimum system version from this key."
         )
     }

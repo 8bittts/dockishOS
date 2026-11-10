@@ -1,4 +1,4 @@
-// swift-tools-version:6.2
+// swift-tools-version:6.4
 import Foundation
 import PackageDescription
 
@@ -22,7 +22,7 @@ let sparkleSearchPath = URL(fileURLWithPath: #filePath)
 
 let package = Package(
     name: "DockishOS",
-    platforms: [.macOS(.v26)],
+    platforms: [.macOS(.v27)],
     targets: [
         .target(
             name: "DockishOSCore",
