@@ -10,7 +10,7 @@ A SwiftUI + AppKit menu-bar utility for people who use macOS Spaces heavily.
 Floating, per-display app bar.
 Scroll over the bar or use Previous Space / Next Space in the status menu to switch Spaces.
 Drag `.app` bundles to pin them.
-The next release requires macOS 27 or later; v0.028 is the last one for macOS 14, 15, and 26.
+Requires macOS 27 or later; [v0.028](https://github.com/8bittts/dockishOS/releases/tag/v0.028) is the last release for macOS 14, 15, and 26.
 Apple Silicon, signed and notarized.
 
 <p align="center">

@@ -32,8 +32,8 @@ The app is built with SwiftUI and AppKit, requires macOS 27 or later on Apple Si
 Download the DMG, drag DockishOS to `/Applications`, and launch it from there.
 Older builds remain available from [GitHub Releases](https://github.com/8bittts/dockishOS/releases).
 
-v0.028 is the last release for macOS 14, 15, and 26.
-This page describes the next release, which requires macOS 27: v0.028 does not have Liquid Glass and still includes the app launcher that was removed since.
+DockishOS requires macOS 27.
+On macOS 14, 15, or 26, use [v0.028](https://github.com/8bittts/dockishOS/releases/tag/v0.028), the last release for those versions; it predates Liquid Glass and still includes the app launcher.
 
 Installed app bundles can use Sparkle for update checks.
 Plain `swift run` builds do not use the bundled app metadata or Sparkle path.
