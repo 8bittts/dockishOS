@@ -8,7 +8,7 @@ Marks, materials, typography, copy, motion and accessibility contracts for the D
 - Inside the app, the collapse button, the edge tab and the About pane show the icon as macOS renders it, mask included (`DockishBrandAssets.applicationIcon`); the app never loads the raw square.
 - The menu-bar extra is a template silhouette of the DockishOS mark from `DockishBrandAssets`, so it tints with the menu bar.
 - `scripts/generate-dmg-background.swift` renders the DMG background.
-- `build/dockishos.png` is the README mark, `public/dockishos-bar-preview.png` the product preview, and `build/yen.png` the YEN credit image; `.gitignore` re-includes the two `build/` images because the README embeds them.
+- `build/dockishos.png` is the README mark, `public/dockishos-bar-preview.png` the product preview (the real bar captured over a plain gradient, so it shows nothing from a desktop), and `build/yen.png` the YEN credit image; `.gitignore` re-includes the two `build/` images because the README embeds them.
 
 ## Materials and color
 
@@ -17,7 +17,8 @@ It is Liquid Glass (`glassEffect`), which brings its own shadow and edge highlig
 There is no other material: the app requires macOS 26, and no view falls back to a visual effect view or branches on a macOS version.
 Nothing draws a second glass layer on top of the surface: chips, tiles and the collapse button sit on it as content.
 The switcher panel has no window shadow, because a window shadow under glass outlines the panel's rectangle.
-Chip and tile highlights use the system selection and accent colors, and notification badges use system red.
+Chips and switcher tiles share one rule: an idle one draws no fill or border, and only hover, frontmost or selected draws the system selection fill; the selected tile adds an accent ring.
+Notification badges use system red.
 
 ## Native first
 

@@ -17,10 +17,10 @@ The app is built with SwiftUI and AppKit, requires macOS 26 or later on Apple Si
 - **Current-Space only.** See and switch the windows that matter right now, not every app on every desktop.
 - **Scroll-to-switch.** Scroll over the expanded bar to move between Spaces without opening Mission Control.
 - **Drag to pin.** Drop `.app` bundles on the bar or right-click a window chip to keep important apps close.
-- **Stays out of the way.** Menu-bar accessory app. No Dock icon. No background polling fanfare.
+- **Stays out of the way.** Menu-bar accessory app with no Dock icon, and it collapses into a small edge tab.
 
 <p align="center">
-  <img src="public/dockishos-bar-preview.png" alt="DockishOS showing a floating current-Space app bar with app chips" width="100%">
+  <img src="public/dockishos-bar-preview.png" alt="The DockishOS bar in Liquid Glass, with one chip per window on the current Space" width="100%">
 </p>
 
 ## Download
@@ -31,6 +31,9 @@ The app is built with SwiftUI and AppKit, requires macOS 26 or later on Apple Si
 
 Download the DMG, drag DockishOS to `/Applications`, and launch it from there.
 Older builds remain available from [GitHub Releases](https://github.com/8bittts/dockishOS/releases).
+
+v0.028 is the last release for macOS 14 and 15.
+This page describes the next release, which requires macOS 26: v0.028 does not have Liquid Glass and still includes the app launcher that was removed since.
 
 Installed app bundles can use Sparkle for update checks.
 Plain `swift run` builds do not use the bundled app metadata or Sparkle path.
@@ -74,7 +77,7 @@ xattr -dr com.apple.quarantine /Applications/DockishOS.app
 - Vertical scroll over the expanded bar to switch Spaces, or Previous Space / Next Space in the status menu.
 - Collapse the bar into a bottom-left or bottom-right edge tab.
 - Window switcher shortcut, default `Option-Tab`, for cycling windows in the current Space with Tab, Shift-Tab, arrow keys, Return, and Escape.
-- Liquid Glass bar, edge tab and switcher.
+- Liquid Glass bar, edge tab, and switcher.
 - Settings for size, top/bottom placement, titles, badges, the switcher shortcut, opening at login, and per-display visibility.
 
 DockishOS does not replace or configure the system Dock, and it has no app launcher: Spotlight opens apps.

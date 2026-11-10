@@ -11,6 +11,7 @@ All notable changes to DockishOS live here. Release tooling reads the
 ### Changed
 - DockishOS now requires macOS 26 or later. A Mac on macOS 14 or 15 stays on 0.028.
 - The bar, the edge tab, and the app switcher use Liquid Glass.
+- The app switcher highlights only the selected window; other icons no longer sit in a box.
 - Settings is a standard window with a toolbar of panes.
 - Text uses system text styles throughout, and labels follow one style: "shortcut" instead of hotkey, "edge tab", "Open at login".
 - The app switcher no longer takes the active app away from what you were doing; closing it leaves you where you were.

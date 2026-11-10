@@ -10,7 +10,8 @@ A SwiftUI + AppKit menu-bar utility for people who use macOS Spaces heavily.
 Floating, per-display app bar.
 Scroll over the bar or use Previous Space / Next Space in the status menu to switch Spaces.
 Drag `.app` bundles to pin them.
-macOS 26 or later, Apple Silicon, signed and notarized.
+The next release requires macOS 26 or later; v0.028 is the last one for macOS 14 and 15.
+Apple Silicon, signed and notarized.
 
 <p align="center">
   <a href="https://github.com/8bittts/dockishOS/releases/latest">
@@ -19,7 +20,7 @@ macOS 26 or later, Apple Silicon, signed and notarized.
 </p>
 
 <p align="center">
-  <img src="../public/dockishos-bar-preview.png" alt="DockishOS showing a floating current-Space app bar with app chips" width="100%">
+  <img src="../public/dockishos-bar-preview.png" alt="The DockishOS bar in Liquid Glass, with one chip per window on the current Space" width="100%">
 </p>
 
 ## Why DockishOS
@@ -27,7 +28,7 @@ macOS 26 or later, Apple Silicon, signed and notarized.
 - **Current-Space only.** See and switch the windows that matter right now, not every app on every desktop.
 - **Scroll-to-switch.** Scroll over the bar, or choose Previous Space / Next Space in the status menu, to move between Spaces without opening Mission Control.
 - **Drag to pin.** Drop `.app` bundles on the bar or right-click a window chip to keep important apps close.
-- **Stays out of the way.** Menu-bar accessory app. No Dock icon. No background polling fanfare.
+- **Stays out of the way.** Menu-bar accessory app with no Dock icon, and it collapses into a small edge tab.
 
 ## Install
 
