@@ -91,13 +91,9 @@ final class SwitcherPanel: NSPanel {
         collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
         backgroundColor = .clear
         isOpaque = false
-        // Liquid Glass casts its own shadow, and a window shadow on top of it
+        // Liquid Glass casts its own shadow; a window shadow on top of it
         // outlines the panel's rectangle.
-        if #available(macOS 26, *) {
-            hasShadow = false
-        } else {
-            hasShadow = true
-        }
+        hasShadow = false
         isMovable = false
         hidesOnDeactivate = false
         isReleasedWhenClosed = false

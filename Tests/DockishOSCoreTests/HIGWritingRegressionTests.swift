@@ -49,11 +49,7 @@ final class HIGWritingRegressionTests: XCTestCase {
     /// Text uses system text styles, never a literal point size, and the
     /// interface says "shortcut" where code says hotkey.
     func testTypographyAndTermsAreNormalized() throws {
-        let sources = try FileManager.default
-            .contentsOfDirectory(atPath: RepositorySource.root.appendingPathComponent("Sources/DockishOS").path)
-            .filter { $0.hasSuffix(".swift") }
-        XCTAssertGreaterThan(sources.count, 20, "The app sources were not found.")
-        for name in sources {
+        for name in try RepositorySource.appSourceNames() {
             let source = try RepositorySource.read("Sources/DockishOS/\(name)")
             XCTAssertFalse(source.contains(".system(size:"), "\(name) sets a literal font size.")
             // A string literal that says hotkey is a stored key, never copy.

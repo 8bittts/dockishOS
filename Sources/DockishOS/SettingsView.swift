@@ -142,7 +142,6 @@ private struct ShortcutSettingsSection: View {
                 Text("App switcher")
                 Spacer()
                 HotkeyRecorder(title: "App switcher shortcut", hotkey: $settings.switcherHotkey)
-                    .frame(width: 160, height: 26)
                 Button("Reset") { settings.switcherHotkey = .switcherDefault }
                     .controlSize(.small)
                     .accessibilityLabel("Reset app switcher shortcut")
@@ -150,7 +149,7 @@ private struct ShortcutSettingsSection: View {
         } header: {
             Text("Keyboard Shortcut")
         } footer: {
-            Text("Click the field, then press the new shortcut. Press Esc to cancel. A shortcut needs Control, Option, or Command.")
+            Text("Click the shortcut, then press a new one. Press Esc to cancel. A shortcut needs Control, Option, or Command.")
         }
     }
 }

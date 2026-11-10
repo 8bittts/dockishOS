@@ -164,7 +164,7 @@ private struct Chip<MenuItems: View>: View {
                         .foregroundStyle(.primary)
                         .padding(.horizontal, ChipStyle.labelHorizontalPadding)
                         .padding(.vertical, ChipStyle.labelVerticalPadding)
-                        .background(ChipChrome(isFrontmost: isFrontmost, hover: hover))
+                        .background(ChipHighlight(isFrontmost: isFrontmost, hover: hover))
                 }
             }
             .padding(.horizontal, 8)
@@ -174,9 +174,9 @@ private struct Chip<MenuItems: View>: View {
             .background {
                 // With titles on, the hover and frontmost fill sits behind the
                 // label only. With titles off there is no label to carry it,
-                // so the whole chip keeps the chrome.
+                // so it sits behind the whole chip.
                 if !showTitle {
-                    ChipChrome(isFrontmost: isFrontmost, hover: hover)
+                    ChipHighlight(isFrontmost: isFrontmost, hover: hover)
                 }
             }
         }
@@ -189,49 +189,15 @@ private struct Chip<MenuItems: View>: View {
     }
 }
 
-/// Chip background (fill + border + top highlight). Only hover and frontmost
-/// draw chrome: an idle chip stays plain so the bar reads as icons and labels
-/// rather than a row of pills.
-private struct ChipChrome: View {
+/// Selection highlight behind a chip. Only hover and frontmost draw it: an
+/// idle chip stays plain so the bar reads as icons and labels rather than a
+/// row of pills.
+private struct ChipHighlight: View {
     let isFrontmost: Bool
     let hover: Bool
 
-    private var fill: Color {
-        if isFrontmost { return ChipStyle.frontmostFill }
-        return hover ? ChipStyle.hoverFill : .clear
-    }
-
-    private var borderOpacity: Double {
-        if hover { return ChipStyle.hoverBorderOpacity }
-        return isFrontmost ? ChipStyle.frontmostBorderOpacity : 0
-    }
-
-    private var topHighlightOpacity: Double {
-        if hover { return ChipStyle.hoverTopHighlightOpacity }
-        return isFrontmost ? ChipStyle.topHighlightOpacity : 0
-    }
-
     var body: some View {
         RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
-            .fill(fill)
-            .overlay {
-                RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
-                    .strokeBorder(ChipStyle.border.opacity(borderOpacity), lineWidth: 0.65)
-            }
-            .overlay {
-                // Gradient stops rather than a fixed height, so the highlight
-                // scales with the label pill instead of the chip.
-                RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
-                    .fill(
-                        LinearGradient(
-                            stops: [
-                                .init(color: Color(nsColor: .highlightColor).opacity(topHighlightOpacity), location: 0),
-                                .init(color: Color(nsColor: .highlightColor).opacity(0), location: 0.45),
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-            }
+            .fill(isFrontmost ? ChipStyle.frontmostFill : hover ? ChipStyle.hoverFill : .clear)
     }
 }

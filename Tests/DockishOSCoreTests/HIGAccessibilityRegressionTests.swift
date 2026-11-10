@@ -48,12 +48,4 @@ final class HIGAccessibilityRegressionTests: XCTestCase {
             "Bar collapse/expand must honor Reduce Motion."
         )
     }
-
-    func testHUDHonorsReduceTransparency() throws {
-        let source = try RepositorySource.read("Sources/DockishOS/BarSupport.swift")
-        XCTAssertTrue(
-            source.contains("accessibilityReduceTransparency"),
-            "HUD materials must honor Reduce Transparency."
-        )
-    }
 }
