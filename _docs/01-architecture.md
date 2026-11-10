@@ -4,7 +4,7 @@ Targets, modules and data flow of DockishOS; the constraints that bind changes a
 
 ## Stack
 
-A SwiftPM macOS menu-bar utility for macOS 14 and later on Apple Silicon, built with SwiftUI and AppKit and shipped as an accessory app with no Dock icon.
+A SwiftPM macOS menu-bar utility for macOS 26 and later on Apple Silicon, built with SwiftUI and AppKit and shipped as an accessory app with no Dock icon.
 The package builds in the Swift 6 language mode, so the compiler checks data-race safety: every type that touches AppKit or shared state is `@MainActor`.
 `Package.swift` defines two targets: `DockishOSCore`, the AppKit-free and Carbon-free logic that `swift test` covers, and `DockishOS`, the app that composes it with AppKit, Accessibility and private CoreGraphics Spaces APIs.
 Sparkle is vendored for updates; distribution is a notarized DMG and a Homebrew Cask ([05-infrastructure.md](05-infrastructure.md)).
@@ -36,7 +36,7 @@ Sparkle is vendored for updates; distribution is a notarized DMG and a Homebrew 
 
 ## Bundle
 
-`Resources/Info.plist` carries the bundle metadata, `LSUIElement` and the Sparkle keys (`SUFeedURL`, `SUPublicEDKey`, `SURequireSignedFeed`, `SUVerifyUpdateBeforeExtraction`, `SUEnableAutomaticChecks`, `SUScheduledCheckInterval`).
+`Resources/Info.plist` carries the bundle metadata, `LSUIElement`, the minimum system version (`LSMinimumSystemVersion`, which must match `platforms` in `Package.swift`) and the Sparkle keys (`SUFeedURL`, `SUPublicEDKey`, `SURequireSignedFeed`, `SUVerifyUpdateBeforeExtraction`, `SUEnableAutomaticChecks`, `SUScheduledCheckInterval`).
 The version in `Resources/Info.plist` is the source of truth and the release script bumps it.
 `public/` holds README and product media and `docs/index.md` is the GitHub Pages landing.
 

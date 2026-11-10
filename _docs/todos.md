@@ -31,4 +31,4 @@ Not active work.
 Promote only one item at a time into `#### Phase N` in `### Work TODOs` when implementation starts.
 
 - Replace `public/dockishos-bar-preview.png`: it shows the bar before Liquid Glass.
-- Check the HUD-material fallback, the edge tab and the Settings toolbar on macOS 14 and 15; the glass design was only run on macOS 27.
+- Run the bar, the edge tab, the switcher and Settings on macOS 26; the glass design was only run on macOS 27.

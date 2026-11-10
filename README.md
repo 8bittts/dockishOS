@@ -10,7 +10,7 @@ The macOS Dock shows every app on every Space.
 DockishOS shows what is open on this Space.
 
 DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar for people who use Spaces heavily.
-The app is built with SwiftUI and AppKit, targets macOS 14+ on Apple Silicon, and ships as an accessory app with no Dock icon.
+The app is built with SwiftUI and AppKit, requires macOS 26 or later on Apple Silicon, and ships as an accessory app with no Dock icon.
 
 ## Why DockishOS
 
@@ -74,7 +74,7 @@ xattr -dr com.apple.quarantine /Applications/DockishOS.app
 - Vertical scroll over the expanded bar to switch Spaces, or Previous Space / Next Space in the status menu.
 - Collapse the bar into a bottom-left or bottom-right edge tab.
 - Window switcher shortcut, default `Option-Tab`, for cycling windows in the current Space with Tab, Shift-Tab, arrow keys, Return, and Escape.
-- Liquid Glass bar, edge tab and switcher on macOS 26 and later.
+- Liquid Glass bar, edge tab and switcher.
 - Settings for size, top/bottom placement, titles, badges, the switcher shortcut, opening at login, and per-display visibility.
 
 DockishOS does not replace or configure the system Dock, and it has no app launcher: Spotlight opens apps.
@@ -105,7 +105,7 @@ swift test
 ./scripts/build_and_run.sh
 ```
 
-Building needs a Swift 6 toolchain (Xcode 16 or later).
+Building needs Xcode 26 or later (Swift 6.2).
 `build_and_run.sh` builds a real app bundle at `build/DockishOS.app` and launches it.
 Use that path for local app testing because Launch Services, Accessibility, login items, icons, and Sparkle behave differently in a plain `swift run` process.
 

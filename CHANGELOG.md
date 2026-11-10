@@ -9,13 +9,14 @@ All notable changes to DockishOS live here. Release tooling reads the
 - The app launcher and its Option-Space shortcut. Spotlight opens apps, so DockishOS no longer duplicates it.
 
 ### Changed
-- The bar, the edge tab, and the app switcher use Liquid Glass on macOS 26 and later.
+- DockishOS now requires macOS 26 or later. A Mac on macOS 14 or 15 stays on 0.028.
+- The bar, the edge tab, and the app switcher use Liquid Glass.
 - Settings is a standard window with a toolbar of panes.
 - Text uses system text styles throughout, and labels follow one style: "shortcut" instead of hotkey, "edge tab", "Open at login".
 - The app switcher no longer takes the active app away from what you were doing; closing it leaves you where you were.
 - The in-app DockishOS icon is the one macOS renders, with the system icon shape.
 - Turning on notification badges asks for Accessibility permission if DockishOS does not have it yet.
-- The shortcut field in Settings starts recording with Space or Return, not only a click.
+- The shortcut in Settings is a standard button: click it, or press Space when it has keyboard focus, then press the new shortcut.
 - DockishOS no longer polls for Spaces in the background; it reads them when you scroll the bar or open the status menu.
 
 ### Fixed

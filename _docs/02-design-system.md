@@ -13,10 +13,10 @@ Marks, materials, typography, copy, motion and accessibility contracts for the D
 ## Materials and color
 
 The bar, the edge tab and the switcher share one surface, `floatingSurface` in `BarSupport`.
-On macOS 26 and later it is Liquid Glass (`glassEffect`), which brings its own shadow, edge highlights and Reduce Transparency behavior; the edge tab uses the interactive variant because the whole surface is a button.
-Before macOS 26 it is the HUD material, which switches to an opaque window material when Reduce Transparency is on.
+It is Liquid Glass (`glassEffect`), which brings its own shadow and edge highlights and adapts to Reduce Transparency by itself; the edge tab uses the interactive variant because the whole surface is a button.
+There is no other material: the app requires macOS 26, and no view falls back to a visual effect view or branches on a macOS version.
 Nothing draws a second glass layer on top of the surface: chips, tiles and the collapse button sit on it as content.
-The switcher panel has no window shadow on macOS 26, because a window shadow under glass outlines the panel's rectangle.
+The switcher panel has no window shadow, because a window shadow under glass outlines the panel's rectangle.
 Chip and tile highlights use the system selection and accent colors, and notification badges use system red.
 
 ## Native first
@@ -24,7 +24,8 @@ Chip and tile highlights use the system selection and accent colors, and notific
 DockishOS adds only what macOS does not have.
 It has no app launcher, because Spotlight opens apps.
 Settings is a standard window with a toolbar of panes and grouped forms; a pane uses the form's own headers, footers and rows.
-The collapse button uses a system button style for its hover state.
+The collapse button uses a system button style for its hover state, and the shortcut recorder in Settings is a system button.
+A chip's hover and frontmost highlight is one fill in the system selection color.
 
 ## Typography
 
@@ -60,8 +61,8 @@ Collapse and expand slide, and skip the slide when Reduce Motion is on.
 The bar can become the key window so VoiceOver and Full Keyboard Access reach the chips, without activating the app on mouse clicks.
 Every chip is a button to assistive clients: it carries a press action and a spoken name, and never replaces itself with a role-less element.
 The switcher is a non-activating key panel of a fixed size, so the app the user was in stays active behind it.
-The shortcut field in Settings starts recording on a click, or on Space or Return when it has keyboard focus.
+The shortcut recorder in Settings is a button, so a click, Space with keyboard focus, or a VoiceOver press starts recording, and Esc cancels.
 Settings pinned-list reorder and unpin controls meet the 20-point minimum hit target and carry VoiceOver labels.
 The bar and switcher panels carry spoken titles, and the Settings Reset button names the shortcut it resets.
 A badge of one reads as "notification" and a single grouped window as "window".
-`Tests/DockishOSCoreTests/HIGAccessibilityRegressionTests.swift` guards the key-window, chip-button, Space-command, Reduce Motion and Reduce Transparency contracts, and `PanelRegressionTests.swift` the switcher panel contracts ([09-quality.md](09-quality.md)); the spoken names have no regression test.
+`Tests/DockishOSCoreTests/HIGAccessibilityRegressionTests.swift` guards the key-window, chip-button, Space-command and Reduce Motion contracts, `HIGChromeRegressionTests.swift` the glass-only surface and the macOS 26 minimum, and `PanelRegressionTests.swift` the switcher panel contracts ([09-quality.md](09-quality.md)); the spoken names have no regression test.
