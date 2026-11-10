@@ -13,20 +13,17 @@ struct CollapsedTab: View {
     private let icon = DockishBrandAssets.applicationIcon(size: NSSize(width: iconSize, height: iconSize))
 
     var body: some View {
-        // Only the top of the tab shows; the rest sits below the screen edge.
-        let exposedHeight = BarGeometry.collapsedExposedHeight(barHeight: barSize.height)
-            - BarGeometry.collapsedTabHoverHeadroom
-
         Button(action: action) {
             Image(nsImage: icon)
                 .resizable()
                 .interpolation(.high)
                 .frame(width: Self.iconSize, height: Self.iconSize)
+                // Center the icon in the part of the tab that shows.
                 .frame(
                     width: BarGeometry.collapsedTabWidth - Self.horizontalInset * 2,
-                    height: exposedHeight
+                    height: BarGeometry.collapsedTabExposedHeight(barHeight: barSize.height)
                 )
-                .frame(height: BarGeometry.collapsedClusterHeight(barHeight: barSize.height), alignment: .top)
+                .frame(height: BarGeometry.collapsedTabHeight(barHeight: barSize.height), alignment: .top)
                 .floatingSurface(cornerRadius: 14, interactive: true)
                 .contentShape(Rectangle())
         }

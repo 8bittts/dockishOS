@@ -38,24 +38,31 @@ final class BarGeometryTests: XCTestCase {
         XCTAssertEqual(frame.width, screen.width)
     }
 
-    func testCollapsedPanelIsClusterPlusHeadroom() {
-        XCTAssertEqual(
-            BarGeometry.collapsedPanelHeight(barHeight: 56),
-            BarGeometry.collapsedClusterHeight(barHeight: 56) + BarGeometry.collapsedTabHoverHeadroom
-        )
-        XCTAssertEqual(BarGeometry.collapsedClusterHeight(barHeight: 44), 70)
-        XCTAssertEqual(BarGeometry.collapsedClusterHeight(barHeight: 56), 70)
-        XCTAssertEqual(BarGeometry.collapsedClusterHeight(barHeight: 72), 82)
+    func testCollapsedTabHeightGrowsWithTheBar() {
+        XCTAssertEqual(BarGeometry.collapsedTabHeight(barHeight: 44), 70)
+        XCTAssertEqual(BarGeometry.collapsedTabHeight(barHeight: 56), 70)
+        XCTAssertEqual(BarGeometry.collapsedTabHeight(barHeight: 72), 82)
+    }
+
+    func testCollapsedTabExposesPartOfItsHeight() {
+        XCTAssertEqual(BarGeometry.collapsedTabExposedHeight(barHeight: 44), 40)
+        XCTAssertEqual(BarGeometry.collapsedTabExposedHeight(barHeight: 72), 72 * 0.78, accuracy: 0.001)
+        for barHeight: CGFloat in [44, 56, 72] {
+            XCTAssertLessThan(
+                BarGeometry.collapsedTabExposedHeight(barHeight: barHeight),
+                BarGeometry.collapsedTabHeight(barHeight: barHeight)
+            )
+        }
     }
 
     func testCollapsedLeftIsInsetFromScreenMinX() {
         let frame = BarGeometry.visibleFrame(input(collapsed: true, tabOnRight: false, barHeight: 56))
         XCTAssertEqual(frame.origin.x, BarGeometry.collapsedTabInset)
         XCTAssertEqual(frame.width, BarGeometry.collapsedTabWidth)
-        XCTAssertEqual(frame.height, BarGeometry.collapsedPanelHeight(barHeight: 56))
+        XCTAssertEqual(frame.height, BarGeometry.collapsedTabHeight(barHeight: 56))
         XCTAssertEqual(
             frame.origin.y,
-            visible.minY - (frame.height - BarGeometry.collapsedExposedHeight(barHeight: 56)),
+            visible.minY - (frame.height - BarGeometry.collapsedTabExposedHeight(barHeight: 56)),
             accuracy: 0.001
         )
         XCTAssertGreaterThan(frame.maxY, visible.minY)
@@ -69,7 +76,7 @@ final class BarGeometryTests: XCTestCase {
             screen.maxX - BarGeometry.collapsedTabWidth - BarGeometry.collapsedTabInset
         )
         XCTAssertEqual(frame.maxX, screen.maxX - BarGeometry.collapsedTabInset)
-        XCTAssertEqual(frame.height, BarGeometry.collapsedPanelHeight(barHeight: 72))
+        XCTAssertEqual(frame.height, BarGeometry.collapsedTabHeight(barHeight: 72))
     }
 
     func testHiddenCollapsedSitsFullyBelowScreen() {
@@ -89,13 +96,5 @@ final class BarGeometryTests: XCTestCase {
         let hidden = BarGeometry.hiddenFrame(input(collapsed: false, barOnTop: true, barHeight: 56))
         XCTAssertEqual(hidden.minY, screen.maxY)
         XCTAssertEqual(hidden.height, 56)
-    }
-
-    func testCollapsedHeadroomIsPanelOnly() {
-        let barHeight: CGFloat = 56
-        let cluster = BarGeometry.collapsedClusterHeight(barHeight: barHeight)
-        let panel = BarGeometry.collapsedPanelHeight(barHeight: barHeight)
-        XCTAssertEqual(panel - cluster, BarGeometry.collapsedTabHoverHeadroom)
-        XCTAssertNotEqual(cluster, panel)
     }
 }

@@ -26,14 +26,14 @@ struct BarView: View {
     @ObservedObject var presentation: BarPresentationState
     @State private var isDropTargeted = false
 
-    /// Room kept clear on the trailing edge for the collapse button.
-    private static let collapseButtonReservation: CGFloat = 88
     private static let cornerRadius: CGFloat = 16
 
     var body: some View {
         if presentation.isCollapsed {
+            // Fill the panel: the hosting view otherwise shrinks the window
+            // to the tab, which cuts the edge of its surface.
             CollapsedTab(barSize: settings.barSize) { settings.barCollapsed = false }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             expandedBar
         }
@@ -63,14 +63,10 @@ struct BarView: View {
                     settings: settings
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .padding(.leading, 18)
-            .padding(.trailing, Self.collapseButtonReservation)
 
-            HStack {
-                Spacer(minLength: 0)
                 CollapseBarButton { settings.barCollapsed = true }
             }
+            .padding(.leading, 18)
             .padding(.trailing, 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

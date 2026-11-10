@@ -28,40 +28,31 @@ package struct BarGeometryInput: Equatable, Sendable {
     }
 }
 
-/// Panel frame math for the per-display bar. The SwiftUI collapsed cluster is
-/// shorter than the panel by `collapsedTabHoverHeadroom`; do not use panel
-/// height as the cluster size or the tab chrome will grow.
+/// Panel frame math for the per-display bar and its collapsed edge tab.
 package enum BarGeometry {
     package static let collapsedTabWidth: CGFloat = 56
+    /// Gap between the edge tab's panel and the side of the screen.
     package static let collapsedTabInset: CGFloat = 6
-    package static let collapsedTabHoverHeadroom: CGFloat = 6
-    package static let collapsedTabMinExposedHeight: CGFloat = 40
-    package static let collapsedExposedHeightFactor: CGFloat = 0.78
-    package static let collapsedClusterMinHeight: CGFloat = 70
-    package static let collapsedClusterHeightPadding: CGFloat = 10
 
-    package static func collapsedClusterHeight(barHeight: CGFloat) -> CGFloat {
-        max(collapsedClusterMinHeight, barHeight + collapsedClusterHeightPadding)
+    /// Height of the edge tab. Only `collapsedTabExposedHeight` of it shows;
+    /// the rest sits below the visible frame, so the tab reads as attached
+    /// to the bottom edge.
+    package static func collapsedTabHeight(barHeight: CGFloat) -> CGFloat {
+        max(70, barHeight + 10)
     }
 
-    package static func collapsedPanelHeight(barHeight: CGFloat) -> CGFloat {
-        collapsedClusterHeight(barHeight: barHeight) + collapsedTabHoverHeadroom
-    }
-
-    package static func collapsedExposedHeight(barHeight: CGFloat) -> CGFloat {
-        max(
-            collapsedTabMinExposedHeight,
-            barHeight * collapsedExposedHeightFactor
-        ) + collapsedTabHoverHeadroom
+    /// How much of the edge tab shows above the bottom of the visible frame.
+    package static func collapsedTabExposedHeight(barHeight: CGFloat) -> CGFloat {
+        max(40, barHeight * 0.78)
     }
 
     package static func visibleFrame(_ input: BarGeometryInput) -> CGRect {
         if input.collapsed {
-            let height = collapsedPanelHeight(barHeight: input.barHeight)
+            let height = collapsedTabHeight(barHeight: input.barHeight)
             let x = input.tabOnRight
                 ? input.screenFrame.maxX - collapsedTabWidth - collapsedTabInset
                 : input.screenFrame.minX + collapsedTabInset
-            let exposed = collapsedExposedHeight(barHeight: input.barHeight)
+            let exposed = collapsedTabExposedHeight(barHeight: input.barHeight)
             let y = input.visibleFrame.minY - (height - exposed)
             return CGRect(x: x, y: y, width: collapsedTabWidth, height: height)
         }
