@@ -192,7 +192,7 @@ The release script reads the `## [Unreleased]` block verbatim (via `changelog_un
 
 - Direct download: the signed and notarized DMG attached to each GitHub release; older builds stay available on the Releases page.
 - Homebrew: the repository doubles as a tap, so `brew install --cask` works from the raw `Casks/dockishos.rb` URL or after `brew tap 8bittts/dockishos`; the Cask is pinned to a released version and bumped by hand after a release, so it can trail the newest version until Sparkle updates the install.
-  Its `depends_on macos:` describes the pinned version, so it changes in the same edit as a version bump that raises the minimum: v0.029 requires macOS 27 (`>= :golden_gate`).
+  Its `depends_on macos:` describes the pinned version, so it changes in the same edit as a version bump that raises the minimum: v0.029 requires macOS 27 (`depends_on macos: :golden_gate`, which Homebrew reads as that version or later).
 - In-app: Sparkle checks the feed at `appcast.xml` in this repository, served through raw.githubusercontent.com.
   `generate_appcast` reads each item's minimum system version from `LSMinimumSystemVersion` in the built bundle, so `Resources/Info.plist` decides which Macs are offered an update.
 - `docs/index.md` is the GitHub Pages landing and mirrors the README's product copy.
