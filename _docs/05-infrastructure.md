@@ -15,7 +15,7 @@ Run them from the repo root.
 | `./scripts/build_and_run.sh --verify` | Build, launch, and confirm the app process is alive |
 | `./scripts/build_and_run.sh --logs` | Build, launch, and stream DockishOS unified logs |
 | `./scripts/build_and_run.sh --debug` | Build the bundle, then launch the binary under `lldb` |
-| `./scripts/build-dmg.sh` | Default: signed + notarized release DMG (requires Developer ID + notary keychain profile) |
+| `./scripts/build-dmg.sh` | Default: signed + notarized release DMG; it stops before the build when the Developer ID identity or the notary keychain profile is missing |
 | `./scripts/build-dmg.sh --local` | Signed DMG, **skip** notarization (fastest path that still produces a draggable DMG) |
 | `./scripts/build-dmg.sh --unsigned` | Ad-hoc sign only — no Developer ID required (good for first-time bootstrapping) |
 | `./scripts/build-dmg.sh --build-only` | Assemble `DockishOS.app` only, no DMG |
@@ -105,7 +105,7 @@ The release flow runs it automatically as its production gate.
 ## Notarization setup (one-time)
 
 The default mode requires a keychain profile named `YEN-Notarization`.
-If notarization is being skipped because the profile doesn't exist:
+If the build stops because the profile does not exist:
 
 ```bash
 xcrun notarytool store-credentials YEN-Notarization \
@@ -170,8 +170,9 @@ The release script reads the `## [Unreleased]` block verbatim (via `changelog_un
 | Symptom | Likely cause |
 |---|---|
 | `Source Info.plist not found` | Running from a directory other than the repo root. The script `cd`s into the repo's own path — re-check. |
-| `No Developer ID found — falling back to ad-hoc signing` | No Developer ID Application certificate in the login keychain. Add one or use `--unsigned`. |
-| `Notarization skipped — no keychain profile` | Run the `notarytool store-credentials` snippet above. |
+| `No Developer ID Application identity found` | The default mode found no Developer ID Application certificate in the login keychain. Add one, or pass `--unsigned` for an ad-hoc build. |
+| `Notary profile '<name>' is unavailable` | Run the `notarytool store-credentials` snippet above, or pass `--local` to skip notarization. |
+| `Sparkle.framework missing at tools/sparkle/Sparkle.framework` | The vendored framework is absent; re-vendor it with the procedure below. The build never continues without it. |
 | `Notarization rejected` | Inspect `build/DockishOS-<version>.notary-submission.json`; the script also fetches the notary log when a submission ID is available. |
 | Signing retry loops | Apple's timestamp server is slow. The script auto-retries 5×. |
 | `xcrun stapler staple` fails | Notarization succeeded but propagation is slow. The script auto-retries 10×. |

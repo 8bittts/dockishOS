@@ -3,7 +3,7 @@
 # build-dmg.sh — Build, sign, package, and notarize DockishOS as a DMG.
 #
 # Usage:
-#   ./scripts/build-dmg.sh                  # Full release: signed + notarized DMG
+#   ./scripts/build-dmg.sh                  # Full release: signed + notarized DMG; fails without the credentials
 #   ./scripts/build-dmg.sh --build-only     # Build .app only (no DMG)
 #   ./scripts/build-dmg.sh --local          # Build + sign + DMG, skip notarization
 #   ./scripts/build-dmg.sh --unsigned       # Ad-hoc sign only (no Developer ID)
@@ -131,7 +131,8 @@ sign_target() {
     local target="$1"
     local with_entitlements="${2:-false}"
     local args=("${CODESIGN_ARGS[@]}")
-    if [ "$with_entitlements" = true ] && [ -f "$ENTITLEMENTS" ]; then
+    if [ "$with_entitlements" = true ]; then
+        [ -f "$ENTITLEMENTS" ] || fail "Entitlements file missing: ${ENTITLEMENTS}"
         args+=(--entitlements "$ENTITLEMENTS")
     fi
     codesign "${args[@]}" "$target"
@@ -158,6 +159,20 @@ can_notarize() {
         && xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1
 }
 
+# The default mode is the release mode, so it fails closed before the build:
+# an ad-hoc signature or a skipped notarization is a choice (--unsigned,
+# --local), never a fallback.
+require_release_credentials() {
+    if [ "$BUILD_ONLY" = true ] || [ "$LOCAL_MODE" = true ] || [ "$UNSIGNED" = true ]; then
+        return 0
+    fi
+    [ "$CODESIGN_IDENTITY" != "-" ] \
+        || fail "No Developer ID Application identity found. Pass --unsigned for an ad-hoc build."
+    xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1 \
+        || fail "Notary profile '${NOTARY_PROFILE}' is unavailable. Pass --local to skip notarization, or run: xcrun notarytool store-credentials ${NOTARY_PROFILE}"
+    step "Release credentials verified"
+}
+
 json_value() {
     local key="$1" file="$2"
     /usr/bin/plutil -extract "$key" raw -o - "$file" 2>/dev/null || true
@@ -176,7 +191,7 @@ print_notary_log() {
 # and that the main framework binary matches the recorded SHA-256.
 verify_sparkle_vendor() {
     local version_file="tools/sparkle/VERSION"
-    [ -d "$SPARKLE_SOURCE" ] || return 0
+    [ -d "$SPARKLE_SOURCE" ] || fail "Sparkle.framework missing at ${SPARKLE_SOURCE}"
     [ -f "$version_file" ] || fail "Missing ${version_file}; cannot verify vendored Sparkle"
 
     # shellcheck disable=SC1090
@@ -210,6 +225,7 @@ info "Packaging ${APP_NAME} v${VERSION} (build ${BUILD_NUMBER})"
 
 resolve_signing_identity
 codesign_base_args
+require_release_credentials
 
 info "Cleaning previous build artifacts"
 if [ -d "$BUILD_DIR" ]; then
@@ -260,12 +276,8 @@ if [ -f "$ICNS_FILE" ]; then
     step "Copied app icon"
 fi
 
-if [ -d "$SPARKLE_SOURCE" ]; then
-    ditto "$SPARKLE_SOURCE" "$FRAMEWORKS_DIR/Sparkle.framework"
-    step "Copied Sparkle.framework"
-else
-    warn "Sparkle.framework not found at ${SPARKLE_SOURCE} — auto-update will be disabled"
-fi
+ditto "$SPARKLE_SOURCE" "$FRAMEWORKS_DIR/Sparkle.framework"
+step "Copied Sparkle.framework"
 
 cp "$SOURCE_PLIST" "$INFO_PLIST"
 plist_set "$INFO_PLIST" "CFBundleIdentifier" string "$BUNDLE_ID"
@@ -528,8 +540,7 @@ else
     elif [ "$UNSIGNED" = true ]; then
         step "Skipping notarization (--unsigned)"
     else
-        warn "Notarization skipped — no keychain profile '${NOTARY_PROFILE}' found"
-        warn "Set up: xcrun notarytool store-credentials ${NOTARY_PROFILE}"
+        fail "Notarization did not run in the release mode"
     fi
 fi
 
@@ -539,11 +550,10 @@ echo "${CHECKSUM}  $(basename "$DMG_FINAL")" > "${BUILD_DIR}/${APP_NAME}-${VERSI
 step "SHA-256: ${CHECKSUM}"
 
 APPCAST_SCRIPT="$(dirname "$0")/generate-appcast.sh"
-if [ -f "$APPCAST_SCRIPT" ] && [ -d "$SPARKLE_SOURCE" ]; then
-    info "Generating appcast"
-    bash "$APPCAST_SCRIPT"
-    step "Appcast generated: ${BUILD_DIR}/appcast.xml"
-fi
+[ -f "$APPCAST_SCRIPT" ] || fail "Appcast script missing at ${APPCAST_SCRIPT}"
+info "Generating appcast"
+bash "$APPCAST_SCRIPT"
+step "Appcast generated: ${BUILD_DIR}/appcast.xml"
 
 DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/$(basename "$DMG_FINAL")"
 DMG_SIZE="$(du -h "$DMG_FINAL" | awk '{print $1}')"
