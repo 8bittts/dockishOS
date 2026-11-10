@@ -5,6 +5,20 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+### Fixed
+- The launcher and the app switcher open every time. They could close themselves the moment they appeared.
+- The launcher shows its results list. The panel had shrunk to the search field, and rows could show the wrong apps after you typed.
+- The arrow keys move the selection in the app switcher.
+- Previous Space and Next Space are disabled in the status menu when there is no Space in that direction.
+- VoiceOver can press a window chip or a pinned app, and reads each as a button.
+- In a grouped chip's menu, a window with no title reads as Untitled.
+
+### Changed
+- The launcher and the app switcher no longer take the active app away from what you were doing; closing them leaves you where you were.
+- Turning on notification badges asks for Accessibility permission if DockishOS does not have it yet.
+- A hotkey field in Settings starts recording with Space or Return, not only a click.
+- DockishOS no longer polls for Spaces in the background; it reads them when you scroll the bar or open the status menu.
+
 ## [0.028]
 
 ### Changed

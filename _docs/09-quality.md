@@ -13,18 +13,24 @@ There is no CI, so these local gates are the only gates; run them before every p
 ## Test strategy
 
 Logic that can be tested without AppKit or Carbon lives in `DockishOSCore` (search scoring, geometry, selection wrap, reordering, grouping) so `swift test` covers it directly.
-`HIGAccessibilityRegressionTests` pins the accessibility contracts in [02-design-system.md](02-design-system.md), `HIGChromeRegressionTests` the icon mask, Settings window buttons and badge color, `HIGWritingRegressionTests` the pin and unpin wording, hotkey warning and untitled-window copy, and `MenuBarIconRegressionTests` the template status mark.
-These four suites read source text, so they live in the core test target without importing AppKit.
+`HIGAccessibilityRegressionTests` pins the accessibility contracts in [02-design-system.md](02-design-system.md), `PanelRegressionTests` the launcher and switcher panel contracts, `HIGChromeRegressionTests` the icon mask, Settings window buttons and badge color, `HIGWritingRegressionTests` the pin and unpin wording, hotkey warning and untitled-window copy, and `MenuBarIconRegressionTests` the template status mark.
+These five suites read source text, so they live in the core test target without importing AppKit.
+They hold a fix in place but cannot find a new defect: the launcher, the switcher, focus and the status menu are only proven by driving a built bundle.
 Use `./scripts/build_and_run.sh` for anything involving Accessibility, login items, app metadata, icons or updates, because a plain `swift run` process behaves differently.
 
 ## Traps
 
 After `./scripts/build-dmg.sh --build-only`, `build/DockishOS.app` exists without its DMG, so the default `smoke-test.sh` run treats it as a release build and demands the missing artifacts; remove the bundle or rebuild the DMG before running the smoke test.
+`./scripts/build_and_run.sh` quits any running DockishOS before it launches the new build, and the build reads the same preferences as an installed copy.
+A bundle launched from a script starts in the background, where AppKit can report the app as active while another app is frontmost; test focus behavior from that state as well as after a normal launch.
 A `scripts/release-dockishOS.sh` failure at the appcast poll step alone does not mean the release failed; check `git log` and the GitHub release page before re-running anything ([05-infrastructure.md](05-infrastructure.md)).
 
 ## Manual verification
 
 - Confirm the bar on every enabled display, the collapse into the edge tab, and scroll-to-switch or the status-menu Space commands.
-- Open the launcher with `Option-Space` and the switcher with `Option-Tab`, then change both hotkeys in Settings and confirm the new bindings.
+- Open the launcher with `Option-Space`: confirm the results list shows, a typed query filters it, the arrow keys move the highlight, Return opens the highlighted app, and Escape or a click elsewhere closes it with the previous app still active.
+- Open the switcher with `Option-Tab`: confirm Tab, Shift-Tab and the arrow keys move the selection, Return raises the selected window, and Escape closes it.
+- Change both hotkeys in Settings and confirm the new bindings.
+- Open the status menu on the first and on the last Space and confirm Previous Space and Next Space are each disabled at their end.
 - Trigger a window raise or close to confirm the Accessibility prompt appears only then.
 - Check VoiceOver reach on the chips and the Reduce Motion and Reduce Transparency variants.

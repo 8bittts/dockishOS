@@ -18,6 +18,8 @@ Dates are the evidence in this doc; the owner docs carry none.
 
 - **Current-Space only.** The bar shows what is open on this Space instead of every app on every desktop, and it never replaces or configures the system Dock.
 - **Accessory app with no Dock icon.** `LSUIElement` keeps DockishOS out of the Dock; the status item and hotkeys are the entry points.
+- **The launcher and switcher are non-activating panels.** They took key focus by activating the app until v0.028. On macOS 27 that failed two ways: AppKit kept reporting the app as active after it handed activation away, so the next activation did nothing and the panel closed 40 ms after it opened; and the documented replacement for the deprecated `activate(ignoringOtherApps:)` is declined for an accessory app. A non-activating key panel needs neither.
+- **`activate(ignoringOtherApps:)` stays for Settings and Sparkle.** Those are ordinary windows that need the app in front, and `activate()` does not bring an accessory app forward; `AppActivation.activateSelf` is the one call site.
 - **Accessibility permission on demand.** Window listing and Spaces switching work without Screen Recording, and Accessibility is requested only when a feature raises or closes a window or reads a Dock badge ([04-security.md](04-security.md)).
 - **No CI.** The local gates are the only gates, so `swift test` and `./scripts/smoke-test.sh` run before every push ([09-quality.md](09-quality.md)).
 - **The appcast is generated, never edited.** Its EdDSA signature covers the exact bytes, so every edit goes through `scripts/generate-appcast.sh` or the release flow.

@@ -22,7 +22,10 @@ Collapse and expand slide, and skip the slide when Reduce Motion is on.
 ## Accessibility
 
 The bar can become the key window so VoiceOver and Full Keyboard Access reach the chips, without activating the app on mouse clicks.
+Every chip is a button to assistive clients: it carries a press action and a spoken name, and never replaces itself with a role-less element.
+The launcher and the switcher are non-activating key panels of a fixed size, so the app the user was in stays active behind them.
+A hotkey field in Settings starts recording on a click, or on Space or Return when it has keyboard focus.
 Settings pinned-list reorder and unpin controls meet the 20-point minimum hit target and carry VoiceOver labels.
 The bar, launcher and switcher panels carry spoken titles, the launcher search field keeps its name after text is typed, and each Settings Reset button names the row it clears.
 A badge of one reads as "notification" and a single grouped window as "window".
-`Tests/DockishOSCoreTests/HIGAccessibilityRegressionTests.swift` guards the key-window, Space-command, Reduce Motion, Reduce Transparency and usage-description contracts ([09-quality.md](09-quality.md)); the spoken names have no regression test.
+`Tests/DockishOSCoreTests/HIGAccessibilityRegressionTests.swift` guards the key-window, chip-button, Space-command, Reduce Motion and Reduce Transparency contracts, and `PanelRegressionTests.swift` the launcher and switcher panel contracts ([09-quality.md](09-quality.md)); the spoken names have no regression test.

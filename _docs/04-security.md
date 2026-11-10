@@ -4,15 +4,18 @@ Permissions, private API exposure, code signing and update-feed trust for Dockis
 
 ## Permissions
 
-DockishOS asks for Accessibility only when a feature needs it: raising or closing a specific window, and reading optional notification badge text from the Dock accessibility tree.
+DockishOS asks for Accessibility only when a feature needs it: raising or closing a specific window, and turning on notification badges, which read badge text from the Dock accessibility tree.
+The system prompt appears once; after that `Permissions` stays quiet until the user grants access or uses the Settings button.
 Window listing and Spaces switching need no Screen Recording permission.
 Notification badges are off by default; they rely on an undocumented Dock accessibility attribute and may stop working on a future macOS release.
-`Resources/Info.plist` carries the Accessibility usage description, which names badge reading as well as raise and close.
+macOS reads no usage-description key for Accessibility, so `Resources/Info.plist` carries none; the system prompt's wording is fixed.
 `DockishOS.entitlements` declares no entitlements, so the app is not sandboxed; it needs private CoreGraphics Spaces APIs and Accessibility control.
 
 ## Private APIs
 
-Spaces listing and switching use private CGS SPIs (`SpacesAPI`), so each macOS release can change them; the unit-tested core stays free of them and the app target isolates the calls.
+Spaces listing and switching use private CGS SPIs (`SpacesAPI`), and raising or closing one window uses the private `_AXUIElementGetWindow` (`WindowControl`), so each macOS release can change them.
+`PrivateSymbol` resolves every one of them at run time: a release that drops a symbol turns that feature off and logs a fault, and the app still launches.
+The unit-tested core stays free of them and the app target isolates the calls.
 
 ## Signing and notarization
 

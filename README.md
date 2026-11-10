@@ -109,6 +109,7 @@ swift test
 ./scripts/build_and_run.sh
 ```
 
+Building needs a Swift 6 toolchain (Xcode 16 or later).
 `build_and_run.sh` builds a real app bundle at `build/DockishOS.app` and launches it.
 Use that path for local app testing because Launch Services, Accessibility, login items, icons, and Sparkle behave differently in a plain `swift run` process.
 
