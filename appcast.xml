@@ -4,10 +4,10 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>DockishOS</title>
         <item>
-            <title>0.029</title>
-            <pubDate>Tue, 10 Nov 2026 15:25:40 -0800</pubDate>
-            <sparkle:version>29</sparkle:version>
-            <sparkle:shortVersionString>0.029</sparkle:shortVersionString>
+            <title>0.030</title>
+            <pubDate>Tue, 10 Nov 2026 15:52:25 -0800</pubDate>
+            <sparkle:version>30</sparkle:version>
+            <sparkle:shortVersionString>0.030</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>27.0</sparkle:minimumSystemVersion>
             <description><![CDATA[<style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 16px 20px; line-height: 1.6; color: #1d1d1f; }
@@ -22,28 +22,16 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </style>
 <h2>What's New</h2>
 <ul>
-    <li>The app launcher and its Option-Space shortcut. Spotlight opens apps, so DockishOS no longer duplicates it.</li>
-    <li>DockishOS now requires macOS 27 or later. A Mac on an older macOS stays on 0.028.</li>
-    <li>The bar, the edge tab, and the app switcher use Liquid Glass.</li>
-    <li>The app switcher highlights only the selected window; other icons no longer sit in a box.</li>
-    <li>Settings is a standard window with a toolbar of panes.</li>
-    <li>Text uses system text styles throughout, and labels follow one style: "shortcut" instead of hotkey, "edge tab", "Open at login".</li>
-    <li>The app switcher no longer takes the active app away from what you were doing; closing it leaves you where you were.</li>
-    <li>The in-app DockishOS icon is the one macOS renders, with the system icon shape.</li>
-    <li>Turning on notification badges asks for Accessibility permission if DockishOS does not have it yet.</li>
-    <li>The shortcut in Settings is a standard button: click it, or press Space when it has keyboard focus, then press the new shortcut.</li>
-    <li>DockishOS no longer polls for Spaces in the background; it reads them when you scroll the bar or open the status menu.</li>
-    <li>The app switcher opens every time. It could close itself the moment it appeared.</li>
-    <li>The arrow keys move the selection in the app switcher.</li>
-    <li>Previous Space and Next Space are disabled in the status menu when there is no Space in that direction.</li>
-    <li>VoiceOver can press a window chip or a pinned app, and reads each as a button.</li>
-    <li>In a grouped chip's menu, a window with no title reads as Untitled.</li></ul>
-<p class="footer">DockishOS 0.029</p>
+    <li>Settings has three panes: General, Bar, and Pinned. The window fits each pane and is named after it.</li>
+    <li>The Accessibility permission is one row that shows its state or a Grant Access button, and it updates when you come back from System Settings.</li>
+    <li>The display list appears only with more than one display, and the shortcut's Reset button only after you change the shortcut.</li>
+    <li>About DockishOS is the standard About panel, in the status menu.</li></ul>
+<p class="footer">DockishOS 0.030</p>
 ]]></description>
-            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.029/DockishOS-0.029.dmg" length="6265940" type="application/octet-stream" sparkle:edSignature="6SObtxhcDSygZKTO4wLmeK1w80HW4gT/K6WELjjqcTlw77aKYQditd+NjWSDUAu4kLmbkNEKDV+q88VMUwHNCQ=="></enclosure>
+            <enclosure url="https://github.com/8bittts/dockishOS/releases/download/v0.030/DockishOS-0.030.dmg" length="6257589" type="application/octet-stream" sparkle:edSignature="O7r+3Q8+nmyqYJJmGcNQtcxYYgy0InLs4uAIZ5kRtti4mrsX3frmvg8WcB0v9B/1nF27dRkppJuBqluc+zcaAA=="></enclosure>
         </item>
     </channel>
 </rss><!-- sparkle-signatures:
-edSignature: AgQrouywMWkNwZwZuX7Xvb4smxHVXhZD2GeJMtVzBxPLPnHGqzHweb/ZltK8CKfT4zYul3w+F9mhuP3wMWMTAA==
-length: 3326
+edSignature: eyOr6BNnvxQF6UXejD3RQY6OWucpdlfzPtnWSk49r6buNnDPe4jB+TWwzNDCcpJeIfGIoWd1DUz/iAGuXckmDQ==
+length: 2147
 -->

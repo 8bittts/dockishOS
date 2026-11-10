@@ -4,7 +4,7 @@
 
 # DockishOS
 
-<!-- version-badge -->v0.029<!-- /version-badge -->
+<!-- version-badge -->v0.030<!-- /version-badge -->
 
 The macOS Dock shows every app on every Space.
 DockishOS shows what is open on this Space.
@@ -26,7 +26,7 @@ The app is built with SwiftUI and AppKit, requires macOS 27 or later on Apple Si
 ## Download
 
 <!-- download-link -->
-[**Download DockishOS v0.029**](https://github.com/8bittts/dockishOS/releases/download/v0.029/DockishOS-0.029.dmg)
+[**Download DockishOS v0.030**](https://github.com/8bittts/dockishOS/releases/download/v0.030/DockishOS-0.030.dmg)
 <!-- /download-link -->
 
 Download the DMG, drag DockishOS to `/Applications`, and launch it from there.

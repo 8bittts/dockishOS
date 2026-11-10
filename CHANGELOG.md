@@ -5,6 +5,8 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+## [0.030]
+
 ### Changed
 - Settings has three panes: General, Bar, and Pinned. The window fits each pane and is named after it.
 - The Accessibility permission is one row that shows its state or a Grant Access button, and it updates when you come back from System Settings.
