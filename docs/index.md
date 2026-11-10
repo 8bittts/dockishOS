@@ -26,7 +26,7 @@ macOS 14+, Apple Silicon, signed and notarized.
 
 - **Current-Space only.** See and switch the windows that matter right now, not every app on every desktop.
 - **Scroll-to-switch.** Scroll over the bar, or choose Previous Space / Next Space in the status menu, to move between Spaces without opening Mission Control.
-- **Drag to pin.** Drop `.app` bundles or right-click windows and launcher results to keep important apps close.
+- **Drag to pin.** Drop `.app` bundles on the bar or right-click a window chip to keep important apps close.
 - **Stays out of the way.** Menu-bar accessory app. No Dock icon. No background polling fanfare.
 
 ## Install

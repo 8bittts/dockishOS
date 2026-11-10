@@ -12,10 +12,10 @@ There is no CI, so these local gates are the only gates; run them before every p
 
 ## Test strategy
 
-Logic that can be tested without AppKit or Carbon lives in `DockishOSCore` (search scoring, geometry, selection wrap, reordering, grouping) so `swift test` covers it directly.
-`HIGAccessibilityRegressionTests` pins the accessibility contracts in [02-design-system.md](02-design-system.md), `PanelRegressionTests` the launcher and switcher panel contracts, `HIGChromeRegressionTests` the icon mask, Settings window buttons and badge color, `HIGWritingRegressionTests` the pin and unpin wording, hotkey warning and untitled-window copy, and `MenuBarIconRegressionTests` the template status mark.
+Logic that can be tested without AppKit or Carbon lives in `DockishOSCore` (geometry, selection wrap, reordering, grouping) so `swift test` covers it directly.
+`HIGAccessibilityRegressionTests` pins the accessibility contracts in [02-design-system.md](02-design-system.md), `PanelRegressionTests` the switcher panel contracts, `HIGChromeRegressionTests` the icon mask, Settings window buttons and badge color, `HIGWritingRegressionTests` the pin and unpin wording, shortcut warning, empty-state and untitled-window copy and the text-style rule, and `MenuBarIconRegressionTests` the template status mark.
 These five suites read source text, so they live in the core test target without importing AppKit.
-They hold a fix in place but cannot find a new defect: the launcher, the switcher, focus and the status menu are only proven by driving a built bundle.
+They hold a fix in place but cannot find a new defect: the switcher, focus, the status menu and the glass surfaces are only proven by driving a built bundle and looking at it.
 Use `./scripts/build_and_run.sh` for anything involving Accessibility, login items, app metadata, icons or updates, because a plain `swift run` process behaves differently.
 
 ## Traps
@@ -28,9 +28,9 @@ A `scripts/release-dockishOS.sh` failure at the appcast poll step alone does not
 ## Manual verification
 
 - Confirm the bar on every enabled display, the collapse into the edge tab, and scroll-to-switch or the status-menu Space commands.
-- Open the launcher with `Option-Space`: confirm the results list shows, a typed query filters it, the arrow keys move the highlight, Return opens the highlighted app, and Escape or a click elsewhere closes it with the previous app still active.
-- Open the switcher with `Option-Tab`: confirm Tab, Shift-Tab and the arrow keys move the selection, Return raises the selected window, and Escape closes it.
-- Change both hotkeys in Settings and confirm the new bindings.
+- Open the switcher with `Option-Tab`: confirm Tab, Shift-Tab and the arrow keys move the selection, Return raises the selected window, and Escape or a click elsewhere closes it with the previous app still active.
+- Change the shortcut in Settings and confirm the new binding.
+- Look at the bar, the edge tab and the switcher over light and dark content, in light and dark appearance.
 - Open the status menu on the first and on the last Space and confirm Previous Space and Next Space are each disabled at their end.
 - Trigger a window raise or close to confirm the Accessibility prompt appears only then.
 - Check VoiceOver reach on the chips and the Reduce Motion and Reduce Transparency variants.

@@ -15,9 +15,8 @@ Sparkle is vendored for updates; distribution is a notarized DMG and a Homebrew 
 
 | Type                        | Owns                                                         |
 | --------------------------- | ------------------------------------------------------------ |
-| `AppSearchScorer`           | Launcher ranking: exact, prefix, word-prefix, contains, ordered-character matches |
 | `BarGeometry`               | Bar sizing and placement math                                |
-| `BoundedIndex`, `SelectionWrap`, `WindowCycle` | Selection movement and wrap-around for the switcher and launcher |
+| `BoundedIndex`, `SelectionWrap`, `WindowCycle` | Space stepping without wrap-around, switcher selection with it, and round-robin over one app's windows |
 | `CollapsedTabPosition`      | Which screen corner holds the collapsed edge tab             |
 | `DisplayNameDisambiguator`  | Distinct names for same-named apps or windows                |
 | `StableIDReordering`        | Drag-to-reorder for the pinned row                           |
@@ -26,13 +25,12 @@ Sparkle is vendored for updates; distribution is a notarized DMG and a Homebrew 
 ## App target
 
 - Bar: `BarController`, `BarPanel`, `BarView`, `WindowChips`, `PinnedRow`, `CollapsedBarTab` and `BarSupport` render one floating bar per enabled display, show window chips for the current Space, the optional pinned row with Finder `.app` drop support, and the collapse into a bottom-left or bottom-right edge tab.
-- Launcher: `LauncherController`, `LauncherView` and `LauncherStore` open on `Option-Space` and search `AppIndex`, the installed-app index.
-- Switcher: `SwitcherController`, its `SwitcherPanel` and `SwitcherView` open on `Option-Tab` and cycle the current Space's windows with Tab, Shift-Tab, the arrow keys, Return and Escape; the panel reads those keys, because the SwiftUI content holds no keyboard focus.
-- Panels: `HUDPanel` is the non-activating, fixed-size key panel behind both the launcher and the switcher ([00-foundation.md](00-foundation.md) records why).
-- Hotkeys: `Hotkey` is the stored chord and `HotkeyManager` registers one per `HotkeyAction` through Carbon; `HotkeyRecorder` is the Settings field that records a new chord.
+- Switcher: `SwitcherController`, its `SwitcherPanel` and `SwitcherView` open on `Option-Tab` and cycle the current Space's windows with Tab, Shift-Tab, the arrow keys, Return and Escape.
+  `SwitcherPanel` is a non-activating key panel of a fixed size, and it reads those keys itself because the SwiftUI content holds no keyboard focus ([00-foundation.md](00-foundation.md) records why).
+- Shortcut: `Hotkey` is the stored chord, `HotkeyManager` registers it through Carbon, and `HotkeyRecorder` is the Settings field that records a new one.
 - Windows and Spaces: `WindowEnumerator`, `WindowStore` and `RunningAppsStore` list windows and apps; `WindowControl` and `AXHelper` raise or close a specific window through Accessibility; `SpacesAPI` reads and switches Spaces through private CGS SPIs, on demand and with no polling; `ScreenHelpers` maps displays.
 - Badges: `BadgeStore` reads optional notification badge text from the Dock accessibility tree; off by default.
-- Persistence: `PinnedAppsStore` and `Settings` keep pinned apps and preferences; `SettingsController` and `SettingsView` present the `Cmd-,` window for size, placement, titles, badges, hotkeys, login launch and per-display visibility.
+- Persistence: `PinnedAppsStore` and `Settings` keep pinned apps and preferences; `SettingsController` presents the `Cmd-,` window as a standard toolbar of panes, and `SettingsView.swift` holds the panes (`SettingsPane`): size, placement, titles, badges, the switcher shortcut, opening at login and per-display visibility.
 - Shell: `main.swift`, `AppDelegate`, `MenuBarController` (status menu with Previous Space and Next Space), `AppActivation`, `Permissions`, `LoginItem`, `Updater` (Sparkle), `Diagnostics`, `AppVersion` and `DockishBrandAssets`.
 - Plumbing: `MainActorCallbacks` gives notification observers and repeating timers main-actor handlers, and `PrivateSymbol` resolves private system functions at run time.
 

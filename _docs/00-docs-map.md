@@ -1,6 +1,6 @@
 # DockishOS Documentation Map
 
-macOS menu-bar utility that shows a floating, per-display app bar for the current Space, with an app launcher and a window switcher.
+macOS menu-bar utility that shows a floating, per-display app bar for the current Space, with a window switcher.
 Agent routing lives in `AGENTS.md`; this index follows the fleet documentation standard that `/docs` audits against.
 
 ## Owner docs

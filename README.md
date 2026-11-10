@@ -16,7 +16,7 @@ The app is built with SwiftUI and AppKit, targets macOS 14+ on Apple Silicon, an
 
 - **Current-Space only.** See and switch the windows that matter right now, not every app on every desktop.
 - **Scroll-to-switch.** Scroll over the expanded bar to move between Spaces without opening Mission Control.
-- **Drag to pin.** Drop `.app` bundles or right-click windows and launcher results to keep important apps close.
+- **Drag to pin.** Drop `.app` bundles on the bar or right-click a window chip to keep important apps close.
 - **Stays out of the way.** Menu-bar accessory app. No Dock icon. No background polling fanfare.
 
 <p align="center">
@@ -73,11 +73,11 @@ xattr -dr com.apple.quarantine /Applications/DockishOS.app
 - Right-click chips to close windows or pin/unpin apps.
 - Vertical scroll over the expanded bar to switch Spaces, or Previous Space / Next Space in the status menu.
 - Collapse the bar into a bottom-left or bottom-right edge tab.
-- Launcher hotkey, default `Option-Space`, for fuzzy-searching installed apps.
-- Window switcher hotkey, default `Option-Tab`, for cycling windows in the current Space with Tab, Shift-Tab, arrow keys, Return, and Escape.
-- Settings for size, top/bottom placement, titles, badges, hotkeys, login launch, and per-display visibility.
+- Window switcher shortcut, default `Option-Tab`, for cycling windows in the current Space with Tab, Shift-Tab, arrow keys, Return, and Escape.
+- Liquid Glass bar, edge tab and switcher on macOS 26 and later.
+- Settings for size, top/bottom placement, titles, badges, the switcher shortcut, opening at login, and per-display visibility.
 
-DockishOS does not replace or configure the system Dock.
+DockishOS does not replace or configure the system Dock, and it has no app launcher: Spotlight opens apps.
 Use System Settings for Dock behavior.
 
 ## Permissions
@@ -90,15 +90,11 @@ Window listing and Spaces switching do not require a Screen Recording permission
 Notification badges are off by default.
 They rely on an undocumented Dock accessibility attribute, so they may stop working on future macOS releases.
 
-## Launcher And Switcher
-
-Press `Option-Space` to open the app launcher.
-Search matches app names case-insensitively, with exact and prefix matches ranked ahead of word-prefix, contains, and ordered-character matches.
-Press Return to open the selected result, or right-click a result to pin it to the bar.
+## Window Switcher
 
 Press `Option-Tab` to open the current-Space window switcher.
 Tab, Shift-Tab, and the arrow keys move selection, Return activates the selected window, and Escape closes the switcher.
-Change either hotkey from `Cmd-,` Settings.
+Change the shortcut from `Cmd-,` Settings.
 
 ## Build
 

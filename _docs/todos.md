@@ -30,4 +30,5 @@ Phase ordering is intentional.
 Not active work.
 Promote only one item at a time into `#### Phase N` in `### Work TODOs` when implementation starts.
 
-(No items.)
+- Replace `public/dockishos-bar-preview.png`: it shows the bar before Liquid Glass.
+- Check the HUD-material fallback, the edge tab and the Settings toolbar on macOS 14 and 15; the glass design was only run on macOS 27.
