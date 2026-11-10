@@ -3,7 +3,7 @@ import XCTest
 /// Guards the HIG accessibility contracts that live in the app target.
 final class HIGAccessibilityRegressionTests: XCTestCase {
     func testBarPanelCanBecomeKey() throws {
-        let source = try Self.readSource("Sources/DockishOS/BarPanel.swift")
+        let source = try RepositorySource.read("Sources/DockishOS/BarPanel.swift")
         XCTAssertTrue(
             source.contains("override var canBecomeKey: Bool { true }"),
             "BarPanel must be able to become key for VoiceOver and Full Keyboard Access."
@@ -14,15 +14,35 @@ final class HIGAccessibilityRegressionTests: XCTestCase {
         )
     }
 
+    /// `accessibilityElement(children: .ignore)` on a chip button replaced the
+    /// button with an element that had no press action and no button role.
+    func testChipsStayButtonsForAssistiveClients() throws {
+        for path in ["Sources/DockishOS/WindowChips.swift", "Sources/DockishOS/PinnedRow.swift"] {
+            let source = try RepositorySource.read(path)
+            XCTAssertFalse(
+                source.contains(".accessibilityElement(children: .ignore)"),
+                "\(path): a chip must stay a button so VoiceOver can press it."
+            )
+        }
+    }
+
+    /// The status menu enables its items automatically, so a Space command
+    /// is only disabled at an end through menu validation.
+    func testSpaceCommandsAreValidated() throws {
+        let source = try RepositorySource.read("Sources/DockishOS/MenuBarController.swift")
+        XCTAssertTrue(source.contains("NSMenuItemValidation"))
+        XCTAssertTrue(source.contains("func validateMenuItem"))
+    }
+
     func testStatusMenuExposesSpaceSwitching() throws {
-        let source = try Self.readSource("Sources/DockishOS/MenuBarController.swift")
+        let source = try RepositorySource.read("Sources/DockishOS/MenuBarController.swift")
         XCTAssertTrue(source.contains("Previous Space"), "Status menu must offer Previous Space.")
         XCTAssertTrue(source.contains("Next Space"), "Status menu must offer Next Space.")
-        XCTAssertTrue(source.contains("adjacentSpace"), "Space menu items must use SpacesStore.adjacentSpace.")
+        XCTAssertTrue(source.contains("adjacentSpace"), "Space menu items must use SpacesAPI.adjacentSpace.")
     }
 
     func testCollapseHonorsReduceMotion() throws {
-        let source = try Self.readSource("Sources/DockishOS/BarController.swift")
+        let source = try RepositorySource.read("Sources/DockishOS/BarController.swift")
         XCTAssertTrue(
             source.contains("accessibilityDisplayShouldReduceMotion"),
             "Bar collapse/expand must honor Reduce Motion."
@@ -30,30 +50,10 @@ final class HIGAccessibilityRegressionTests: XCTestCase {
     }
 
     func testHUDHonorsReduceTransparency() throws {
-        let source = try Self.readSource("Sources/DockishOS/BarSupport.swift")
+        let source = try RepositorySource.read("Sources/DockishOS/BarSupport.swift")
         XCTAssertTrue(
-            source.contains("accessibilityDisplayShouldReduceTransparency"),
+            source.contains("accessibilityReduceTransparency"),
             "HUD materials must honor Reduce Transparency."
-        )
-    }
-
-    func testAccessibilityUsageDescriptionNamesBadges() throws {
-        let source = try Self.readSource("Resources/Info.plist")
-        XCTAssertTrue(
-            source.contains("badge"),
-            "NSAccessibilityUsageDescription must mention Dock badge counts."
-        )
-    }
-
-    private static func readSource(_ relativePath: String, file: StaticString = #filePath) throws -> String {
-        let testFile = URL(fileURLWithPath: "\(file)")
-        let repoRoot = testFile
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        return try String(
-            contentsOf: repoRoot.appendingPathComponent(relativePath),
-            encoding: .utf8
         )
     }
 }

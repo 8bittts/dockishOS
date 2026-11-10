@@ -1,7 +1,8 @@
-import Foundation
 import DockishOSCore
+import Foundation
 
-struct AppEntry: Identifiable, Hashable {
+struct AppEntry: Identifiable, Hashable, Sendable {
+    /// The bundle's standardized path.
     let id: String
     let name: String
     let bundleID: String?
@@ -10,6 +11,15 @@ struct AppEntry: Identifiable, Hashable {
     /// repeating `lowercased()` / word-splitting for every candidate.
     let lowercasedName: String
     let lowercasedWords: [String]
+}
+
+extension Bundle {
+    /// The app's name as its `Info.plist` gives it, or the bundle's file name.
+    var appName: String {
+        infoDictionary?["CFBundleDisplayName"] as? String
+            ?? infoDictionary?["CFBundleName"] as? String
+            ?? bundleURL.deletingPathExtension().lastPathComponent
+    }
 }
 
 enum AppIndex {
@@ -22,32 +32,27 @@ enum AppIndex {
     /// Recursively scan the standard app directories for `.app` bundles.
     /// Skips contents inside each `.app` so we don't recurse into helpers.
     static func scan() -> [AppEntry] {
-        let fm = FileManager.default
+        let fileManager = FileManager.default
         var seen: Set<String> = []
         var entries: [AppEntry] = []
 
-        for dir in directories where fm.fileExists(atPath: dir.path) {
-            guard let enumerator = fm.enumerator(
-                at: dir,
-                includingPropertiesForKeys: [.isApplicationKey],
-                options: [.skipsHiddenFiles],
-                errorHandler: nil
+        for directory in directories {
+            guard let enumerator = fileManager.enumerator(
+                at: directory,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
             ) else { continue }
 
             while let url = enumerator.nextObject() as? URL {
                 guard url.pathExtension == "app" else { continue }
                 enumerator.skipDescendants()
-                let pathKey = url.standardizedFileURL.path
-                guard !seen.contains(pathKey) else { continue }
-                seen.insert(pathKey)
+                let path = url.standardizedFileURL.path
+                guard seen.insert(path).inserted else { continue }
                 let bundle = Bundle(url: url)
-                let display = bundle?.infoDictionary?["CFBundleDisplayName"] as? String
-                let plain = bundle?.infoDictionary?["CFBundleName"] as? String
-                let name = display ?? plain ?? url.deletingPathExtension().lastPathComponent
-                let stableID = pathKey
+                let name = bundle?.appName ?? url.deletingPathExtension().lastPathComponent
                 let lowercasedName = name.lowercased()
                 entries.append(AppEntry(
-                    id: stableID,
+                    id: path,
                     name: name,
                     bundleID: bundle?.bundleIdentifier,
                     path: url,

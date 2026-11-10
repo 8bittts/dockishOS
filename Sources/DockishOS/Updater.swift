@@ -7,8 +7,6 @@ import Sparkle
 ///
 /// Held as a singleton because Sparkle requires a long-lived updater
 /// object to run its scheduled check timer (`SUEnableAutomaticChecks`).
-/// Touching `.shared` from `applicationDidFinishLaunching` is enough to
-/// trigger init and start the timer.
 ///
 /// DockishOS runs as an `.accessory` app (`LSUIElement`), so it has no
 /// Dock icon and cannot bring its own windows forward on its own. Left
@@ -18,56 +16,55 @@ import Sparkle
 /// app to a regular foreground app and floats the update windows above
 /// everything for the duration of the session, then restores both the
 /// activation policy and the window levels when Sparkle finishes.
+@MainActor
 final class Updater: NSObject {
+    /// True when running from a real `.app` bundle, whose `Info.plist`
+    /// carries the feed URL. `swift run` builds have none, so they must not
+    /// start Sparkle or offer update commands.
+    static let isAvailable = Bundle.main.infoDictionary?["SUFeedURL"] != nil
+
+    /// Creating the instance starts Sparkle. Use only when `isAvailable`.
     static let shared = Updater()
 
-    private var controller: SPUStandardUpdaterController?
+    private lazy var controller = SPUStandardUpdaterController(
+        startingUpdater: true,
+        updaterDelegate: nil,
+        userDriverDelegate: self
+    )
     private var activationPolicyBeforeUpdate: NSApplication.ActivationPolicy?
     private var elevatedWindowLevels: [ObjectIdentifier: NSWindow.Level] = [:]
-    private var windowObserver: Any?
+    private var windowObserver: NSObjectProtocol?
 
     private override init() {
         super.init()
-        controller = SPUStandardUpdaterController(
-            startingUpdater: true,
-            updaterDelegate: nil,
-            userDriverDelegate: self
-        )
+        _ = controller
+    }
+
+    /// Starts Sparkle and its scheduled check timer in a bundled build.
+    static func startIfAvailable() {
+        guard isAvailable else {
+            Diagnostics.updater.info("Running unbundled (no SUFeedURL); auto-update disabled")
+            return
+        }
+        _ = shared
+        Diagnostics.updater.info("Sparkle auto-update enabled")
     }
 
     /// User-initiated check ("Check for Updates…" menu item).
-    @objc func checkForUpdates() {
+    func checkForUpdates() {
         presentSparkleUI()
-        controller?.checkForUpdates(nil)
-    }
-
-    /// True when running from a real `.app` bundle with Sparkle bundled.
-    /// `swift run` builds skip Sparkle entirely, so callers should test
-    /// this before exposing update affordances.
-    var canUpdate: Bool {
-        Bundle.main.infoDictionary?["SUFeedURL"] != nil
+        controller.checkForUpdates(nil)
     }
 
     // MARK: - Foregrounding an accessory app for the update UI
 
     private func presentSparkleUI() {
-        promoteToForegroundIfNeeded()
-        startFloatingWindows()
-    }
-
-    private func promoteToForegroundIfNeeded() {
-        let currentPolicy = NSApp.activationPolicy()
-        if currentPolicy != .regular, activationPolicyBeforeUpdate == nil {
-            activationPolicyBeforeUpdate = currentPolicy
+        if NSApp.activationPolicy() != .regular, activationPolicyBeforeUpdate == nil {
+            activationPolicyBeforeUpdate = NSApp.activationPolicy()
             NSApp.setActivationPolicy(.regular)
         }
-        NSApp.activate(ignoringOtherApps: true)
-    }
-
-    private func restoreActivationPolicyIfNeeded() {
-        guard let activationPolicyBeforeUpdate else { return }
-        NSApp.setActivationPolicy(activationPolicyBeforeUpdate)
-        self.activationPolicyBeforeUpdate = nil
+        AppActivation.activateSelf()
+        startFloatingWindows()
     }
 
     /// Sparkle creates its windows lazily as the session advances, so we
@@ -76,14 +73,15 @@ final class Updater: NSObject {
     /// so DockishOS's own panels are left exactly as they were.
     private func startFloatingWindows() {
         guard windowObserver == nil else { return }
-        windowObserver = NotificationCenter.default.addObserver(
-            forName: NSWindow.didBecomeKeyNotification,
-            object: nil,
-            queue: .main
+        windowObserver = NotificationCenter.default.observeOnMain(
+            NSWindow.didBecomeKeyNotification
         ) { [weak self] notification in
             guard let self, let window = notification.object as? NSWindow,
                   Self.isSparkleWindow(window) else { return }
-            self.floatForUpdateSession(window)
+            if self.elevatedWindowLevels[ObjectIdentifier(window)] == nil {
+                self.elevatedWindowLevels[ObjectIdentifier(window)] = window.level
+            }
+            window.level = .floating
         }
     }
 
@@ -92,37 +90,35 @@ final class Updater: NSObject {
     /// Only elevate windows that belong to the Sparkle framework, so opening
     /// the launcher/Settings mid-update doesn't transiently mis-level our own
     /// panels. Falls back to floating any window if the Sparkle bundle can't
-    /// be resolved (preserves prior best-effort behavior).
+    /// be resolved.
     private static func isSparkleWindow(_ window: NSWindow) -> Bool {
         guard let sparkleBundle else { return true }
         let owners: [AnyClass] = [type(of: window), window.windowController.map { type(of: $0) }].compactMap { $0 }
         return owners.contains { Bundle(for: $0) == sparkleBundle }
     }
 
-    private func floatForUpdateSession(_ window: NSWindow) {
-        let id = ObjectIdentifier(window)
-        if elevatedWindowLevels[id] == nil {
-            elevatedWindowLevels[id] = window.level
-        }
-        window.level = .floating
-    }
-
-    private func stopFloatingWindows() {
+    private func endSparkleUI() {
         if let windowObserver {
             NotificationCenter.default.removeObserver(windowObserver)
             self.windowObserver = nil
         }
         for window in NSApp.windows {
-            let id = ObjectIdentifier(window)
-            if let originalLevel = elevatedWindowLevels[id] {
+            if let originalLevel = elevatedWindowLevels[ObjectIdentifier(window)] {
                 window.level = originalLevel
             }
         }
         elevatedWindowLevels.removeAll()
+
+        if let activationPolicyBeforeUpdate {
+            NSApp.setActivationPolicy(activationPolicyBeforeUpdate)
+            self.activationPolicyBeforeUpdate = nil
+        }
     }
 }
 
-extension Updater: SPUStandardUserDriverDelegate {
+// Sparkle calls its user-driver delegate on the main thread but does not
+// annotate the protocol, hence `@preconcurrency`.
+extension Updater: @preconcurrency SPUStandardUserDriverDelegate {
     /// DockishOS handles surfacing scheduled update reminders itself: when
     /// Sparkle decides to show an update, `standardUserDriverWillHandleShowingUpdate`
     /// promotes this accessory app to the foreground and floats the update
@@ -144,7 +140,6 @@ extension Updater: SPUStandardUserDriverDelegate {
     }
 
     func standardUserDriverWillFinishUpdateSession() {
-        stopFloatingWindows()
-        restoreActivationPolicyIfNeeded()
+        endSparkleUI()
     }
 }

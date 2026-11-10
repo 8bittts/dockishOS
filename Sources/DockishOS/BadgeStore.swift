@@ -4,58 +4,42 @@ import Combine
 
 /// Reads notification-badge strings (the little red number on Dock icons)
 /// from the system Dock's accessibility tree and republishes them keyed by
-/// bundle identifier.
-///
-/// Apple does not expose another app's `NSDockTile.badgeLabel`, so we walk
-/// the Dock process's AX hierarchy:
-///
-///     Dock (com.apple.dock)
-///         └─ AXList ("the dock")
-///             └─ AXApplicationDockItem... (one per app icon)
-///                 ├─ kAXURLAttribute       → file:///Applications/Foo.app
-///                 ├─ kAXTitleAttribute     → "Foo"
-///                 └─ "AXStatusLabel"       → "12"   (the badge string)
-///
-/// `AXStatusLabel` is an undocumented attribute the Dock exposes — every
-/// comparable tool (DockMate, DockShelf) uses it. The rest are public
-/// attributes from `AXAttributeConstants.h`.
-///
-/// All AX calls happen on the main thread (Timer scheduled on main RL).
-/// Apple's accessibility client docs require this.
+/// bundle identifier. Polls only while the "Show notification badges"
+/// setting is on.
+@MainActor
 final class BadgeStore: ObservableObject {
     static let shared = BadgeStore()
+
+    private static let pollInterval: TimeInterval = 2.5
 
     @Published private(set) var badges: [String: String] = [:]
 
     private var timer: Timer?
-    private var settingsObserver: AnyCancellable?
-    private let pollInterval: TimeInterval = 2.5
+    private var settingObserver: AnyCancellable?
 
     private init() {
-        settingsObserver = SettingsStore.shared.$showNotificationBadges
+        // A `@Published` publisher sends its current value on subscription,
+        // so this also applies the persisted setting at launch.
+        settingObserver = SettingsStore.shared.$showNotificationBadges
             .removeDuplicates()
-            .sink { [weak self] enabled in
-                self?.applyEnabled(enabled)
-            }
-        applyEnabled(SettingsStore.shared.showNotificationBadges)
+            .sink { [weak self] enabled in self?.setPolling(enabled) }
     }
 
     func badge(for bundleID: String?) -> String? {
-        guard let bid = bundleID else { return nil }
-        return badges[bid]
+        bundleID.flatMap { badges[$0] }
     }
 
-    private func applyEnabled(_ enabled: Bool) {
+    private func setPolling(_ enabled: Bool) {
         timer?.invalidate()
         timer = nil
-        if enabled {
-            refresh()
-            timer = Timer.scheduledTimer(withTimeInterval: pollInterval, repeats: true) { [weak self] _ in
-                self?.refresh()
-            }
-        } else if !badges.isEmpty {
-            badges = [:]
+        guard enabled else {
+            if !badges.isEmpty { badges = [:] }
+            return
         }
+        // Reading another app's accessibility tree needs the permission.
+        Permissions.requestAccessibility()
+        refresh()
+        timer = Timer.repeating(every: Self.pollInterval) { [weak self] in self?.refresh() }
     }
 
     private func refresh() {
@@ -64,55 +48,50 @@ final class BadgeStore: ObservableObject {
     }
 }
 
-/// Pure, stateless wrapper around the Dock's AX tree. Returns
-/// `[bundleID: badgeString]`. Returns `[:]` on any failure (Dock not
-/// running, AX permission revoked, Dock layout changed in a future macOS
-/// release, etc.) — never throws, never crashes.
+/// Stateless reader of the Dock's AX tree. Returns `[bundleID: badgeString]`,
+/// or `[:]` on any failure (Dock not running, Accessibility not granted, Dock
+/// layout changed in a future macOS release).
+///
+/// Apple does not expose another app's `NSDockTile.badgeLabel`, so this walks
+/// the Dock process's AX hierarchy:
+///
+///     Dock (com.apple.dock)
+///         └─ AXList
+///             └─ AXApplicationDockItem (one per app icon)
+///                 ├─ kAXURLAttribute   → file:///Applications/Foo.app
+///                 └─ "AXStatusLabel"   → "12"   (the badge string)
+///
+/// `AXStatusLabel` is an undocumented attribute; the others are public
+/// constants from `AXAttributeConstants.h`.
+@MainActor
 enum DockBadgeReader {
     static func read() -> [String: String] {
-        guard let dockApp = NSWorkspace.shared.runningApplications.first(where: {
-            $0.bundleIdentifier == "com.apple.dock"
-        }) else {
+        guard let dock = NSRunningApplication.runningApplications(
+            withBundleIdentifier: "com.apple.dock"
+        ).first else {
             Diagnostics.badges.debug("Dock process not found")
             return [:]
         }
 
-        let dockAX = AXUIElementCreateApplication(dockApp.processIdentifier)
-        AXUIElementSetMessagingTimeout(dockAX, 0.5)
+        let dockElement = AXUIElementCreateApplication(dock.processIdentifier)
+        // Bound the synchronous AX round-trips so a hung Dock cannot block
+        // the main run loop for the default messaging timeout.
+        AXUIElementSetMessagingTimeout(dockElement, 0.5)
+        let dockChildren: [AXUIElement] = AX.value(dockElement, kAXChildrenAttribute) ?? []
         guard
-            let dockChildren: [AXUIElement] = AX.value(dockAX, kAXChildrenAttribute as CFString),
-            let list = dockList(from: dockChildren),
-            let icons: [AXUIElement] = AX.value(list, kAXChildrenAttribute as CFString)
+            let list = dockChildren.first(where: { AX.value($0, kAXRoleAttribute) == kAXListRole }),
+            let items: [AXUIElement] = AX.value(list, kAXChildrenAttribute)
         else { return [:] }
 
-        var result: [String: String] = [:]
-        for icon in icons {
-            let subrole: String? = AX.value(icon, kAXSubroleAttribute as CFString)
-            guard subrole == "AXApplicationDockItem" else { continue }
-
+        var badges: [String: String] = [:]
+        for item in items where AX.value(item, kAXSubroleAttribute) == "AXApplicationDockItem" {
             guard
-                let bundleID = bundleIdentifier(for: icon),
-                let badge: String = AX.value(icon, "AXStatusLabel"),
-                !badge.isEmpty
+                let badge: String = AX.value(item, "AXStatusLabel"), !badge.isEmpty,
+                let url: URL = AX.value(item, kAXURLAttribute), url.pathExtension == "app",
+                let bundleID = Bundle(url: url)?.bundleIdentifier
             else { continue }
-
-            result[bundleID] = badge
+            badges[bundleID] = badge
         }
-        return result
-    }
-
-    private static func dockList(from children: [AXUIElement]) -> AXUIElement? {
-        children.first { child in
-            let role: String? = AX.value(child, kAXRoleAttribute as CFString)
-            return role == (kAXListRole as String)
-        }
-    }
-
-    private static func bundleIdentifier(for icon: AXUIElement) -> String? {
-        guard
-            let url = AX.url(icon, kAXURLAttribute as CFString),
-            url.pathExtension == "app"
-        else { return nil }
-        return Bundle(url: url)?.bundleIdentifier
+        return badges
     }
 }

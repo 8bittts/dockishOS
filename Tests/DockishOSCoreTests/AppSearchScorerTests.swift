@@ -2,63 +2,50 @@ import XCTest
 @testable import DockishOSCore
 
 final class AppSearchScorerTests: XCTestCase {
-    func testExactMatchReturnsHighestScore() {
-        XCTAssertEqual(AppSearchScorer.score(query: "Safari", name: "Safari"), 1000)
+    /// Scores `name` the way the launcher does: lowercased once, then split.
+    private func score(_ query: String, in name: String) -> Int? {
+        let lowercased = name.lowercased()
+        return AppSearchScorer.score(
+            query: query,
+            lowercasedName: lowercased,
+            lowercasedWords: AppSearchScorer.lowercasedWords(of: lowercased)
+        )
     }
 
-    func testPrefixMatchBeatsWordPrefixAndContains() {
-        let prefix = AppSearchScorer.score(query: "saf", name: "Safari")
-        let wordPrefix = AppSearchScorer.score(query: "saf", name: "Open Safari")
-        let contains = AppSearchScorer.score(query: "far", name: "Safari")
+    func testExactMatchReturnsHighestScore() {
+        XCTAssertEqual(score("Safari", in: "Safari"), 1000)
+    }
 
-        XCTAssertNotNil(prefix)
-        XCTAssertNotNil(wordPrefix)
-        XCTAssertNotNil(contains)
-        XCTAssertGreaterThan(prefix!, wordPrefix!)
-        XCTAssertGreaterThan(wordPrefix!, contains!)
+    func testEmptyQueryMatchesEverything() {
+        XCTAssertEqual(score("", in: "Safari"), 0)
+    }
+
+    func testPrefixMatchBeatsWordPrefixAndContains() throws {
+        let prefix = try XCTUnwrap(score("saf", in: "Safari"))
+        let wordPrefix = try XCTUnwrap(score("saf", in: "Open Safari"))
+        let contains = try XCTUnwrap(score("far", in: "Safari"))
+
+        XCTAssertGreaterThan(prefix, wordPrefix)
+        XCTAssertGreaterThan(wordPrefix, contains)
     }
 
     func testWordPrefixMatchesLaterWord() {
-        XCTAssertEqual(
-            AppSearchScorer.score(query: "co", name: "Visual Studio Code"),
-            200 - "visual studio code".count
-        )
+        XCTAssertEqual(score("co", in: "Visual Studio Code"), 200 - "visual studio code".count)
+    }
+
+    func testWordsSplitOnPunctuationAndDigitsStayInWords() {
+        XCTAssertEqual(AppSearchScorer.lowercasedWords(of: "1password 7 - beta"), ["1password", "7", "beta"])
     }
 
     func testSubsequenceFallbackMatchesOrderedCharacters() {
-        XCTAssertEqual(
-            AppSearchScorer.score(query: "sfr", name: "Safari"),
-            50 - "safari".count
-        )
+        XCTAssertEqual(score("sfr", in: "Safari"), 50 - "safari".count)
     }
 
     func testMatchingIsCaseInsensitive() {
-        XCTAssertEqual(
-            AppSearchScorer.score(query: "TER", name: "Terminal"),
-            500 - "terminal".count
-        )
+        XCTAssertEqual(score("TER", in: "Terminal"), 500 - "terminal".count)
     }
 
     func testNoMatchReturnsNil() {
-        XCTAssertNil(AppSearchScorer.score(query: "xyz", name: "Safari"))
-    }
-
-    func testPrecomputedPathMatchesNamePath() {
-        let names = [
-            "Safari", "Open Safari", "Visual Studio Code", "Terminal",
-            "1Password 7", "Final Cut Pro", "System Settings", "",
-        ]
-        let queries = ["", "saf", "co", "sfr", "TER", "xyz", "1", "pro", "system"]
-        for name in names {
-            let lower = name.lowercased()
-            let words = AppSearchScorer.lowercasedWords(of: lower)
-            for query in queries {
-                XCTAssertEqual(
-                    AppSearchScorer.score(query: query, name: name),
-                    AppSearchScorer.score(query: query, lowercasedName: lower, lowercasedWords: words),
-                    "Mismatch for query \(query) name \(name)"
-                )
-            }
-        }
+        XCTAssertNil(score("xyz", in: "Safari"))
     }
 }

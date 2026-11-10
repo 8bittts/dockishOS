@@ -40,72 +40,33 @@ struct AppIconView: NSViewRepresentable {
     let pid: pid_t
 
     func makeNSView(context: Context) -> NSImageView {
-        let v = NSImageView()
-        v.imageScaling = .scaleProportionallyUpOrDown
-        return v
+        let view = NSImageView()
+        view.imageScaling = .scaleProportionallyUpOrDown
+        return view
     }
 
-    func updateNSView(_ nsView: NSImageView, context: Context) {
-        nsView.image = NSRunningApplication(processIdentifier: pid)?.icon
+    func updateNSView(_ view: NSImageView, context: Context) {
+        view.image = NSRunningApplication(processIdentifier: pid)?.icon
     }
 }
 
-/// `NSVisualEffectView` bridge used as the bar's translucent background.
-/// `.behindWindow` makes desktop content show through the bar.
+/// `NSVisualEffectView` bridge used as the translucent background of the bar,
+/// launcher and switcher. Switches to an opaque window material while Reduce
+/// Transparency (`accessibilityReduceTransparency`) is on.
 struct VisualEffectView: NSViewRepresentable {
     var material: NSVisualEffectView.Material
     var blending: NSVisualEffectView.BlendingMode
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     func makeNSView(context: Context) -> NSVisualEffectView {
-        let v = NSVisualEffectView()
-        context.coordinator.view = v
-        apply(to: v)
-        return v
-    }
-
-    func updateNSView(_ v: NSVisualEffectView, context: Context) {
-        context.coordinator.parent = self
-        context.coordinator.view = v
-        apply(to: v)
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-
-    func apply(to view: NSVisualEffectView) {
-        if NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency {
-            view.material = .windowBackground
-            view.blendingMode = .withinWindow
-        } else {
-            view.material = material
-            view.blendingMode = blending
-        }
+        let view = NSVisualEffectView()
         view.state = .active
+        return view
     }
 
-    final class Coordinator {
-        var parent: VisualEffectView
-        weak var view: NSVisualEffectView?
-        private var observer: NSObjectProtocol?
-
-        init(_ parent: VisualEffectView) {
-            self.parent = parent
-            observer = NSWorkspace.shared.notificationCenter.addObserver(
-                forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                guard let self, let view = self.view else { return }
-                self.parent.apply(to: view)
-            }
-        }
-
-        deinit {
-            if let observer {
-                NSWorkspace.shared.notificationCenter.removeObserver(observer)
-            }
-        }
+    func updateNSView(_ view: NSVisualEffectView, context: Context) {
+        view.material = reduceTransparency ? .windowBackground : material
+        view.blendingMode = reduceTransparency ? .withinWindow : blending
     }
 }
 
@@ -124,4 +85,19 @@ enum ChipStyle {
     static let frontmostFill = Color(nsColor: .selectedContentBackgroundColor).opacity(0.34)
     static let border = Color(nsColor: .separatorColor)
     static let accent = Color(nsColor: .controlAccentColor)
+}
+
+/// What VoiceOver reads for a chip: the name, then each state that applies.
+enum ChipAccessibility {
+    static func label(_ name: String, windowCount: Int? = nil, state: String? = nil, badge: String?) -> String {
+        var parts = [name]
+        if let windowCount { parts.append(windowCountText(windowCount)) }
+        if let state { parts.append(state) }
+        if let badge { parts.append(badge == "1" ? "1 notification" : "\(badge) notifications") }
+        return parts.joined(separator: ", ")
+    }
+
+    static func windowCountText(_ count: Int) -> String {
+        count == 1 ? "1 window" : "\(count) windows"
+    }
 }

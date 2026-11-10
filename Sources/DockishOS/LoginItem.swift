@@ -1,42 +1,37 @@
-import AppKit
 import ServiceManagement
 
-/// Auto-launch on login via `SMAppService` (macOS 13+).
+/// Auto-launch on login via `SMAppService`.
 ///
 /// Only works when the binary is in a signed, notarized `.app` bundle that
 /// macOS has registered as a Login Item. From `swift run` builds the call
-/// will throw `notFound` — that's expected and silently ignored.
+/// throws and the status reads `notFound`.
 enum LoginItem {
-    static var status: SMAppService.Status {
-        SMAppService.mainApp.status
-    }
-
     static var isEnabled: Bool {
-        status == .enabled
+        SMAppService.mainApp.status == .enabled
     }
 
-    /// Returns true on success. Returns false (and leaves state unchanged)
-    /// when running unbundled or when the user denied approval.
-    @discardableResult
-    static func setEnabled(_ enabled: Bool) -> Bool {
+    /// Registers or unregisters the login item. A failure leaves the state
+    /// unchanged, so callers re-read `isEnabled` afterwards.
+    static func setEnabled(_ enabled: Bool) {
         do {
             if enabled {
                 try SMAppService.mainApp.register()
             } else {
                 try SMAppService.mainApp.unregister()
             }
-            return true
         } catch {
-            return false
+            Diagnostics.lifecycle.error(
+                "login item \(enabled ? "register" : "unregister", privacy: .public) failed: \(error.localizedDescription, privacy: .public)"
+            )
         }
     }
 
     static var statusDescription: String {
-        switch status {
+        switch SMAppService.mainApp.status {
         case .notRegistered:    return "Not enabled"
         case .enabled:          return "Enabled — DockishOS will launch at login"
         case .requiresApproval: return "Pending approval in System Settings → General → Login Items"
-        case .notFound:         return "Unavailable (run from a built `.app`)"
+        case .notFound:         return "Not enabled — macOS does not list this copy of DockishOS as a login item"
         @unknown default:       return "Unknown"
         }
     }

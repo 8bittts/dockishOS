@@ -4,9 +4,13 @@ import DockishOSCore
 
 struct SwitcherView: View {
     @ObservedObject var store: WindowStore
-    @Binding var selectedIndex: Int
+    @ObservedObject var selection: SwitcherSelection
+    /// Called when a tile is clicked. `SwitcherPanel` handles the keyboard.
     let onActivate: (WindowInfo) -> Void
-    let onDismiss: () -> Void
+
+    private var selectedWindow: WindowInfo? {
+        store.windows.indices.contains(selection.index) ? store.windows[selection.index] : nil
+    }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -15,30 +19,30 @@ struct SwitcherView: View {
                     HStack(spacing: 14) {
                         ForEach(Array(store.windows.enumerated()), id: \.element.id) { index, window in
                             Button {
-                                selectedIndex = index
+                                selection.index = index
                                 onActivate(window)
                             } label: {
                                 SwitcherTile(
                                     window: window,
-                                    isSelected: index == selectedIndex,
+                                    isSelected: index == selection.index,
                                     isFirst: index == 0
                                 )
                             }
                             .buttonStyle(.plain)
-                            .id(index)
                         }
                     }
                     .padding(20)
-                    .onChange(of: selectedIndex) { _, new in
+                    .onChange(of: selection.index) {
+                        guard let selectedWindow else { return }
                         withAnimation(.easeInOut(duration: 0.12)) {
-                            proxy.scrollTo(new, anchor: .center)
+                            proxy.scrollTo(selectedWindow.id, anchor: .center)
                         }
                     }
                 }
             }
 
-            if store.windows.indices.contains(selectedIndex) {
-                Text(store.windows[selectedIndex].displayTitle)
+            if let selectedWindow {
+                Text(selectedWindow.displayTitle)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -51,6 +55,7 @@ struct SwitcherView: View {
                     .padding(.bottom, 12)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             VisualEffectView(material: .hudWindow, blending: .behindWindow)
                 .clipShape(RoundedRectangle(cornerRadius: 18))
@@ -59,20 +64,6 @@ struct SwitcherView: View {
             RoundedRectangle(cornerRadius: 18)
                 .stroke(Color(nsColor: .separatorColor).opacity(0.55), lineWidth: 0.5)
         )
-        .onKeyPress(.return)     { activate(); return .handled }
-        .onKeyPress(.escape)     { onDismiss(); return .handled }
-        .onKeyPress(.leftArrow)  { advance(by: -1); return .handled }
-        .onKeyPress(.rightArrow) { advance(by: 1); return .handled }
-    }
-
-    private func advance(by delta: Int) {
-        guard !store.windows.isEmpty else { return }
-        selectedIndex = SelectionWrap.advance(selectedIndex, by: delta, count: store.windows.count)
-    }
-
-    private func activate() {
-        guard store.windows.indices.contains(selectedIndex) else { return }
-        onActivate(store.windows[selectedIndex])
     }
 }
 
@@ -84,8 +75,7 @@ private struct SwitcherTile: View {
     var body: some View {
         VStack(spacing: 6) {
             ZStack {
-                if let app = NSRunningApplication(processIdentifier: window.pid),
-                   let icon = app.icon {
+                if let icon = NSRunningApplication(processIdentifier: window.pid)?.icon {
                     Image(nsImage: icon)
                         .resizable()
                         .frame(width: 64, height: 64)
@@ -100,8 +90,10 @@ private struct SwitcherTile: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14)
-                    .stroke(isSelected ? Color(nsColor: .controlAccentColor) : Color(nsColor: .separatorColor).opacity(0.45),
-                            lineWidth: isSelected ? 2 : 0.5)
+                    .stroke(
+                        isSelected ? ChipStyle.accent : Color(nsColor: .separatorColor).opacity(0.45),
+                        lineWidth: isSelected ? 2 : 0.5
+                    )
             )
             Text(window.ownerName)
                 .font(.system(size: 11, weight: .medium))

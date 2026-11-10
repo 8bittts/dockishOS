@@ -1,124 +1,99 @@
-import AppKit
 import Carbon.HIToolbox
 
-/// Registers any number of named global hotkeys via Carbon's
-/// `RegisterEventHotKey`. Carbon is technically deprecated but
-/// `RegisterEventHotKey` remains the only public Apple API for global
-/// hotkeys — `NSEvent.addGlobalMonitorForEvents` can't suppress event
-/// propagation, which we want for trigger keys like ⌥ Space and ⌥ Tab.
+/// Registers the global hotkeys via Carbon's `RegisterEventHotKey`. Carbon is
+/// technically deprecated but `RegisterEventHotKey` remains the only public
+/// Apple API for global hotkeys — `NSEvent.addGlobalMonitorForEvents` can't
+/// suppress event propagation, which we want for trigger keys like ⌥ Space
+/// and ⌥ Tab.
+@MainActor
 final class HotkeyManager {
     static let shared = HotkeyManager()
 
     private struct Registration {
-        let id: UInt32
         let ref: EventHotKeyRef
-        let callback: () -> Void
+        let onFire: @MainActor () -> Void
     }
 
-    private var registrations: [String: Registration] = [:]
-    private var registrationFailures: [String: OSStatus] = [:]
-    private var handlerRef: EventHandlerRef?
-    private let signature: OSType = 0x444B5301 // 'DKS\1'
+    private static let signature: OSType = 0x444B5301 // 'DKS\1'
 
-    /// Register or replace a named hotkey. Calling with the same `name`
-    /// unregisters the previous binding first.
-    @discardableResult
-    func register(
-        name: String,
-        keyCode: UInt32,
-        modifiers: UInt32,
-        onFire: @escaping () -> Void
-    ) -> OSStatus {
-        unregister(name: name)
-        let id = (registrations.values.map(\.id).max() ?? 0) + 1
-        let hkID = EventHotKeyID(signature: signature, id: id)
+    private var registrations: [HotkeyAction: Registration] = [:]
+    private var failures: [HotkeyAction: OSStatus] = [:]
+    private var handlerInstalled = false
+
+    private init() {}
+
+    /// Binds `hotkey` to `action`, replacing the action's previous binding.
+    func register(_ action: HotkeyAction, hotkey: Hotkey, onFire: @escaping @MainActor () -> Void) {
+        if let previous = registrations.removeValue(forKey: action) {
+            UnregisterEventHotKey(previous.ref)
+        }
+        installHandlerIfNeeded()
+
         var ref: EventHotKeyRef?
         let status = RegisterEventHotKey(
-            keyCode, modifiers, hkID,
-            GetApplicationEventTarget(), 0, &ref
+            hotkey.keyCode,
+            hotkey.carbonModifiers,
+            EventHotKeyID(signature: Self.signature, id: action.rawValue),
+            GetApplicationEventTarget(),
+            0,
+            &ref
         )
-        guard status == noErr, let ref else {
-            registrationFailures[name] = status
-            NotificationCenter.default.post(name: .dockishHotkeyRegistrationDidChange, object: nil)
-            return status
-        }
-        registrations[name] = Registration(id: id, ref: ref, callback: onFire)
-        registrationFailures.removeValue(forKey: name)
-        installHandlerIfNeeded()
-        NotificationCenter.default.post(name: .dockishHotkeyRegistrationDidChange, object: nil)
-        return noErr
-    }
-
-    func unregister(name: String) {
-        if let r = registrations.removeValue(forKey: name) {
-            UnregisterEventHotKey(r.ref)
-        }
-        if registrationFailures.removeValue(forKey: name) != nil {
-            NotificationCenter.default.post(name: .dockishHotkeyRegistrationDidChange, object: nil)
+        if status == noErr, let ref {
+            registrations[action] = Registration(ref: ref, onFire: onFire)
+            failures[action] = nil
+        } else {
+            failures[action] = status
         }
     }
 
-    func registrationStatus(name: String) -> OSStatus? {
-        registrationFailures[name]
+    /// The Carbon error from the last attempt to register `action`, or nil
+    /// when its hotkey is live.
+    func registrationFailure(for action: HotkeyAction) -> OSStatus? {
+        failures[action]
     }
 
-    func unregister() {
-        unregisterAll()
-    }
-
-    func unregisterAll() {
-        for r in registrations.values { UnregisterEventHotKey(r.ref) }
-        registrations.removeAll()
-        registrationFailures.removeAll()
-        if let h = handlerRef {
-            RemoveEventHandler(h)
-            handlerRef = nil
-        }
-        NotificationCenter.default.post(name: .dockishHotkeyRegistrationDidChange, object: nil)
-    }
-
-    fileprivate func dispatch(_ id: UInt32) {
-        if let reg = registrations.values.first(where: { $0.id == id }) {
-            reg.callback()
-        }
+    private func fire(hotkeyID: UInt32) {
+        guard let action = HotkeyAction(rawValue: hotkeyID) else { return }
+        registrations[action]?.onFire()
     }
 
     private func installHandlerIfNeeded() {
-        guard handlerRef == nil else { return }
+        guard !handlerInstalled else { return }
         var spec = EventTypeSpec(
             eventClass: OSType(kEventClassKeyboard),
             eventKind: UInt32(kEventHotKeyPressed)
         )
-        let installStatus = InstallEventHandler(
+        let status = InstallEventHandler(
             GetApplicationEventTarget(),
-            { (_, event, userData) -> OSStatus in
-                guard let userData, let event else { return noErr }
-                var hkID = EventHotKeyID()
-                let paramStatus = GetEventParameter(
+            { _, event, _ -> OSStatus in
+                var hotkeyID = EventHotKeyID()
+                let status = GetEventParameter(
                     event,
                     EventParamName(kEventParamDirectObject),
                     EventParamType(typeEventHotKeyID),
                     nil,
                     MemoryLayout<EventHotKeyID>.size,
                     nil,
-                    &hkID
+                    &hotkeyID
                 )
-                guard paramStatus == noErr else {
-                    Diagnostics.lifecycle.fault("hotkey GetEventParameter failed: \(paramStatus)")
+                guard status == noErr else {
+                    Diagnostics.lifecycle.fault("hotkey GetEventParameter failed: \(status)")
                     return noErr
                 }
-                let mgr = Unmanaged<HotkeyManager>.fromOpaque(userData).takeUnretainedValue()
-                let id = hkID.id
-                DispatchQueue.main.async { mgr.dispatch(id) }
+                // Hop off the Carbon dispatch before running app code.
+                let id = hotkeyID.id
+                Task { @MainActor in HotkeyManager.shared.fire(hotkeyID: id) }
                 return noErr
             },
             1,
             &spec,
-            Unmanaged.passUnretained(self).toOpaque(),
-            &handlerRef
+            nil,
+            nil
         )
-        if installStatus != noErr {
-            Diagnostics.lifecycle.fault("InstallEventHandler failed: \(installStatus); hotkeys will not fire")
+        if status == noErr {
+            handlerInstalled = true
+        } else {
+            Diagnostics.lifecycle.fault("InstallEventHandler failed: \(status); hotkeys will not fire")
         }
     }
 }

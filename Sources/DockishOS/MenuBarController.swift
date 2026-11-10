@@ -1,32 +1,21 @@
 import AppKit
 import Carbon.HIToolbox
-import Combine
+import DockishOSCore
 
-/// Minimal menu-bar item so users have a way to quit the app, open
-/// settings, and toggle quick system actions when no terminal is attached.
-final class MenuBarController: NSObject, NSMenuDelegate {
-    private let statusItem: NSStatusItem
+/// Status-bar item and its menu: the way to open the launcher and Settings,
+/// collapse the bar, switch Spaces, check for updates and quit.
+@MainActor
+final class MenuBarController: NSObject, NSMenuDelegate, NSMenuItemValidation {
+    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let menu = NSMenu()
-    private let titleItem: NSMenuItem
-    private let launcherItem: NSMenuItem
-    private let hotkeyWarningItem: NSMenuItem
-    private let utilitySectionsItem: NSMenuItem
-    private let collapsedTabPositionItem: NSMenuItem
-    private let previousSpaceItem: NSMenuItem
-    private let nextSpaceItem: NSMenuItem
-    private let collapsedTabPositionMenu = NSMenu()
-    private var collapsedTabPositionOptions: [CollapsedTabPosition: NSMenuItem] = [:]
-    private var cancellables: Set<AnyCancellable> = []
+    private var launcherItem = NSMenuItem()
+    private var hotkeyWarningItem = NSMenuItem()
+    private var collapseItem = NSMenuItem()
+    private var previousSpaceItem = NSMenuItem()
+    private var nextSpaceItem = NSMenuItem()
+    private var tabPositionItems: [CollapsedTabPosition: NSMenuItem] = [:]
 
     override init() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        titleItem = NSMenuItem(title: Self.menuTitle, action: nil, keyEquivalent: "")
-        launcherItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-        hotkeyWarningItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-        utilitySectionsItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-        collapsedTabPositionItem = NSMenuItem(title: "Collapsed Tab Position", action: nil, keyEquivalent: "")
-        previousSpaceItem = NSMenuItem(title: "Previous Space", action: nil, keyEquivalent: "")
-        nextSpaceItem = NSMenuItem(title: "Next Space", action: nil, keyEquivalent: "")
         super.init()
         if let button = statusItem.button {
             let icon = DockishBrandAssets.menuBarTemplateIcon(size: DockishBrandAssets.menuBarIconSize)
@@ -37,239 +26,143 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             button.toolTip = "DockishOS"
         }
         buildMenu()
-        bindMenuState()
         menu.delegate = self
         statusItem.menu = menu
     }
 
     private func buildMenu() {
-        titleItem.isEnabled = false
-        menu.addItem(titleItem)
+        let title = menu.addItem(withTitle: "DockishOS - v\(AppVersion.short)", action: nil, keyEquivalent: "")
+        title.isEnabled = false
         menu.addItem(.separator())
 
-        launcherItem.image = Self.menuIcon(systemName: "magnifyingglass")
-        launcherItem.action = #selector(openLauncher)
-        launcherItem.target = self
-        menu.addItem(launcherItem)
+        // `menuNeedsUpdate` gives the launcher, warning and collapse items their titles.
+        launcherItem = addItem("", symbol: "magnifyingglass", action: #selector(openLauncher))
+        hotkeyWarningItem = addItem("", symbol: "exclamationmark.triangle", action: #selector(openSettings))
+        addItem("Settings…", symbol: "gearshape", action: #selector(openSettings), keyEquivalent: ",")
+        collapseItem = addItem("", symbol: "chevron.down", action: #selector(toggleCollapse))
 
-        hotkeyWarningItem.image = Self.menuIcon(systemName: "exclamationmark.triangle")
-        hotkeyWarningItem.action = #selector(openSettings)
-        hotkeyWarningItem.target = self
-        hotkeyWarningItem.isHidden = true
-        menu.addItem(hotkeyWarningItem)
-
-        let settings = NSMenuItem(
-            title: "Settings…",
-            action: #selector(openSettings),
-            keyEquivalent: ","
-        )
-        settings.image = Self.menuIcon(systemName: "gearshape")
-        settings.target = self
-        menu.addItem(settings)
-
-        utilitySectionsItem.image = Self.barMenuIcon(collapsed: SettingsStore.shared.barCollapsed)
-        utilitySectionsItem.action = #selector(toggleUtilitySections)
-        utilitySectionsItem.target = self
-        menu.addItem(utilitySectionsItem)
-
-        buildCollapsedTabPositionMenu()
-        collapsedTabPositionItem.image = Self.menuIcon(systemName: "arrow.left.and.right")
-        collapsedTabPositionItem.submenu = collapsedTabPositionMenu
-        menu.addItem(collapsedTabPositionItem)
-
-        previousSpaceItem.image = Self.menuIcon(systemName: "chevron.up")
-        previousSpaceItem.action = #selector(previousSpace)
-        previousSpaceItem.target = self
-        menu.addItem(previousSpaceItem)
-
-        nextSpaceItem.image = Self.menuIcon(systemName: "chevron.down")
-        nextSpaceItem.action = #selector(nextSpace)
-        nextSpaceItem.target = self
-        menu.addItem(nextSpaceItem)
-
-        menu.addItem(.separator())
-
-        let github = NSMenuItem(
-            title: "Open GitHub Repo",
-            action: #selector(openRepo),
-            keyEquivalent: ""
-        )
-        github.image = Self.menuIcon(systemName: "globe")
-        github.target = self
-        menu.addItem(github)
-
-        menu.addItem(.separator())
-
-        if Updater.shared.canUpdate {
-            let updates = NSMenuItem(
-                title: "Check for Updates…",
-                action: #selector(checkForUpdates),
-                keyEquivalent: ""
+        let tabPositionItem = addItem("Collapsed Tab Position", symbol: "arrow.left.and.right", action: nil)
+        let tabPositionMenu = NSMenu()
+        for position in CollapsedTabPosition.allCases {
+            let item = makeItem(
+                position.displayName,
+                symbol: position.isRightEdge ? "arrow.down.right" : "arrow.down.left",
+                action: #selector(selectCollapsedTabPosition(_:))
             )
-            updates.image = Self.menuIcon(systemName: "arrow.triangle.2.circlepath")
-            updates.target = self
-            menu.addItem(updates)
+            item.representedObject = position.rawValue
+            tabPositionMenu.addItem(item)
+            tabPositionItems[position] = item
+        }
+        tabPositionItem.submenu = tabPositionMenu
+
+        previousSpaceItem = addItem("Previous Space", symbol: "chevron.up", action: #selector(previousSpace))
+        nextSpaceItem = addItem("Next Space", symbol: "chevron.down", action: #selector(nextSpace))
+        menu.addItem(.separator())
+
+        addItem("Open GitHub Repo", symbol: "globe", action: #selector(openRepo))
+        menu.addItem(.separator())
+
+        if Updater.isAvailable {
+            addItem("Check for Updates…", symbol: "arrow.triangle.2.circlepath", action: #selector(checkForUpdates))
             menu.addItem(.separator())
         }
-        let quit = NSMenuItem(
-            title: "Quit DockishOS",
-            action: #selector(quit),
-            keyEquivalent: "q"
-        )
-        quit.image = Self.menuIcon(systemName: "power")
-        quit.target = self
-        menu.addItem(quit)
+        addItem("Quit DockishOS", symbol: "power", action: #selector(quit), keyEquivalent: "q")
     }
 
-    private func buildCollapsedTabPositionMenu() {
-        CollapsedTabPosition.allCases.forEach { position in
-            let item = NSMenuItem(
-                title: position.displayName,
-                action: #selector(selectCollapsedTabPosition(_:)),
-                keyEquivalent: ""
-            )
-            item.image = Self.collapsedTabPositionIcon(for: position)
-            item.target = self
-            item.representedObject = position.rawValue
-            collapsedTabPositionMenu.addItem(item)
-            collapsedTabPositionOptions[position] = item
-        }
+    @discardableResult
+    private func addItem(
+        _ title: String,
+        symbol: String,
+        action: Selector?,
+        keyEquivalent: String = ""
+    ) -> NSMenuItem {
+        let item = makeItem(title, symbol: symbol, action: action, keyEquivalent: keyEquivalent)
+        menu.addItem(item)
+        return item
     }
 
-    // These sinks are intentionally NOT redundant with `menuNeedsUpdate`:
-    // `menuNeedsUpdate` refreshes the item titles when the menu OPENS, while
-    // these keep them correct LIVE if state changes while the menu is already
-    // open (e.g. the collapse hotkey fires with the menu showing). Keep both.
-    private func bindMenuState() {
-        SettingsStore.shared.$launcherHotkey
-            .map(Self.launcherMenuTitle(for:))
-            .removeDuplicates()
-            .sink { [weak self] title in
-                self?.launcherItem.title = title
-            }
-            .store(in: &cancellables)
-
-        SettingsStore.shared.$barCollapsed
-            .map(Self.barMenuTitle(collapsed:))
-            .removeDuplicates()
-            .sink { [weak self] title in
-                self?.utilitySectionsItem.title = title
-                self?.utilitySectionsItem.image = Self.barMenuIcon(collapsed: SettingsStore.shared.barCollapsed)
-            }
-            .store(in: &cancellables)
-
-        NotificationCenter.default.publisher(for: .dockishHotkeyRegistrationDidChange)
-            .sink { [weak self] _ in self?.updateHotkeyWarning() }
-            .store(in: &cancellables)
+    private func makeItem(
+        _ title: String,
+        symbol: String,
+        action: Selector?,
+        keyEquivalent: String = ""
+    ) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: keyEquivalent)
+        item.target = self
+        item.image = Self.menuIcon(symbol)
+        return item
     }
 
-    private static func launcherMenuTitle(for hotkey: LauncherHotkey) -> String {
-        "Open Launcher  \(hotkey.displayString)"
+    private static func menuIcon(_ systemName: String) -> NSImage? {
+        NSImage(systemSymbolName: systemName, accessibilityDescription: nil)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 13, weight: .medium))
     }
 
-    private static func menuIcon(systemName: String) -> NSImage? {
-        let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .medium)
-        guard let base = NSImage(systemSymbolName: systemName, accessibilityDescription: nil) else {
-            return nil
-        }
-        let image = base.withSymbolConfiguration(config) ?? base
-        image.isTemplate = true
-        return image
-    }
+    // MARK: - NSMenuDelegate
 
-    private static func collapsedTabPositionIcon(for position: CollapsedTabPosition) -> NSImage? {
-        menuIcon(systemName: position.isRightEdge ? "arrow.down.right" : "arrow.down.left")
-    }
-
-    private static var menuTitle: String {
-        "DockishOS - v\(AppVersion.short)"
-    }
-
-    private static func barMenuIcon(collapsed: Bool) -> NSImage? {
-        menuIcon(systemName: collapsed ? "chevron.up" : "chevron.down")
-    }
-
-    private static func barMenuTitle(collapsed: Bool) -> String {
-        collapsed ? "Expand Bar" : "Collapse Bar"
-    }
-
-    // NSMenuDelegate — refresh the Dock toggle's checkmark each time the
-    // menu opens.
+    /// Brings every state-dependent item up to date each time the menu opens.
     func menuNeedsUpdate(_ menu: NSMenu) {
-        titleItem.title = Self.menuTitle
-        launcherItem.title = Self.launcherMenuTitle(for: SettingsStore.shared.launcherHotkey)
-        utilitySectionsItem.title = Self.barMenuTitle(collapsed: SettingsStore.shared.barCollapsed)
-        utilitySectionsItem.image = Self.barMenuIcon(collapsed: SettingsStore.shared.barCollapsed)
+        let settings = SettingsStore.shared
+        launcherItem.title = "Open Launcher  \(settings.launcherHotkey.displayString)"
+        collapseItem.title = settings.barCollapsed ? "Expand Bar" : "Collapse Bar"
+        collapseItem.image = Self.menuIcon(settings.barCollapsed ? "chevron.up" : "chevron.down")
+        for (position, item) in tabPositionItems {
+            item.state = position == settings.collapsedTabPosition ? .on : .off
+        }
         updateHotkeyWarning()
-        updateCollapsedTabPositionState()
-        updateSpaceSwitchState()
     }
 
+    /// Shows the first hotkey that failed to register, if any.
     private func updateHotkeyWarning() {
-        if let status = HotkeyManager.shared.registrationStatus(name: "launcher") {
-            hotkeyWarningItem.title = Self.hotkeyWarningTitle(label: "Launcher", status: status)
-            hotkeyWarningItem.isHidden = false
-        } else if let status = HotkeyManager.shared.registrationStatus(name: "switcher") {
-            hotkeyWarningItem.title = Self.hotkeyWarningTitle(label: "Switcher", status: status)
-            hotkeyWarningItem.isHidden = false
-        } else {
-            hotkeyWarningItem.isHidden = true
+        let failed = [HotkeyAction.launcher, .switcher].lazy.compactMap { action in
+            HotkeyManager.shared.registrationFailure(for: action).map { (action: action, status: $0) }
+        }.first
+        hotkeyWarningItem.isHidden = failed == nil
+        if let failed {
+            let conflict = failed.status == eventHotKeyExistsErr ? " - conflict detected" : ""
+            hotkeyWarningItem.title = "\(failed.action.displayName) hotkey unavailable\(conflict)"
         }
     }
 
-    private static func hotkeyWarningTitle(label: String, status: OSStatus) -> String {
-        if status == eventHotKeyExistsErr {
-            return "\(label) hotkey unavailable - conflict detected"
-        }
-        return "\(label) hotkey unavailable"
+    /// The Space next to the active one on the screen under the pointer.
+    private func adjacentSpace(direction: Int) -> SpaceInfo? {
+        guard let screen = NSScreen.containing(NSEvent.mouseLocation) else { return nil }
+        return SpacesAPI.adjacentSpace(for: screen, direction: direction)
     }
-
-    private func updateCollapsedTabPositionState() {
-        let selected = SettingsStore.shared.collapsedTabPosition
-        for (position, item) in collapsedTabPositionOptions {
-            item.state = position == selected ? .on : .off
-        }
-    }
-
-    private func updateSpaceSwitchState() {
-        let screen = NSScreen.containing(NSEvent.mouseLocation) ?? NSScreen.screens.first
-        guard let screen else {
-            previousSpaceItem.isEnabled = false
-            nextSpaceItem.isEnabled = false
-            return
-        }
-        let store = SpacesStore.shared
-        previousSpaceItem.isEnabled = store.adjacentSpace(for: screen, direction: -1) != nil
-        nextSpaceItem.isEnabled = store.adjacentSpace(for: screen, direction: 1) != nil
-    }
-
-    @MainActor @objc private func openLauncher()  { LauncherController.shared.toggle() }
-    @MainActor @objc private func openSettings()  { SettingsController.shared.show() }
-    @objc private func toggleUtilitySections() { SettingsStore.shared.barCollapsed.toggle() }
-    @objc private func previousSpace() { switchSpace(direction: -1) }
-    @objc private func nextSpace() { switchSpace(direction: 1) }
 
     private func switchSpace(direction: Int) {
-        let screen = NSScreen.containing(NSEvent.mouseLocation) ?? NSScreen.screens.first
-        guard let screen else { return }
-        let store = SpacesStore.shared
-        guard let space = store.adjacentSpace(for: screen, direction: direction) else { return }
-        store.switchTo(space)
-        updateSpaceSwitchState()
+        guard let space = adjacentSpace(direction: direction) else { return }
+        SpacesAPI.switchTo(space)
     }
+
+    // MARK: - NSMenuItemValidation
+
+    /// Disables a Space command at the end it cannot move past. The menu
+    /// enables its items automatically, so setting `isEnabled` would not stick.
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        switch menuItem {
+        case previousSpaceItem: return adjacentSpace(direction: -1) != nil
+        case nextSpaceItem: return adjacentSpace(direction: 1) != nil
+        default: return true
+        }
+    }
+
+    // MARK: - Actions
+
+    @objc private func openLauncher() { LauncherController.shared.toggle() }
+    @objc private func openSettings() { SettingsController.shared.show() }
+    @objc private func toggleCollapse() { SettingsStore.shared.barCollapsed.toggle() }
+    @objc private func previousSpace() { switchSpace(direction: -1) }
+    @objc private func nextSpace() { switchSpace(direction: 1) }
+    @objc private func openRepo() { NSWorkspace.shared.open(AppLinks.repository) }
+    @objc private func checkForUpdates() { Updater.shared.checkForUpdates() }
+    @objc private func quit() { NSApp.terminate(nil) }
+
     @objc private func selectCollapsedTabPosition(_ sender: NSMenuItem) {
         guard
             let rawValue = sender.representedObject as? String,
             let position = CollapsedTabPosition(rawValue: rawValue)
         else { return }
         SettingsStore.shared.collapsedTabPosition = position
-        updateCollapsedTabPositionState()
     }
-    @objc private func checkForUpdates()    { Updater.shared.checkForUpdates() }
-    @objc private func openRepo() {
-        if let url = URL(string: "https://github.com/8bittts/dockishOS") {
-            NSWorkspace.shared.open(url)
-        }
-    }
-    @objc private func quit() { NSApp.terminate(nil) }
 }

@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
+@MainActor
 final class BarPresentationState: ObservableObject {
     @Published var isCollapsed: Bool
 
@@ -25,39 +26,33 @@ struct BarView: View {
     @ObservedObject var presentation: BarPresentationState
     @State private var isDropTargeted = false
 
+    /// Room kept clear on the trailing edge for the collapse button.
+    private static let collapseButtonReservation: CGFloat = 88
+
     var body: some View {
         if presentation.isCollapsed {
-            collapsedTab
+            CollapsedTab(barSize: settings.barSize) { settings.barCollapsed = false }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         } else {
             expandedBar
         }
     }
 
     private var expandedBar: some View {
-        let showPinned = settings.showPinnedRow && !pinnedStore.pins.isEmpty
-        let collapseControlReservation: CGFloat = 88
-
-        return ZStack {
+        ZStack {
             VisualEffectView(material: .hudWindow, blending: .behindWindow)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .padding(.vertical, 6)
                 .shadow(color: .black.opacity(0.35), radius: 18, y: 6)
 
             HStack(spacing: 8) {
-                if showPinned {
+                if settings.showPinnedRow && !pinnedStore.pins.isEmpty {
                     PinnedRow(
                         size: settings.barSize,
-                        pins: pinnedStore.pins,
+                        pinnedStore: pinnedStore,
                         runningApps: runningApps,
-                        badgeStore: badgeStore,
-                        onLaunch:  { pinnedStore.launch($0) },
-                        onUnpin:   { pinnedStore.unpin(bundleID: $0.bundleID) },
-                        onMove:    { pinnedStore.move($0, by: $1) },
-                        onReorder: { src, dst in pinnedStore.move(sourceID: src, onto: dst) }
+                        badgeStore: badgeStore
                     )
-                }
-
-                if showPinned {
                     Divider().frame(height: 24).opacity(0.3)
                 }
 
@@ -70,13 +65,11 @@ struct BarView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.leading, 18)
-            .padding(.trailing, collapseControlReservation)
+            .padding(.trailing, Self.collapseButtonReservation)
 
             HStack {
                 Spacer(minLength: 0)
-                UtilitySectionsToggle {
-                    settings.barCollapsed = true
-                }
+                CollapseBarButton { settings.barCollapsed = true }
             }
             .padding(.trailing, 10)
         }
@@ -94,26 +87,15 @@ struct BarView: View {
         }
     }
 
-    private var collapsedTab: some View {
-        let metrics = CollapsedTabMetrics(
-            barSize: settings.barSize
-        )
-
-        return CollapsedTabCluster(metrics: metrics, action: { settings.barCollapsed = false })
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-    }
-
     private func handleFinderDrop(_ providers: [NSItemProvider]) -> Bool {
-        var accepted = false
-        for provider in providers where provider.canLoadObject(ofClass: URL.self) {
-            accepted = true
+        let urlProviders = providers.filter { $0.canLoadObject(ofClass: URL.self) }
+        let pinnedStore = pinnedStore
+        for provider in urlProviders {
             _ = provider.loadObject(ofClass: URL.self) { url, _ in
                 guard let url else { return }
-                DispatchQueue.main.async {
-                    pinnedStore.pinAppBundle(at: url)
-                }
+                Task { @MainActor in pinnedStore.pinAppBundle(at: url) }
             }
         }
-        return accepted
+        return !urlProviders.isEmpty
     }
 }

@@ -1,150 +1,111 @@
 import AppKit
 import Carbon.HIToolbox
+import Combine
 import DockishOSCore
-import SwiftUI
 
-/// Modal-ish app/window switcher panel triggered by a global hotkey
-/// (default: ⌥ Tab). Lists windows on the current Space; Tab/arrows
-/// cycle, Return activates, Esc dismisses, click-outside dismisses.
-final class SwitcherController {
-    static let shared = SwitcherController()
+/// Which window the switcher has selected, as an index into the window list.
+@MainActor
+final class SwitcherSelection: ObservableObject {
+    @Published var index = 0
 
-    private let panel: SwitcherPanel
-    private var hostingView: NSHostingView<SwitcherView>?
-    private var resignObserver: NSObjectProtocol?
-    private var previousActiveApp: NSRunningApplication?
-    private var selectedIndex: Int = 0
-
-    private init() {
-        let size = NSSize(width: 720, height: 200)
-        panel = SwitcherPanel(size: size)
-        panel.onAdvance = { [weak self] delta in
-            self?.advanceSelection(by: delta)
-        }
-        resignObserver = NotificationCenter.default.addObserver(
-            forName: NSWindow.didResignKeyNotification,
-            object: panel,
-            queue: .main
-        ) { [weak self] _ in
-            self?.hide()
-        }
-    }
-
-    func toggle() {
-        panel.isVisible ? hide() : show()
-    }
-
-    func show() {
-        previousActiveApp = NSWorkspace.shared.frontmostApplication
-        WindowStore.shared.refresh()
-        let count = WindowStore.shared.windows.count
-        // Default to "next" window so a quick ⌥Tab tap mirrors the macOS
-        // built-in switcher behavior of jumping to the previous app.
-        selectedIndex = count > 1 ? 1 : 0
-        rebuildView()
-        positionOnActiveScreen()
-        NSApp.activate(ignoringOtherApps: true)
-        panel.makeKeyAndOrderFront(nil)
-    }
-
-    func hide() {
-        guard panel.isVisible else { return }
-        panel.orderOut(nil)
-        if let previousActiveApp {
-            AppActivation.activate(previousActiveApp)
-        }
-        previousActiveApp = nil
-    }
-
-    private func activate(_ window: WindowInfo) {
-        // Don't restore previousActiveApp — the switcher's whole job is to
-        // change the frontmost window.
-        previousActiveApp = nil
-        panel.orderOut(nil)
-        WindowStore.shared.activate(window)
-    }
-
-    private func advanceSelection(by delta: Int) {
-        let count = WindowStore.shared.windows.count
-        guard count > 0 else { return }
-        selectedIndex = SelectionWrap.advance(selectedIndex, by: delta, count: count)
-        rebuildView()
-    }
-
-    private func rebuildView() {
-        let view = SwitcherView(
-            store: WindowStore.shared,
-            selectedIndex: Binding(
-                get: { [weak self] in self?.selectedIndex ?? 0 },
-                set: { [weak self] in self?.selectedIndex = $0 }
-            ),
-            onActivate: { [weak self] in self?.activate($0) },
-            onDismiss: { [weak self] in self?.hide() }
-        )
-        if let hostingView {
-            hostingView.rootView = view
-            return
-        }
-        let host = NSHostingView(rootView: view)
-        host.autoresizingMask = [.width, .height]
-        panel.contentView = host
-        hostingView = host
-    }
-
-    private func positionOnActiveScreen() {
-        guard let screen = NSScreen.containing(NSEvent.mouseLocation) else { return }
-        let visible = screen.visibleFrame
-        let size = panel.frame.size
-        let x = visible.midX - size.width / 2
-        let y = visible.midY - size.height / 2
-        panel.setFrame(NSRect(origin: NSPoint(x: x, y: y), size: size), display: true)
+    /// Moves the selection by `delta`, wrapping at both ends of `count` windows.
+    func advance(by delta: Int, count: Int) {
+        index = SelectionWrap.advance(index, by: delta, count: count)
     }
 }
 
-final class SwitcherPanel: NSPanel {
-    var onAdvance: ((Int) -> Void)?
+/// App/window switcher panel triggered by a global hotkey (default: ⌥ Tab).
+/// Lists windows on the current Space; Tab and the arrow keys cycle, Return
+/// activates, Esc dismisses, click-outside dismisses.
+@MainActor
+final class SwitcherController {
+    static let shared = SwitcherController()
 
-    init(size: NSSize) {
-        super.init(
-            contentRect: NSRect(origin: .zero, size: size),
-            styleMask: [.borderless, .fullSizeContentView],
-            backing: .buffered,
-            defer: false
-        )
-        isFloatingPanel = true
-        level = .floating
-        collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
-        backgroundColor = .clear
-        isOpaque = false
-        hasShadow = true
-        isMovable = false
-        hidesOnDeactivate = false
-        isReleasedWhenClosed = false
+    private let panel = SwitcherPanel()
+    private let selection = SwitcherSelection()
+    private let windowStore = WindowStore.shared
+
+    private init() {
+        panel.onCommand = { [weak self] in self?.perform($0) }
+        panel.setContent(SwitcherView(
+            store: windowStore,
+            selection: selection,
+            onActivate: { [weak self] in self?.activate($0) }
+        ))
     }
 
-    override var canBecomeKey: Bool { true }
-    override var canBecomeMain: Bool { false }
+    func toggle() {
+        guard !panel.isVisible else { return panel.dismiss() }
+        windowStore.refresh()
+        // Default to "next" window so a quick ⌥Tab tap mirrors the macOS
+        // built-in switcher behavior of jumping to the previous app.
+        selection.index = windowStore.windows.count > 1 ? 1 : 0
+        panel.present { visibleFrame, size in
+            NSPoint(x: visibleFrame.midX - size.width / 2, y: visibleFrame.midY - size.height / 2)
+        }
+    }
 
-    /// Borderless, so VoiceOver has no visible title to read.
-    override func accessibilityTitle() -> String? { "App switcher" }
+    private func perform(_ command: SwitcherPanel.Command) {
+        let windows = windowStore.windows
+        switch command {
+        case .advance(let delta):
+            selection.advance(by: delta, count: windows.count)
+        case .activateSelection:
+            if windows.indices.contains(selection.index) {
+                activate(windows[selection.index])
+            }
+        case .dismiss:
+            panel.dismiss()
+        }
+    }
+
+    private func activate(_ window: WindowInfo) {
+        panel.dismiss()
+        windowStore.activate(window)
+    }
+}
+
+/// The switcher's panel. It reads the switcher's keys itself: the SwiftUI
+/// content holds no keyboard focus, and AppKit would spend Tab on key-view
+/// navigation.
+final class SwitcherPanel: HUDPanel {
+    enum Command {
+        /// Move the selection by this many windows; negative moves back.
+        case advance(Int)
+        case activateSelection
+        case dismiss
+    }
+
+    var onCommand: ((Command) -> Void)?
+
+    init() {
+        super.init(size: NSSize(width: 720, height: 200), accessibilityTitle: "App switcher")
+    }
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        if handleTab(event) {
-            return true
-        }
-        return super.performKeyEquivalent(with: event)
+        handle(event) || super.performKeyEquivalent(with: event)
     }
 
     override func keyDown(with event: NSEvent) {
-        if handleTab(event) {
-            return
+        if !handle(event) {
+            super.keyDown(with: event)
         }
-        super.keyDown(with: event)
     }
 
-    private func handleTab(_ event: NSEvent) -> Bool {
-        guard event.keyCode == UInt16(kVK_Tab) else { return false }
-        onAdvance?(event.modifierFlags.contains(.shift) ? -1 : 1)
+    private func handle(_ event: NSEvent) -> Bool {
+        guard event.type == .keyDown, let command = command(for: event) else { return false }
+        onCommand?(command)
         return true
+    }
+
+    private func command(for event: NSEvent) -> Command? {
+        switch Int(event.keyCode) {
+        case kVK_Tab:                           return .advance(event.modifierFlags.contains(.shift) ? -1 : 1)
+        case kVK_RightArrow:                    return .advance(1)
+        case kVK_LeftArrow:                     return .advance(-1)
+        case kVK_Return, kVK_ANSI_KeypadEnter:  return .activateSelection
+        case kVK_Escape:                        return .dismiss
+        default:                                return nil
+        }
     }
 }

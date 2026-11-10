@@ -1,49 +1,17 @@
 import AppKit
-import Carbon.HIToolbox
 import Combine
 import DockishOSCore
 
-/// Three discrete bar sizes. Chosen instead of a slider so the layout is
-/// always pixel-honest and easy to test.
-enum BarPosition: String, CaseIterable, Codable, Identifiable {
+enum BarPosition: String, CaseIterable, Identifiable {
     case top, bottom
+
     var id: String { rawValue }
     var displayName: String { self == .top ? "Top" : "Bottom" }
 }
 
-enum CollapsedTabPosition: String, CaseIterable, Codable, Identifiable {
-    case bottomLeft
-    case bottomRight
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .bottomLeft:  return "Bottom Left"
-        case .bottomRight: return "Bottom Right"
-        }
-    }
-
-    var isRightEdge: Bool {
-        switch self {
-        case .bottomRight:
-            return true
-        case .bottomLeft:
-            return false
-        }
-    }
-
-    init(persistedRawValue: String?) {
-        switch CollapsedTabPlacement(persistedRawValue: persistedRawValue) {
-        case .bottomLeft:
-            self = .bottomLeft
-        case .bottomRight:
-            self = .bottomRight
-        }
-    }
-}
-
-enum BarSize: String, CaseIterable, Codable, Identifiable {
+/// Three discrete bar sizes. Chosen instead of a slider so the layout is
+/// always pixel-honest and easy to test.
+enum BarSize: String, CaseIterable, Identifiable {
     case small, medium, large
 
     var id: String { rawValue }
@@ -64,6 +32,7 @@ enum BarSize: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    /// Height of a window chip, and the side of a pinned-app chip.
     var chipHeight: CGFloat {
         switch self {
         case .small:  return 26
@@ -79,189 +48,181 @@ enum BarSize: String, CaseIterable, Codable, Identifiable {
         case .large:  return 28
         }
     }
+}
 
-    var pinnedChipSize: CGFloat {
+extension CollapsedTabPosition {
+    var displayName: String {
         switch self {
-        case .small:  return 26
-        case .medium: return 34
-        case .large:  return 44
+        case .bottomLeft:  return "Bottom Left"
+        case .bottomRight: return "Bottom Right"
         }
     }
 }
 
 extension Notification.Name {
-    /// Posted when any setting that requires bars to be rebuilt changes
-    /// (currently: bar size). The AppDelegate listens and calls
-    /// `rebuildBars()`.
+    /// Posted when a setting that changes bar frames or the set of bars
+    /// changes: size, position, collapsed tab corner, per-display visibility.
     static let dockishBarLayoutDidChange = Notification.Name("DockishOS.BarLayoutDidChange")
+    /// Posted when the bar collapses or expands, so each bar animates.
+    static let dockishBarCollapseDidChange = Notification.Name("DockishOS.BarCollapseDidChange")
+    /// Posted when either global hotkey changes and must be registered again.
+    static let dockishHotkeyDidChange = Notification.Name("DockishOS.HotkeyDidChange")
 }
 
 /// Persistent app-wide preferences. UserDefaults-backed.
+@MainActor
 final class SettingsStore: ObservableObject {
     static let shared = SettingsStore()
 
-    private struct Key {
-        static let barSize         = "DockishOS.barSize"
-        static let barPosition     = "DockishOS.barPosition"
-        static let showChipTitles  = "DockishOS.showChipTitles"
-        static let showPinnedRow   = "DockishOS.showPinnedRow"
-        static let barCollapsed    = "DockishOS.barCollapsed"
+    private enum Key {
+        static let barSize = "DockishOS.barSize"
+        static let barPosition = "DockishOS.barPosition"
+        static let showChipTitles = "DockishOS.showChipTitles"
+        static let showPinnedRow = "DockishOS.showPinnedRow"
+        static let barCollapsed = "DockishOS.barCollapsed"
         static let collapsedTabPosition = "DockishOS.collapsedTabPosition"
-        static let legacyUtilityCollapsed = "DockishOS.utilitySectionsCollapsed"
         static let disabledScreens = "DockishOS.disabledScreens"
-        static let launcherHotkey  = "DockishOS.launcherHotkey"
-        static let switcherHotkey  = "DockishOS.switcherHotkey"
-        static let groupByApp      = "DockishOS.groupByApp"
-        static let notifBadges     = "DockishOS.showNotificationBadges"
+        static let launcherHotkey = "DockishOS.launcherHotkey"
+        static let switcherHotkey = "DockishOS.switcherHotkey"
+        static let groupWindowsByApp = "DockishOS.groupByApp"
+        static let showNotificationBadges = "DockishOS.showNotificationBadges"
     }
+
+    private let defaults = UserDefaults.standard
 
     @Published var barSize: BarSize {
         didSet {
             guard barSize != oldValue else { return }
-            UserDefaults.standard.set(barSize.rawValue, forKey: Key.barSize)
-            NotificationCenter.default.post(name: .dockishBarLayoutDidChange, object: nil)
+            defaults.set(barSize.rawValue, forKey: Key.barSize)
+            post(.dockishBarLayoutDidChange)
         }
     }
 
     @Published var barPosition: BarPosition {
         didSet {
             guard barPosition != oldValue else { return }
-            UserDefaults.standard.set(barPosition.rawValue, forKey: Key.barPosition)
-            NotificationCenter.default.post(name: .dockishBarLayoutDidChange, object: nil)
+            defaults.set(barPosition.rawValue, forKey: Key.barPosition)
+            post(.dockishBarLayoutDidChange)
         }
     }
 
     @Published var showChipTitles: Bool {
         didSet {
             guard showChipTitles != oldValue else { return }
-            UserDefaults.standard.set(showChipTitles, forKey: Key.showChipTitles)
+            defaults.set(showChipTitles, forKey: Key.showChipTitles)
         }
     }
 
     @Published var showPinnedRow: Bool {
         didSet {
             guard showPinnedRow != oldValue else { return }
-            UserDefaults.standard.set(showPinnedRow, forKey: Key.showPinnedRow)
+            defaults.set(showPinnedRow, forKey: Key.showPinnedRow)
         }
     }
 
     @Published var barCollapsed: Bool {
         didSet {
             guard barCollapsed != oldValue else { return }
-            UserDefaults.standard.set(barCollapsed, forKey: Key.barCollapsed)
-            NotificationCenter.default.post(name: .dockishBarCollapseDidChange, object: nil)
+            defaults.set(barCollapsed, forKey: Key.barCollapsed)
+            post(.dockishBarCollapseDidChange)
         }
     }
 
     @Published var collapsedTabPosition: CollapsedTabPosition {
         didSet {
             guard collapsedTabPosition != oldValue else { return }
-            UserDefaults.standard.set(
-                collapsedTabPosition.rawValue,
-                forKey: Key.collapsedTabPosition
-            )
-            NotificationCenter.default.post(name: .dockishBarLayoutDidChange, object: nil)
+            defaults.set(collapsedTabPosition.rawValue, forKey: Key.collapsedTabPosition)
+            post(.dockishBarLayoutDidChange)
         }
     }
 
-    @Published var disabledScreenUUIDs: Set<String> {
+    /// Displays the user turned the bar off for. Change it through
+    /// `setScreen(_:enabled:)`.
+    @Published private(set) var disabledScreenUUIDs: Set<String> {
         didSet {
             guard disabledScreenUUIDs != oldValue else { return }
-            // Refuse to disable every connected display — the user would
-            // lose access to the bar with no recovery UI.
-            let connected = Set(NSScreen.screens.map { SpacesAPI.displayUUID(for: $0) })
-            if !connected.isEmpty, connected.isSubset(of: disabledScreenUUIDs) {
-                disabledScreenUUIDs = oldValue
-                return
-            }
-            UserDefaults.standard.set(Array(disabledScreenUUIDs), forKey: Key.disabledScreens)
-            NotificationCenter.default.post(name: .dockishBarLayoutDidChange, object: nil)
+            defaults.set(Array(disabledScreenUUIDs), forKey: Key.disabledScreens)
+            post(.dockishBarLayoutDidChange)
         }
     }
 
-    @Published var launcherHotkey: LauncherHotkey {
+    @Published var launcherHotkey: Hotkey {
         didSet {
             guard launcherHotkey != oldValue else { return }
-            if let data = try? JSONEncoder().encode(launcherHotkey) {
-                UserDefaults.standard.set(data, forKey: Key.launcherHotkey)
-            }
-            NotificationCenter.default.post(name: .dockishHotkeyDidChange, object: nil)
+            save(launcherHotkey, forKey: Key.launcherHotkey)
         }
     }
 
-    @Published var switcherHotkey: LauncherHotkey {
+    @Published var switcherHotkey: Hotkey {
         didSet {
             guard switcherHotkey != oldValue else { return }
-            if let data = try? JSONEncoder().encode(switcherHotkey) {
-                UserDefaults.standard.set(data, forKey: Key.switcherHotkey)
-            }
-            NotificationCenter.default.post(name: .dockishHotkeyDidChange, object: nil)
+            save(switcherHotkey, forKey: Key.switcherHotkey)
         }
     }
 
     @Published var groupWindowsByApp: Bool {
         didSet {
             guard groupWindowsByApp != oldValue else { return }
-            UserDefaults.standard.set(groupWindowsByApp, forKey: Key.groupByApp)
+            defaults.set(groupWindowsByApp, forKey: Key.groupWindowsByApp)
         }
     }
 
     @Published var showNotificationBadges: Bool {
         didSet {
             guard showNotificationBadges != oldValue else { return }
-            UserDefaults.standard.set(showNotificationBadges, forKey: Key.notifBadges)
+            defaults.set(showNotificationBadges, forKey: Key.showNotificationBadges)
         }
     }
 
     func isScreenEnabled(_ screen: NSScreen) -> Bool {
-        !disabledScreenUUIDs.contains(SpacesAPI.displayUUID(for: screen))
+        !disabledScreenUUIDs.contains(screen.displayUUID)
+    }
+
+    /// Turns the bar on or off for one display. Refuses to turn off the last
+    /// connected display that still shows a bar.
+    func setScreen(_ displayUUID: String, enabled: Bool) {
+        var disabled = disabledScreenUUIDs
+        if enabled {
+            disabled.remove(displayUUID)
+        } else {
+            disabled.insert(displayUUID)
+        }
+        let connected = Set(NSScreen.screens.map(\.displayUUID))
+        guard connected.isEmpty || !connected.isSubset(of: disabled) else { return }
+        disabledScreenUUIDs = disabled
     }
 
     private init() {
-        let rawSize = UserDefaults.standard.string(forKey: Key.barSize) ?? BarSize.medium.rawValue
-        self.barSize = BarSize(rawValue: rawSize) ?? .medium
-        let rawPos = UserDefaults.standard.string(forKey: Key.barPosition) ?? BarPosition.bottom.rawValue
-        self.barPosition = BarPosition(rawValue: rawPos) ?? .bottom
-        self.showChipTitles = (UserDefaults.standard.object(forKey: Key.showChipTitles) as? Bool) ?? true
-        self.showPinnedRow  = (UserDefaults.standard.object(forKey: Key.showPinnedRow)  as? Bool) ?? true
-        if let persisted = UserDefaults.standard.object(forKey: Key.barCollapsed) as? Bool {
-            self.barCollapsed = persisted
-        } else {
-            self.barCollapsed = (UserDefaults.standard.object(forKey: Key.legacyUtilityCollapsed) as? Bool) ?? false
-        }
-        let rawCollapsedTabPosition =
-            UserDefaults.standard.string(forKey: Key.collapsedTabPosition)
-            ?? CollapsedTabPosition.bottomRight.rawValue
-        let persistedCollapsedPosition =
-            CollapsedTabPosition(persistedRawValue: rawCollapsedTabPosition)
-        self.collapsedTabPosition = persistedCollapsedPosition
-        UserDefaults.standard.set(
-            persistedCollapsedPosition.rawValue,
-            forKey: Key.collapsedTabPosition
-        )
-        let disabled = UserDefaults.standard.stringArray(forKey: Key.disabledScreens) ?? []
-        self.disabledScreenUUIDs = Set(disabled)
-        if let data = UserDefaults.standard.data(forKey: Key.launcherHotkey),
-           let hk = try? JSONDecoder().decode(LauncherHotkey.self, from: data) {
-            self.launcherHotkey = hk
-        } else {
-            self.launcherHotkey = .default
-        }
-        if let data = UserDefaults.standard.data(forKey: Key.switcherHotkey),
-           let hk = try? JSONDecoder().decode(LauncherHotkey.self, from: data) {
-            self.switcherHotkey = hk
-        } else {
-            self.switcherHotkey = .switcherDefault
-        }
-        self.groupWindowsByApp = (UserDefaults.standard.object(forKey: Key.groupByApp) as? Bool) ?? false
-        self.showNotificationBadges = (UserDefaults.standard.object(forKey: Key.notifBadges) as? Bool) ?? false
+        defaults.register(defaults: [
+            Key.showChipTitles: true,
+            Key.showPinnedRow: true,
+        ])
+        barSize = defaults.string(forKey: Key.barSize).flatMap(BarSize.init) ?? .medium
+        barPosition = defaults.string(forKey: Key.barPosition).flatMap(BarPosition.init) ?? .bottom
+        showChipTitles = defaults.bool(forKey: Key.showChipTitles)
+        showPinnedRow = defaults.bool(forKey: Key.showPinnedRow)
+        barCollapsed = defaults.bool(forKey: Key.barCollapsed)
+        collapsedTabPosition = defaults.string(forKey: Key.collapsedTabPosition)
+            .flatMap(CollapsedTabPosition.init) ?? .bottomRight
+        disabledScreenUUIDs = Set(defaults.stringArray(forKey: Key.disabledScreens) ?? [])
+        launcherHotkey = Self.loadHotkey(from: defaults, forKey: Key.launcherHotkey) ?? .launcherDefault
+        switcherHotkey = Self.loadHotkey(from: defaults, forKey: Key.switcherHotkey) ?? .switcherDefault
+        groupWindowsByApp = defaults.bool(forKey: Key.groupWindowsByApp)
+        showNotificationBadges = defaults.bool(forKey: Key.showNotificationBadges)
     }
-}
 
-extension Notification.Name {
-    /// Posted when the launcher hotkey changes — AppDelegate re-registers
-    /// the global Carbon hotkey.
-    static let dockishHotkeyDidChange = Notification.Name("DockishOS.HotkeyDidChange")
-    static let dockishHotkeyRegistrationDidChange = Notification.Name("DockishOS.HotkeyRegistrationDidChange")
-    static let dockishBarCollapseDidChange = Notification.Name("DockishOS.BarCollapseDidChange")
+    private func post(_ name: Notification.Name) {
+        NotificationCenter.default.post(name: name, object: nil)
+    }
+
+    private func save(_ hotkey: Hotkey, forKey key: String) {
+        if let data = try? JSONEncoder().encode(hotkey) {
+            defaults.set(data, forKey: key)
+        }
+        post(.dockishHotkeyDidChange)
+    }
+
+    private static func loadHotkey(from defaults: UserDefaults, forKey key: String) -> Hotkey? {
+        defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(Hotkey.self, from: $0) }
+    }
 }

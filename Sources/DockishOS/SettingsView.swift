@@ -66,39 +66,17 @@ private struct AppearanceTab: View {
 
 private struct BehaviorTab: View {
     @ObservedObject var settings: SettingsStore
-    @State private var loginItemEnabled: Bool = LoginItem.isEnabled
-    @State private var loginItemMessage: String = LoginItem.statusDescription
-    @State private var screens: [ScreenItem] = []
 
     var body: some View {
         Form {
             HotkeySettingsSection(settings: settings)
             AccessibilitySettingsSection()
-            UtilitySettingsSection(settings: settings)
-            LoginSettingsSection(
-                loginItemEnabled: $loginItemEnabled,
-                loginItemMessage: $loginItemMessage
-            )
-            DisplaySettingsSection(settings: settings, screens: screens)
+            CollapseSettingsSection(settings: settings)
+            LoginSettingsSection()
+            DisplaySettingsSection(settings: settings)
         }
         .formStyle(.grouped)
         .padding(.horizontal, 12)
-        .onAppear(perform: refreshState)
-        .onReceive(NotificationCenter.default.publisher(
-            for: NSApplication.didChangeScreenParametersNotification
-        )) { _ in
-            reloadScreens()
-        }
-    }
-
-    private func refreshState() {
-        loginItemEnabled = LoginItem.isEnabled
-        loginItemMessage = LoginItem.statusDescription
-        reloadScreens()
-    }
-
-    private func reloadScreens() {
-        screens = ScreenItem.snapshot()
     }
 }
 
@@ -141,7 +119,7 @@ private struct HotkeySettingsSection: View {
             HotkeyRecorderRow(
                 title: "Launcher hotkey",
                 hotkey: $settings.launcherHotkey,
-                resetValue: .default
+                resetValue: .launcherDefault
             )
             HotkeyRecorderRow(
                 title: "App switcher hotkey",
@@ -156,22 +134,7 @@ private struct HotkeySettingsSection: View {
     }
 }
 
-private struct ScreenItem: Identifiable, Hashable {
-    let id: String
-    let name: String
-
-    static func snapshot() -> [ScreenItem] {
-        let items = NSScreen.screens.map { screen in
-            DisplayNameDisambiguator.Item(
-                id: SpacesAPI.displayUUID(for: screen),
-                name: screen.localizedName
-            )
-        }
-        return DisplayNameDisambiguator.disambiguate(items).map { ScreenItem(id: $0.id, name: $0.name) }
-    }
-}
-
-private struct UtilitySettingsSection: View {
+private struct CollapseSettingsSection: View {
     @ObservedObject var settings: SettingsStore
 
     var body: some View {
@@ -193,8 +156,8 @@ private struct UtilitySettingsSection: View {
 
 private struct HotkeyRecorderRow: View {
     let title: String
-    @Binding var hotkey: LauncherHotkey
-    let resetValue: LauncherHotkey
+    @Binding var hotkey: Hotkey
+    let resetValue: Hotkey
 
     var body: some View {
         HStack {
@@ -210,59 +173,69 @@ private struct HotkeyRecorderRow: View {
 }
 
 private struct LoginSettingsSection: View {
-    @Binding var loginItemEnabled: Bool
-    @Binding var loginItemMessage: String
+    @State private var isEnabled = LoginItem.isEnabled
+    @State private var status = LoginItem.statusDescription
 
     var body: some View {
         Section {
-            Toggle("Launch DockishOS at login", isOn: $loginItemEnabled)
-                .onChange(of: loginItemEnabled) { _, newValue in
-                    _ = LoginItem.setEnabled(newValue)
-                    loginItemEnabled = LoginItem.isEnabled
-                    loginItemMessage = LoginItem.statusDescription
+            Toggle("Launch DockishOS at login", isOn: Binding(
+                get: { isEnabled },
+                set: { newValue in
+                    LoginItem.setEnabled(newValue)
+                    refresh()
                 }
+            ))
         } header: {
             Text("Login")
         } footer: {
-            FooterText(loginItemMessage)
+            FooterText(status)
         }
+        .onAppear(perform: refresh)
+    }
+
+    /// Reads the state back from the system: registering can fail or wait
+    /// for the user's approval.
+    private func refresh() {
+        isEnabled = LoginItem.isEnabled
+        status = LoginItem.statusDescription
     }
 }
 
 private struct DisplaySettingsSection: View {
+    private struct Display: Identifiable {
+        let id: String
+        let name: String
+
+        @MainActor
+        static func connected() -> [Display] {
+            let items = NSScreen.screens.map {
+                DisplayNameDisambiguator.Item(id: $0.displayUUID, name: $0.localizedName)
+            }
+            return DisplayNameDisambiguator.disambiguate(items).map { Display(id: $0.id, name: $0.name) }
+        }
+    }
+
     @ObservedObject var settings: SettingsStore
-    let screens: [ScreenItem]
+    @State private var displays = Display.connected()
 
     var body: some View {
         Section {
-            if screens.isEmpty {
-                Text("Detecting displays…")
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(screens) { screen in
-                    Toggle(screen.name, isOn: enabledBinding(for: screen))
-                }
+            ForEach(displays) { display in
+                Toggle(display.name, isOn: Binding(
+                    get: { !settings.disabledScreenUUIDs.contains(display.id) },
+                    set: { settings.setScreen(display.id, enabled: $0) }
+                ))
             }
         } header: {
             Text("Displays")
         } footer: {
             FooterText("Turn off displays where you don't want a bar. Bars rebuild instantly.")
         }
-    }
-
-    private func enabledBinding(for screen: ScreenItem) -> Binding<Bool> {
-        Binding(
-            get: { !settings.disabledScreenUUIDs.contains(screen.id) },
-            set: { newValue in
-                var disabled = settings.disabledScreenUUIDs
-                if newValue {
-                    disabled.remove(screen.id)
-                } else {
-                    disabled.insert(screen.id)
-                }
-                settings.disabledScreenUUIDs = disabled
-            }
-        )
+        .onReceive(NotificationCenter.default.publisher(
+            for: NSApplication.didChangeScreenParametersNotification
+        )) { _ in
+            displays = Display.connected()
+        }
     }
 }
 
@@ -277,24 +250,6 @@ private struct FooterText: View {
         Text(text)
             .font(.subheadline)
             .foregroundStyle(.secondary)
-    }
-}
-
-private struct HotkeyRecorder: NSViewRepresentable {
-    let title: String
-    @Binding var hotkey: LauncherHotkey
-
-    func makeNSView(context: Context) -> HotkeyRecorderView {
-        let v = HotkeyRecorderView()
-        v.hotkey = hotkey
-        v.recorderLabel = title
-        v.onChange = { hotkey = $0 }
-        return v
-    }
-
-    func updateNSView(_ nsView: HotkeyRecorderView, context: Context) {
-        nsView.hotkey = hotkey
-        nsView.recorderLabel = title
     }
 }
 
@@ -424,9 +379,6 @@ private struct PinnedListIconButton: View {
 }
 
 private struct AboutTab: View {
-    private var version: String { AppVersion.short }
-    private var build: String { AppVersion.build }
-
     var body: some View {
         VStack(spacing: 14) {
             Image(nsImage: DockishBrandAssets.applicationIcon(size: NSSize(width: 112, height: 112)))
@@ -434,7 +386,7 @@ private struct AboutTab: View {
                 .accessibilityHidden(true)
             Text("DockishOS")
                 .font(.title.weight(.semibold))
-            Text("v\(version) (build \(build))")
+            Text("v\(AppVersion.short) (build \(AppVersion.build))")
                 .font(.system(.callout, design: .monospaced))
                 .foregroundStyle(.secondary)
             if !AppVersion.copyright.isEmpty {
@@ -447,9 +399,9 @@ private struct AboutTab: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 40)
             HStack(spacing: 16) {
-                Link("GitHub", destination: URL(string: "https://github.com/8bittts/dockishOS")!)
-                Link("Releases", destination: URL(string: "https://github.com/8bittts/dockishOS/releases")!)
-                Link("MIT License", destination: URL(string: "https://github.com/8bittts/dockishOS/blob/main/LICENSE")!)
+                Link("GitHub", destination: AppLinks.repository)
+                Link("Releases", destination: AppLinks.releases)
+                Link("MIT License", destination: AppLinks.license)
             }
             .font(.callout)
         }

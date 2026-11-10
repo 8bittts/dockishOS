@@ -5,51 +5,50 @@ import AppKit
 /// reorder, right-click for unpin / move.
 struct PinnedRow: View {
     let size: BarSize
-    let pins: [PinnedApp]
+    @ObservedObject var pinnedStore: PinnedAppsStore
     @ObservedObject var runningApps: RunningAppsStore
     @ObservedObject var badgeStore: BadgeStore
-    let onLaunch: (PinnedApp) -> Void
-    let onUnpin: (PinnedApp) -> Void
-    let onMove: (PinnedApp, Int) -> Void
-    let onReorder: (String, String) -> Void
 
     var body: some View {
+        let pins = pinnedStore.pins
         HStack(spacing: 4) {
-            ForEach(Array(pins.enumerated()), id: \.element.id) { index, app in
+            ForEach(pins) { app in
                 PinnedChip(
                     app: app,
                     size: size,
                     isRunning: runningApps.contains(app.bundleID),
                     isFrontmost: runningApps.isFrontmost(app.bundleID),
                     badge: badgeStore.badge(for: app.bundleID),
-                    isFirst: index == 0,
-                    isLast: index == pins.count - 1,
-                    action: { onLaunch(app) },
-                    onUnpin: { onUnpin(app) },
-                    onMoveLeft: { onMove(app, -1) },
-                    onMoveRight: { onMove(app, 1) }
+                    isFirst: app == pins.first,
+                    isLast: app == pins.last,
+                    onLaunch: { pinnedStore.launch(app) },
+                    onUnpin: { pinnedStore.unpin(bundleID: app.bundleID) },
+                    onMove: { pinnedStore.move(app, by: $0) }
                 )
                 .onDrag {
                     NSItemProvider(object: app.bundleID as NSString)
                 }
                 .onDrop(
                     of: [.text],
-                    delegate: PinnedDropDelegate(targetID: app.bundleID, onReorder: onReorder)
+                    delegate: PinnedDropDelegate(targetID: app.bundleID) { sourceID in
+                        pinnedStore.move(sourceID: sourceID, onto: app.bundleID)
+                    }
                 )
             }
         }
     }
 }
 
+/// Accepts a dragged pinned chip and reports the dragged app's bundle ID.
 private struct PinnedDropDelegate: DropDelegate {
     let targetID: String
-    let onReorder: (String, String) -> Void
+    let onDrop: @MainActor (String) -> Void
 
     func performDrop(info: DropInfo) -> Bool {
         guard let provider = info.itemProviders(for: [.text]).first else { return false }
-        provider.loadObject(ofClass: NSString.self) { item, _ in
+        _ = provider.loadObject(ofClass: NSString.self) { [targetID, onDrop] item, _ in
             guard let sourceID = item as? String, sourceID != targetID else { return }
-            DispatchQueue.main.async { onReorder(sourceID, targetID) }
+            Task { @MainActor in onDrop(sourceID) }
         }
         return true
     }
@@ -63,18 +62,23 @@ private struct PinnedChip: View {
     let badge: String?
     let isFirst: Bool
     let isLast: Bool
-    let action: () -> Void
+    let onLaunch: () -> Void
     let onUnpin: () -> Void
-    let onMoveLeft: () -> Void
-    let onMoveRight: () -> Void
+    /// Moves the chip by the given offset: -1 is left, +1 is right.
+    let onMove: (Int) -> Void
     @State private var hover = false
 
+    private var accessibilityState: String? {
+        if isFrontmost { return "frontmost" }
+        return isRunning ? "running" : nil
+    }
+
     var body: some View {
-        Button(action: action) {
+        Button(action: onLaunch) {
             VStack(spacing: 2) {
                 Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
                     .resizable()
-                    .frame(width: size.pinnedChipSize - 6, height: size.pinnedChipSize - 6)
+                    .frame(width: size.chipHeight - 6, height: size.chipHeight - 6)
                     .overlay(alignment: .topTrailing) {
                         if let badge { NotificationBadge(text: badge).offset(x: 4, y: -4) }
                     }
@@ -92,14 +96,13 @@ private struct PinnedChip: View {
         .buttonStyle(.plain)
         .onHover { hover = $0 }
         .help(app.name)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(app.name)\(isFrontmost ? ", frontmost" : isRunning ? ", running" : "")\(badge.map { ", \($0) notification\($0 == "1" ? "" : "s")" } ?? "")")
+        .accessibilityLabel(ChipAccessibility.label(app.name, state: accessibilityState, badge: badge))
         .contextMenu {
-            Button("Activate \(app.name)") { action() }
+            Button("Activate \(app.name)") { onLaunch() }
             if !isFirst || !isLast {
                 Divider()
-                if !isFirst { Button("Move Left") { onMoveLeft() } }
-                if !isLast { Button("Move Right") { onMoveRight() } }
+                if !isFirst { Button("Move Left") { onMove(-1) } }
+                if !isLast { Button("Move Right") { onMove(1) } }
             }
             Divider()
             Button("Unpin from Bar") { onUnpin() }

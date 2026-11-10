@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import DockishOSCore
 
 /// Scrollable horizontal list of window chips for the current Space.
 /// Branches between flat-window and grouped-by-app rendering based on the
@@ -11,135 +12,152 @@ struct WindowsRow: View {
     @ObservedObject var settings: SettingsStore
     private let reorderAnimation = Animation.spring(response: 0.30, dampingFraction: 0.82)
 
-    private var suppressPinnedDuplicates: Bool {
+    /// An app with a chip in the pinned row gets no second chip here.
+    private var hidesPinnedApps: Bool {
         settings.showPinnedRow && !pinnedStore.pins.isEmpty
     }
 
     private var visibleWindows: [WindowInfo] {
-        guard suppressPinnedDuplicates else { return windowStore.windows }
+        guard hidesPinnedApps else { return windowStore.windows }
         return windowStore.windows.filter { !pinnedStore.isPinned(bundleID: $0.bundleID) }
     }
 
-    private var visibleGroups: [WindowGroup] {
-        let groups = windowStore.grouped()
-        guard suppressPinnedDuplicates else { return groups }
-        return groups.filter { !pinnedStore.isPinned(bundleID: $0.bundleID) }
-    }
-
-    private func layoutAnimationKey(groups: [WindowGroup], windows: [WindowInfo]) -> [String] {
-        if settings.groupWindowsByApp {
-            return groups.map { group in
-                let isFrontmost = group.windows.contains(where: { $0.pid == windowStore.frontmostPID })
-                return "\(group.id):\(isFrontmost ? 1 : 0)"
-            }
-        }
-        return windows.map { window in
-            "\(window.id):\(window.pid == windowStore.frontmostPID ? 1 : 0)"
-        }
+    private func isFrontmost(_ group: AppWindowGroup) -> Bool {
+        group.windows.contains { $0.pid == windowStore.frontmostPID }
     }
 
     var body: some View {
-        // Compute the derived lists once per body pass — `visibleGroups` runs
-        // the O(n) grouping and was previously recomputed for the ForEach, the
-        // isEmpty check, and the animation key.
-        let groups = settings.groupWindowsByApp ? visibleGroups : []
+        // Derive the lists once per body pass: the chips and the animation
+        // value both read them.
+        let visibleWindows = visibleWindows
         let windows = settings.groupWindowsByApp ? [] : visibleWindows
+        let groups = settings.groupWindowsByApp ? WindowGrouping.group(visibleWindows) : []
+
         return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                if settings.groupWindowsByApp {
-                    ForEach(groups) { group in groupChip(for: group) }
-                    if groups.isEmpty { emptyState }
-                } else {
-                    ForEach(windows, id: \.id) { window in
-                        chip(for: window)
-                    }
-                    if windows.isEmpty { emptyState }
+                ForEach(groups) { groupChip(for: $0) }
+                ForEach(windows) { chip(for: $0) }
+                if visibleWindows.isEmpty {
+                    Text("No open apps in this space…")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
                 }
             }
             .padding(.vertical, 10)
-            .animation(reorderAnimation, value: layoutAnimationKey(groups: groups, windows: windows))
+            // A reorder, a retitle and a focus change all move chips.
+            .animation(reorderAnimation, value: visibleWindows)
+            .animation(reorderAnimation, value: windowStore.frontmostPID)
         }
     }
 
-    @ViewBuilder
-    private var emptyState: some View {
-        Text("No open apps in this space…")
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 8)
-    }
-
-    @ViewBuilder
     private func chip(for window: WindowInfo) -> some View {
-        let isPinned = pinnedStore.isPinned(bundleID: window.bundleID)
+        let isFrontmost = window.pid == windowStore.frontmostPID
         let badge = badgeStore.badge(for: window.bundleID)
-        WindowChip(
-            window: window,
-            size: settings.barSize,
-            showTitle: settings.showChipTitles,
-            isFrontmost: window.pid == windowStore.frontmostPID,
-            isPinned: isPinned,
-            badge: badge,
-            onActivate: { windowStore.activate(window) },
-            onClose: { windowStore.close(window) },
-            onTogglePin: {
-                if let bid = window.bundleID, pinnedStore.isPinned(bundleID: bid) {
-                    pinnedStore.unpin(bundleID: bid)
-                } else {
-                    pinnedStore.pin(window: window)
-                }
-            }
-        )
-    }
-
-    @ViewBuilder
-    private func groupChip(for group: WindowGroup) -> some View {
-        let isPinned = pinnedStore.isPinned(bundleID: group.bundleID)
-        let isFrontmost = group.windows.contains(where: { $0.pid == windowStore.frontmostPID })
-        let badge = badgeStore.badge(for: group.bundleID)
-        WindowGroupChip(
-            group: group,
+        return Chip(
+            pid: window.pid,
+            title: window.displayTitle,
             size: settings.barSize,
             showTitle: settings.showChipTitles,
             isFrontmost: isFrontmost,
-            isPinned: isPinned,
             badge: badge,
-            onActivateNext: { windowStore.activateNext(in: group) },
-            onActivate: { windowStore.activate($0) },
-            onClose: { windowStore.close($0) },
-            onTogglePin: {
-                if let bid = group.bundleID, pinnedStore.isPinned(bundleID: bid) {
-                    pinnedStore.unpin(bundleID: bid)
-                } else if let win = group.windows.first {
-                    pinnedStore.pin(window: win)
+            windowCount: 1,
+            help: window.displayTitle,
+            accessibilityLabel: ChipAccessibility.label(
+                window.displayTitle,
+                state: isFrontmost ? "frontmost" : nil,
+                badge: badge
+            ),
+            action: { windowStore.activate(window) }
+        ) {
+            Button("Activate") { windowStore.activate(window) }
+            Button("Close Window", role: .destructive) { windowStore.close(window) }
+            Divider()
+            pinToggle(for: window)
+        }
+    }
+
+    private func groupChip(for group: AppWindowGroup) -> some View {
+        let isFrontmost = isFrontmost(group)
+        let badge = badgeStore.badge(for: group.bundleID)
+        let countText = ChipAccessibility.windowCountText(group.windows.count)
+        return Chip(
+            pid: group.pid,
+            title: group.ownerName,
+            size: settings.barSize,
+            showTitle: settings.showChipTitles,
+            isFrontmost: isFrontmost,
+            badge: badge,
+            windowCount: group.windows.count,
+            help: "\(group.ownerName) — \(countText)",
+            accessibilityLabel: ChipAccessibility.label(
+                group.ownerName,
+                windowCount: group.windows.count,
+                state: isFrontmost ? "frontmost" : nil,
+                badge: badge
+            ),
+            action: { windowStore.activateNext(in: group) }
+        ) {
+            ForEach(group.windows) { window in
+                Button(window.title.isEmpty ? "Untitled" : window.title) {
+                    windowStore.activate(window)
                 }
             }
-        )
+            Divider()
+            Button("Close All Windows", role: .destructive) {
+                group.windows.forEach(windowStore.close)
+            }
+            Divider()
+            if let window = group.windows.first {
+                pinToggle(for: window)
+            }
+        }
+    }
+
+    /// Pins or unpins the app that owns `window`.
+    @ViewBuilder
+    private func pinToggle(for window: WindowInfo) -> some View {
+        if let bundleID = window.bundleID, pinnedStore.isPinned(bundleID: bundleID) {
+            Button("Unpin from Bar") { pinnedStore.unpin(bundleID: bundleID) }
+        } else {
+            Button("Pin to Bar") { pinnedStore.pin(window: window) }
+        }
     }
 }
 
-private struct WindowChip: View {
-    let window: WindowInfo
+/// One chip in the windows row: a single window, or every window of an app
+/// when grouping is on.
+private struct Chip<MenuItems: View>: View {
+    let pid: pid_t
+    let title: String
     let size: BarSize
     let showTitle: Bool
     let isFrontmost: Bool
-    let isPinned: Bool
     let badge: String?
-    let onActivate: () -> Void
-    let onClose: () -> Void
-    let onTogglePin: () -> Void
+    let windowCount: Int
+    let help: String
+    let accessibilityLabel: String
+    let action: () -> Void
+    @ViewBuilder let menuItems: () -> MenuItems
     @State private var hover = false
 
     var body: some View {
-        Button(action: onActivate) {
+        Button(action: action) {
             HStack(spacing: 6) {
-                AppIconView(pid: window.pid)
+                AppIconView(pid: pid)
                     .frame(width: size.chipIconSize, height: size.chipIconSize)
                     .overlay(alignment: .topTrailing) {
-                        if let badge { NotificationBadge(text: badge).offset(x: 6, y: -4) }
+                        if let badge {
+                            NotificationBadge(text: badge).offset(x: 6, y: -4)
+                        }
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        if windowCount > 1 {
+                            WindowCountMark(count: windowCount).offset(x: 6, y: 4)
+                        }
                     }
                 if showTitle {
-                    Text(window.displayTitle)
+                    Text(title)
                         .font(.system(size: size.chipHeight * 0.40, weight: isFrontmost ? .semibold : .medium))
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -165,131 +183,37 @@ private struct WindowChip: View {
         .buttonStyle(.plain)
         .onHover { hover = $0 }
         .animation(ChipStyle.hoverAnimation, value: hover)
-        .help(window.displayTitle)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(window.displayTitle)\(isFrontmost ? ", frontmost" : "")\(badge.map { ", \($0) notification\($0 == "1" ? "" : "s")" } ?? "")")
-        .contextMenu {
-            Button("Activate") { onActivate() }
-            Button(role: .destructive) { onClose() } label: {
-                Text("Close Window")
-            }
-            Divider()
-            if isPinned {
-                Button("Unpin from Bar") { onTogglePin() }
-            } else {
-                Button("Pin to Bar") { onTogglePin() }
-            }
-        }
+        .help(help)
+        .accessibilityLabel(accessibilityLabel)
+        .contextMenu(menuItems: menuItems)
     }
 }
 
-private struct WindowGroupChip: View {
-    let group: WindowGroup
-    let size: BarSize
-    let showTitle: Bool
-    let isFrontmost: Bool
-    let isPinned: Bool
-    let badge: String?
-    let onActivateNext: () -> Void
-    let onActivate: (WindowInfo) -> Void
-    let onClose: (WindowInfo) -> Void
-    let onTogglePin: () -> Void
-    @State private var hover = false
-
-    var body: some View {
-        Button(action: onActivateNext) {
-            HStack(spacing: 6) {
-                AppIconView(pid: group.pid)
-                    .frame(width: size.chipIconSize, height: size.chipIconSize)
-                    .overlay(alignment: .topTrailing) {
-                        if let badge {
-                            NotificationBadge(text: badge).offset(x: 6, y: -4)
-                        }
-                    }
-                    .overlay(alignment: .bottomTrailing) {
-                        if group.windows.count > 1 {
-                            WindowCountMark(count: group.windows.count)
-                                .offset(x: 6, y: 4)
-                        }
-                    }
-                if showTitle {
-                    Text(group.ownerName)
-                        .font(.system(size: size.chipHeight * 0.40, weight: isFrontmost ? .semibold : .medium))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .foregroundStyle(.primary)
-                        .padding(.horizontal, ChipStyle.labelHorizontalPadding)
-                        .padding(.vertical, ChipStyle.labelVerticalPadding)
-                        .background(ChipChrome(isFrontmost: isFrontmost, hover: hover))
-                }
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .frame(height: size.chipHeight)
-            .frame(maxWidth: showTitle ? 220 : nil)
-            .background {
-                if !showTitle {
-                    ChipChrome(isFrontmost: isFrontmost, hover: hover)
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .onHover { hover = $0 }
-        .animation(ChipStyle.hoverAnimation, value: hover)
-        .help("\(group.ownerName) — \(group.windows.count) window\(group.windows.count == 1 ? "" : "s")")
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(group.ownerName), \(group.windows.count) \(group.windows.count == 1 ? "window" : "windows")\(isFrontmost ? ", frontmost" : "")\(badge.map { ", \($0) notification\($0 == "1" ? "" : "s")" } ?? "")")
-        .contextMenu {
-            ForEach(group.windows, id: \.id) { window in
-                Button(window.displayTitle.isEmpty ? "Untitled" : window.displayTitle) {
-                    onActivate(window)
-                }
-            }
-            Divider()
-            Button(role: .destructive) {
-                for w in group.windows { onClose(w) }
-            } label: {
-                Text("Close All Windows")
-            }
-            Divider()
-            if isPinned {
-                Button("Unpin from Bar") { onTogglePin() }
-            } else {
-                Button("Pin to Bar") { onTogglePin() }
-            }
-        }
-    }
-}
-
-/// Shared chip background (fill + border + top highlight) used by both
-/// `WindowChip` and `WindowGroupChip` so the look stays in one place.
+/// Chip background (fill + border + top highlight). Only hover and frontmost
+/// draw chrome: an idle chip stays plain so the bar reads as icons and labels
+/// rather than a row of pills.
 private struct ChipChrome: View {
     let isFrontmost: Bool
     let hover: Bool
 
-    /// Only hover and frontmost draw chrome. An idle chip stays plain so the
-    /// bar reads as icons and labels rather than a row of pills.
-    private var isHighlighted: Bool { isFrontmost || hover }
-
-    private var chipFill: Color {
+    private var fill: Color {
         if isFrontmost { return ChipStyle.frontmostFill }
         return hover ? ChipStyle.hoverFill : .clear
     }
 
     private var borderOpacity: Double {
         if hover { return ChipStyle.hoverBorderOpacity }
-        if isFrontmost { return ChipStyle.frontmostBorderOpacity }
-        return 0
+        return isFrontmost ? ChipStyle.frontmostBorderOpacity : 0
     }
 
     private var topHighlightOpacity: Double {
-        guard isHighlighted else { return 0 }
-        return hover ? ChipStyle.hoverTopHighlightOpacity : ChipStyle.topHighlightOpacity
+        if hover { return ChipStyle.hoverTopHighlightOpacity }
+        return isFrontmost ? ChipStyle.topHighlightOpacity : 0
     }
 
     var body: some View {
         RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
-            .fill(chipFill)
+            .fill(fill)
             .overlay {
                 RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
                     .strokeBorder(ChipStyle.border.opacity(borderOpacity), lineWidth: 0.65)
@@ -302,7 +226,7 @@ private struct ChipChrome: View {
                         LinearGradient(
                             stops: [
                                 .init(color: Color(nsColor: .highlightColor).opacity(topHighlightOpacity), location: 0),
-                                .init(color: Color(nsColor: .highlightColor).opacity(0), location: 0.45)
+                                .init(color: Color(nsColor: .highlightColor).opacity(0), location: 0.45),
                             ],
                             startPoint: .top,
                             endPoint: .bottom

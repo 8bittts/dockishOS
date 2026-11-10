@@ -11,7 +11,7 @@ import XCTest
 /// the source reverts to `dock.rectangle` or to the full-color app icon.
 final class MenuBarIconRegressionTests: XCTestCase {
     func testStatusItemUsesTemplateBrandedMark() throws {
-        let source = try Self.menuBarControllerSource()
+        let source = try RepositorySource.read("Sources/DockishOS/MenuBarController.swift")
 
         XCTAssertTrue(
             source.contains("DockishBrandAssets.menuBarTemplateIcon(size: DockishBrandAssets.menuBarIconSize)"),
@@ -27,18 +27,5 @@ final class MenuBarIconRegressionTests: XCTestCase {
             source.contains("dock.rectangle"),
             "MenuBarController must not reference the dock.rectangle SF Symbol for the status item."
         )
-    }
-
-    private static func menuBarControllerSource(file: StaticString = #filePath) throws -> String {
-        let testFile = URL(fileURLWithPath: "\(file)")
-        let repoRoot = testFile
-            .deletingLastPathComponent() // DockishOSCoreTests/
-            .deletingLastPathComponent() // Tests/
-            .deletingLastPathComponent() // repo root
-        let menuBar = repoRoot
-            .appendingPathComponent("Sources")
-            .appendingPathComponent("DockishOS")
-            .appendingPathComponent("MenuBarController.swift")
-        return try String(contentsOf: menuBar, encoding: .utf8)
     }
 }

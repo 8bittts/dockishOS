@@ -2,144 +2,69 @@ import SwiftUI
 import AppKit
 import DockishOSCore
 
-struct CollapsedTabMetrics {
+/// The edge tab a collapsed bar leaves behind. Click it to expand the bar.
+struct CollapsedTab: View {
     let barSize: BarSize
-
-    var containerAlignment: Alignment {
-        .center
-    }
-
-    var backgroundVerticalPadding: CGFloat {
-        0
-    }
-
-    var clusterWidth: CGFloat {
-        BarGeometry.collapsedTabWidth
-    }
-
-    var clusterHeight: CGFloat {
-        BarGeometry.collapsedClusterHeight(barHeight: barSize.height)
-    }
-
-    var panelHeight: CGFloat {
-        BarGeometry.collapsedPanelHeight(barHeight: barSize.height)
-    }
-
-    var backgroundCornerRadius: CGFloat {
-        14
-    }
-
-    var backgroundFillOpacity: Double {
-        0.76
-    }
-
-    var backgroundStrokeOpacity: Double {
-        0.10
-    }
-
-    var backgroundHighlightOpacity: Double {
-        0.08
-    }
-
-    var backgroundShadowOpacity: Double {
-        0.14
-    }
-
-    var backgroundShadowRadius: CGFloat {
-        8
-    }
-
-    var backgroundShadowY: CGFloat {
-        2
-    }
-
-    var buttonTopPadding: CGFloat {
-        10
-    }
-
-    var buttonBottomPadding: CGFloat {
-        10
-    }
-
-    var buttonWidth: CGFloat {
-        42
-    }
-
-    var buttonHeight: CGFloat {
-        50
-    }
-
-    var buttonCornerRadius: CGFloat {
-        14
-    }
-
-    var iconOffsetY: CGFloat {
-        -7
-    }
-}
-
-struct CollapsedTabCluster: View {
-    let metrics: CollapsedTabMetrics
     let action: () -> Void
     @State private var hover = false
-    @State private var sheenPhase: CGFloat = -1.2
+    @State private var sheenPhase = Self.sheenStart
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// The sheen band's horizontal offset, in icon widths, before and after a sweep.
+    private static let sheenStart: CGFloat = -1.2
+    private static let sheenEnd: CGFloat = 1.2
+    private static let sheenSweep: Duration = .milliseconds(1350)
 
     var body: some View {
         Button(action: action) {
             ZStack(alignment: .bottom) {
-                Color.clear
-                    .frame(width: metrics.clusterWidth, height: metrics.panelHeight)
+                // The panel is taller than the cluster by the hover headroom.
+                Color.clear.frame(
+                    width: BarGeometry.collapsedTabWidth,
+                    height: BarGeometry.collapsedPanelHeight(barHeight: barSize.height)
+                )
 
-                ZStack(alignment: metrics.containerAlignment) {
-                    CollapsedTabBackdrop(metrics: metrics)
-                        .padding(.vertical, metrics.backgroundVerticalPadding)
-
-                    CollapsedBarTab(
-                        metrics: metrics,
-                        hover: hover,
-                        sheenPhase: sheenPhase
-                    )
-                    .padding(.top, metrics.buttonTopPadding)
-                    .padding(.bottom, metrics.buttonBottomPadding)
+                ZStack {
+                    CollapsedTabBackdrop()
+                    CollapsedTabButton(hover: hover, sheenPhase: sheenPhase)
+                        .padding(.vertical, 10)
                 }
                 .frame(
-                    width: metrics.clusterWidth,
-                    height: metrics.clusterHeight,
-                    alignment: metrics.containerAlignment
+                    width: BarGeometry.collapsedTabWidth,
+                    height: BarGeometry.collapsedClusterHeight(barHeight: barSize.height)
                 )
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .onHover { hover = $0 }
-        .animation(.easeOut(duration: 0.10), value: hover)
+        .animation(ChipStyle.hoverAnimation, value: hover)
         .task(id: reduceMotion) {
+            sheenPhase = Self.sheenStart
             guard !reduceMotion else { return }
-            sheenPhase = -1.2
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-            while !Task.isCancelled {
-                withAnimation(.easeInOut(duration: 1.35)) {
-                    sheenPhase = 1.2
-                }
-                try? await Task.sleep(nanoseconds: 1_350_000_000)
-                if Task.isCancelled { break }
-                sheenPhase = -1.2
-                try? await Task.sleep(nanoseconds: 8_000_000_000)
-            }
-        }
-        .onDisappear {
-            withAnimation(.none) {
-                sheenPhase = -1.2
-            }
+            try? await runSheen()
         }
         .help("Expand bar")
         .accessibilityLabel("Expand bar")
     }
+
+    /// Sweeps a highlight across the icon now and then. Ends when the task is
+    /// cancelled, which makes the pending sleep throw.
+    private func runSheen() async throws {
+        try await Task.sleep(for: .seconds(2))
+        while true {
+            withAnimation(.easeInOut(duration: 1.35)) {
+                sheenPhase = Self.sheenEnd
+            }
+            try await Task.sleep(for: Self.sheenSweep)
+            sheenPhase = Self.sheenStart
+            try await Task.sleep(for: .seconds(8))
+        }
+    }
 }
 
-/// Collapse control on the expanded bar. Expand uses `CollapsedTabCluster`.
-struct UtilitySectionsToggle: View {
+/// Collapse control on the trailing edge of the expanded bar.
+struct CollapseBarButton: View {
     let action: () -> Void
     @State private var hover = false
     /// Sized to sit just under the 12pt chip label rather than dominating it.
@@ -182,112 +107,104 @@ struct UtilitySectionsToggle: View {
     }
 }
 
-private struct CollapsedTabBackdrop: View {
-    let metrics: CollapsedTabMetrics
+/// Corner radius shared by the collapsed tab's backdrop and its button.
+private let collapsedTabCornerRadius: CGFloat = 14
+
+/// Rounded surface with a hairline border, a soft top highlight and a shadow.
+private struct CollapsedTabSurface: View {
+    let fillOpacity: Double
+    let strokeOpacity: Double
+    let highlightOpacity: Double
+    let highlightHeight: CGFloat
+    let shadowOpacity: Double
+    let shadowRadius: CGFloat
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: collapsedTabCornerRadius, style: .continuous)
+    }
 
     var body: some View {
-        RoundedRectangle(cornerRadius: metrics.backgroundCornerRadius, style: .continuous)
-            .fill(Color(nsColor: .windowBackgroundColor).opacity(metrics.backgroundFillOpacity))
+        shape
+            .fill(Color(nsColor: .windowBackgroundColor).opacity(fillOpacity))
             .overlay {
-                RoundedRectangle(cornerRadius: metrics.backgroundCornerRadius, style: .continuous)
-                    .stroke(Color(nsColor: .separatorColor).opacity(metrics.backgroundStrokeOpacity), lineWidth: 0.55)
+                shape.stroke(Color(nsColor: .separatorColor).opacity(strokeOpacity), lineWidth: 0.55)
             }
             .overlay(alignment: .top) {
-                RoundedRectangle(cornerRadius: metrics.backgroundCornerRadius, style: .continuous)
+                shape
                     .fill(
                         LinearGradient(
                             colors: [
-                                Color(nsColor: .highlightColor).opacity(metrics.backgroundHighlightOpacity),
-                                Color(nsColor: .highlightColor).opacity(0)
+                                Color(nsColor: .highlightColor).opacity(highlightOpacity),
+                                Color(nsColor: .highlightColor).opacity(0),
                             ],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
-                    .frame(maxHeight: 16)
-                    .clipShape(RoundedRectangle(cornerRadius: metrics.backgroundCornerRadius, style: .continuous))
+                    .frame(maxHeight: highlightHeight)
+                    .clipShape(shape)
             }
-            .shadow(
-                color: .black.opacity(metrics.backgroundShadowOpacity),
-                radius: metrics.backgroundShadowRadius,
-                y: metrics.backgroundShadowY
-            )
+            .shadow(color: .black.opacity(shadowOpacity), radius: shadowRadius, y: 2)
     }
 }
 
-private struct CollapsedBarTab: View {
-    let metrics: CollapsedTabMetrics
+private struct CollapsedTabBackdrop: View {
+    var body: some View {
+        CollapsedTabSurface(
+            fillOpacity: 0.76,
+            strokeOpacity: 0.10,
+            highlightOpacity: 0.08,
+            highlightHeight: 16,
+            shadowOpacity: 0.14,
+            shadowRadius: 8
+        )
+    }
+}
+
+private struct CollapsedTabButton: View {
     let hover: Bool
     let sheenPhase: CGFloat
 
-    private let icon = DockishBrandAssets.applicationIcon(size: NSSize(width: 18, height: 18))
-    private let iconSize: CGFloat = 18
+    private static let iconSize: CGFloat = 18
+    private let icon = DockishBrandAssets.applicationIcon(size: NSSize(width: iconSize, height: iconSize))
 
     private var iconImage: some View {
         Image(nsImage: icon)
             .resizable()
             .interpolation(.high)
-            .frame(width: iconSize, height: iconSize)
+            .frame(width: Self.iconSize, height: Self.iconSize)
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                iconImage
+        ZStack {
+            iconImage
 
-                GeometryReader { proxy in
-                    LinearGradient(
-                        colors: [
-                            Color(nsColor: .highlightColor).opacity(0.0),
-                            Color(nsColor: .highlightColor).opacity(0.0),
-                            Color(nsColor: .highlightColor).opacity(0.24),
-                            Color(nsColor: .highlightColor).opacity(0.0),
-                            Color(nsColor: .highlightColor).opacity(0.0),
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(width: proxy.size.width * 0.54, height: proxy.size.height * 1.65)
-                    .rotationEffect(.degrees(18))
-                    .offset(x: proxy.size.width * sheenPhase)
-                    .blendMode(.screen)
-                    .mask(iconImage)
-                }
-                .frame(width: iconSize, height: iconSize)
-                .allowsHitTesting(false)
+            GeometryReader { proxy in
+                LinearGradient(
+                    colors: [0, 0, 0.24, 0, 0].map { Color(nsColor: .highlightColor).opacity($0) },
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(width: proxy.size.width * 0.54, height: proxy.size.height * 1.65)
+                .rotationEffect(.degrees(18))
+                .offset(x: proxy.size.width * sheenPhase)
+                .blendMode(.screen)
+                .mask(iconImage)
             }
-            .offset(y: metrics.iconOffsetY)
+            .frame(width: Self.iconSize, height: Self.iconSize)
+            .allowsHitTesting(false)
         }
-        .frame(width: metrics.buttonWidth, height: metrics.buttonHeight)
-        .background(buttonChrome)
-    }
-
-    private var buttonChrome: some View {
-        RoundedRectangle(cornerRadius: metrics.buttonCornerRadius, style: .continuous)
-            .fill(Color(nsColor: .windowBackgroundColor).opacity(hover ? 0.985 : 0.96))
-            .overlay {
-                RoundedRectangle(cornerRadius: metrics.buttonCornerRadius, style: .continuous)
-                    .stroke(Color(nsColor: .separatorColor).opacity(hover ? 0.55 : 0.35), lineWidth: 0.55)
-            }
-            .overlay(alignment: .top) {
-                RoundedRectangle(cornerRadius: metrics.buttonCornerRadius, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color(nsColor: .highlightColor).opacity(hover ? 0.34 : 0.26),
-                                Color(nsColor: .highlightColor).opacity(0)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(height: 18)
-                    .clipShape(RoundedRectangle(cornerRadius: metrics.buttonCornerRadius, style: .continuous))
-            }
-            .shadow(
-                color: .black.opacity(0.10),
-                radius: 6,
-                y: 2
+        .offset(y: -7)
+        .frame(width: 42, height: 50)
+        .background(
+            CollapsedTabSurface(
+                fillOpacity: hover ? 0.985 : 0.96,
+                strokeOpacity: hover ? 0.55 : 0.35,
+                highlightOpacity: hover ? 0.34 : 0.26,
+                highlightHeight: 18,
+                shadowOpacity: 0.10,
+                shadowRadius: 6
             )
+        )
     }
 }

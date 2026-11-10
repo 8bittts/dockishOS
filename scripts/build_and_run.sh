@@ -4,8 +4,7 @@
 #
 # `swift run DockishOS` works for most code paths, but a real .app bundle
 # is required for: accessory-app launch behavior, Info.plist-backed
-# settings like `LSUIElement` and `NSAccessibilityUsageDescription`, and
-# Sparkle integration. This script builds the binary,
+# settings like `LSUIElement`, and Sparkle integration. This script builds the binary,
 # assembles a bundle in build/DockishOS.app, and launches it. We keep the
 # top-level .app path stable so macOS privacy permissions (Accessibility,
 # login item registration, and Launch Services bookkeeping are less likely

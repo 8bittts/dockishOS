@@ -1,54 +1,39 @@
 import AppKit
 
-/// Set of bundle identifiers for currently-running apps. Replaces the
-/// per-render `Set(NSWorkspace.shared.runningApplications.compactMap(...))`
-/// snapshot in BarView, which executed on every SwiftUI body invalidation.
-///
-/// Updates on `NSWorkspace.didLaunchApplicationNotification` and
-/// `didTerminateApplicationNotification`. Read from the main thread.
+/// Bundle identifiers of the running apps and of the frontmost one, for the
+/// pinned row's running dot and spoken state. Updated from `NSWorkspace`
+/// launch, terminate and activate notifications.
+@MainActor
 final class RunningAppsStore: ObservableObject {
     static let shared = RunningAppsStore()
 
     @Published private(set) var bundleIDs: Set<String> = []
     @Published private(set) var frontmostBundleID: String?
 
-    private var launchObserver: NSObjectProtocol?
-    private var terminateObserver: NSObjectProtocol?
-    private var activationObserver: NSObjectProtocol?
-
     private init() {
         refresh()
-        let center = NSWorkspace.shared.notificationCenter
-        launchObserver = center.addObserver(
-            forName: NSWorkspace.didLaunchApplicationNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in self?.refresh() }
-        terminateObserver = center.addObserver(
-            forName: NSWorkspace.didTerminateApplicationNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in self?.refresh() }
-        activationObserver = center.addObserver(
-            forName: NSWorkspace.didActivateApplicationNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] note in
-            if let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication {
-                self?.frontmostBundleID = app.bundleIdentifier
-            }
-        }
         frontmostBundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+
+        let workspace = NSWorkspace.shared.notificationCenter
+        workspace.observeOnMain(NSWorkspace.didLaunchApplicationNotification) { [weak self] _ in
+            self?.refresh()
+        }
+        workspace.observeOnMain(NSWorkspace.didTerminateApplicationNotification) { [weak self] _ in
+            self?.refresh()
+        }
+        workspace.observeOnMain(NSWorkspace.didActivateApplicationNotification) { [weak self] notification in
+            let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+            guard let app else { return }
+            self?.frontmostBundleID = app.bundleIdentifier
+        }
     }
 
-    func contains(_ bundleID: String?) -> Bool {
-        guard let bid = bundleID else { return false }
-        return bundleIDs.contains(bid)
+    func contains(_ bundleID: String) -> Bool {
+        bundleIDs.contains(bundleID)
     }
 
-    func isFrontmost(_ bundleID: String?) -> Bool {
-        guard let bundleID else { return false }
-        return frontmostBundleID == bundleID
+    func isFrontmost(_ bundleID: String) -> Bool {
+        frontmostBundleID == bundleID
     }
 
     private func refresh() {

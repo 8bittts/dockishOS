@@ -1,5 +1,3 @@
-import Foundation
-
 package enum StableIDReordering {
     package static func moving<T: Identifiable>(
         _ items: [T],

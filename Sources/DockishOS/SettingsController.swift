@@ -7,32 +7,26 @@ import SwiftUI
 final class SettingsController {
     static let shared = SettingsController()
 
-    private var window: NSWindow?
-
-    func show() {
-        if window == nil { build() }
-        NSApp.activate(ignoringOtherApps: true)
-        window?.makeKeyAndOrderFront(nil)
-    }
-
-    private func build() {
-        let host = NSHostingView(rootView: SettingsView(
-            settings: SettingsStore.shared,
-            pinned: PinnedAppsStore.shared
-        ))
-
-        let w = NSWindow(
+    private lazy var window: NSWindow = {
+        let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 480, height: 460),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
-        w.title = "DockishOS Settings"
-        w.minSize = NSSize(width: 480, height: 460)
-        w.contentView = host
-        w.isReleasedWhenClosed = false
-        w.center()
-        w.collectionBehavior = [.fullScreenAuxiliary, .moveToActiveSpace]
-        window = w
+        window.title = "DockishOS Settings"
+        window.contentView = NSHostingView(rootView: SettingsView(
+            settings: SettingsStore.shared,
+            pinned: PinnedAppsStore.shared
+        ))
+        window.isReleasedWhenClosed = false
+        window.collectionBehavior = [.fullScreenAuxiliary, .moveToActiveSpace]
+        window.center()
+        return window
+    }()
+
+    func show() {
+        AppActivation.activateSelf()
+        window.makeKeyAndOrderFront(nil)
     }
 }

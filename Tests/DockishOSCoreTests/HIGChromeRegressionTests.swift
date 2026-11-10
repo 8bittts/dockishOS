@@ -2,7 +2,7 @@ import XCTest
 
 final class HIGChromeRegressionTests: XCTestCase {
     func testAppIconGeneratorDoesNotBakeASquircle() throws {
-        let source = try Self.readSource("scripts/generate-app-icon.swift")
+        let source = try RepositorySource.read("scripts/generate-app-icon.swift")
         XCTAssertTrue(
             source.contains("Full-bleed square"),
             "The icon generator must document that the asset is an unmasked square."
@@ -14,7 +14,7 @@ final class HIGChromeRegressionTests: XCTestCase {
     }
 
     func testSettingsWindowOmitsMiniaturizeAndZoom() throws {
-        let source = try Self.readSource("Sources/DockishOS/SettingsController.swift")
+        let source = try RepositorySource.read("Sources/DockishOS/SettingsController.swift")
         XCTAssertTrue(
             source.contains("styleMask: [.titled, .closable]"),
             "Settings must not offer miniaturize or zoom."
@@ -26,7 +26,7 @@ final class HIGChromeRegressionTests: XCTestCase {
     }
 
     func testNotificationBadgeUsesSystemRed() throws {
-        let source = try Self.readSource("Sources/DockishOS/BarSupport.swift")
+        let source = try RepositorySource.read("Sources/DockishOS/BarSupport.swift")
         XCTAssertTrue(
             source.contains("Color(nsColor: .systemRed)"),
             "Notification badges must use systemRed."
@@ -34,18 +34,6 @@ final class HIGChromeRegressionTests: XCTestCase {
         XCTAssertFalse(
             source.contains("Capsule().fill(Color.red)"),
             "Notification badges must not use hardcoded Color.red."
-        )
-    }
-
-    private static func readSource(_ relativePath: String, file: StaticString = #filePath) throws -> String {
-        let testFile = URL(fileURLWithPath: "\(file)")
-        let repoRoot = testFile
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-        return try String(
-            contentsOf: repoRoot.appendingPathComponent(relativePath),
-            encoding: .utf8
         )
     }
 }

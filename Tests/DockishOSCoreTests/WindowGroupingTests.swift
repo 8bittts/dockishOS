@@ -2,30 +2,41 @@ import XCTest
 @testable import DockishOSCore
 
 final class WindowGroupingTests: XCTestCase {
+    private func window(_ id: UInt32, pid: Int32, owner: String, bundleID: String?) -> WindowInfo {
+        WindowInfo(id: id, pid: pid, ownerName: owner, title: "", bundleID: bundleID)
+    }
+
     func testGroupsWindowsByBundleIDAndPreservesFirstSeenGroupOrder() {
-        let windows = [
-            WindowGroupingInput(id: 1, pid: 100, ownerName: "Notes", bundleID: "com.apple.Notes"),
-            WindowGroupingInput(id: 2, pid: 200, ownerName: "Safari", bundleID: "com.apple.Safari"),
-            WindowGroupingInput(id: 3, pid: 100, ownerName: "Notes", bundleID: "com.apple.Notes"),
-        ]
+        let groups = WindowGrouping.group([
+            window(1, pid: 100, owner: "Notes", bundleID: "com.apple.Notes"),
+            window(2, pid: 200, owner: "Safari", bundleID: "com.apple.Safari"),
+            window(3, pid: 100, owner: "Notes", bundleID: "com.apple.Notes"),
+        ])
 
-        let groups = WindowGrouping.group(windows)
-
-        XCTAssertEqual(groups.map(\.key), ["com.apple.Notes", "com.apple.Safari"])
-        XCTAssertEqual(groups[0].windowIDs, [1, 3])
-        XCTAssertEqual(groups[1].windowIDs, [2])
+        XCTAssertEqual(groups.map(\.id), ["com.apple.Notes", "com.apple.Safari"])
+        XCTAssertEqual(groups[0].windows.map(\.id), [1, 3])
+        XCTAssertEqual(groups[1].windows.map(\.id), [2])
+        XCTAssertEqual(groups[1].ownerName, "Safari")
+        XCTAssertEqual(groups[1].pid, 200)
     }
 
     func testGroupsWindowsWithoutBundleIDByPID() {
-        let windows = [
-            WindowGroupingInput(id: 10, pid: 42, ownerName: "Untitled", bundleID: nil),
-            WindowGroupingInput(id: 11, pid: 42, ownerName: "Untitled", bundleID: nil),
-        ]
-
-        let groups = WindowGrouping.group(windows)
+        let groups = WindowGrouping.group([
+            window(10, pid: 42, owner: "Helper", bundleID: nil),
+            window(11, pid: 42, owner: "Helper", bundleID: nil),
+        ])
 
         XCTAssertEqual(groups.count, 1)
-        XCTAssertEqual(groups[0].key, "pid:42")
-        XCTAssertEqual(groups[0].windowIDs, [10, 11])
+        XCTAssertEqual(groups[0].id, "pid:42")
+        XCTAssertNil(groups[0].bundleID)
+        XCTAssertEqual(groups[0].windows.map(\.id), [10, 11])
+    }
+
+    func testDisplayTitleFallsBackToOwnerName() {
+        XCTAssertEqual(window(1, pid: 1, owner: "Notes", bundleID: nil).displayTitle, "Notes")
+        XCTAssertEqual(
+            WindowInfo(id: 1, pid: 1, ownerName: "Notes", title: "Groceries", bundleID: nil).displayTitle,
+            "Groceries"
+        )
     }
 }

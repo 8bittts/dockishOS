@@ -43,7 +43,7 @@ struct LauncherView: View {
                     pinnedStore: pinnedStore,
                     onActivateSelected: activateSelected
                 )
-                    .frame(maxHeight: 360)
+                .frame(maxHeight: 360)
             } else if !store.query.isEmpty {
                 Divider().opacity(0.4)
                 HStack {
@@ -62,6 +62,8 @@ struct LauncherView: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(Color(nsColor: .separatorColor).opacity(0.55), lineWidth: 0.5)
         )
+        // The panel is taller than the search field alone: keep the HUD at its top.
+        .frame(maxHeight: .infinity, alignment: .top)
         .onAppear { queryFocused = true }
         .onKeyPress(.upArrow) { store.moveSelection(by: -1); return .handled }
         .onKeyPress(.downArrow) { store.moveSelection(by: 1); return .handled }
@@ -70,8 +72,9 @@ struct LauncherView: View {
     }
 
     private func activateSelected() {
-        guard let app = store.selectedApp() else { return }
-        onActivate(app)
+        if let app = store.selectedApp {
+            onActivate(app)
+        }
     }
 }
 
@@ -92,27 +95,23 @@ private struct ResultsList: View {
                             AppRow(app: app, isSelected: index == store.selectedIndex)
                         }
                         .buttonStyle(.plain)
-                        .id(index)
                         .contextMenu {
-                            if pinnedStore.isPinned(bundleID: app.bundleID) {
-                                Button("Unpin from Bar") {
-                                    if let bid = app.bundleID {
-                                        pinnedStore.unpin(bundleID: bid)
-                                    }
-                                }
+                            if let bundleID = app.bundleID, pinnedStore.isPinned(bundleID: bundleID) {
+                                Button("Unpin from Bar") { pinnedStore.unpin(bundleID: bundleID) }
                             } else {
-                                Button("Pin to Bar") {
-                                    pinnedStore.pin(app)
-                                }
+                                Button("Pin to Bar") { pinnedStore.pin(app) }
                             }
                         }
                     }
                 }
                 .padding(.vertical, 6)
             }
-            .onChange(of: store.selectedIndex) { _, newValue in
+            // Rows are identified by app, never by position: a row keyed by
+            // its index keeps showing the app that held that index before.
+            .onChange(of: store.selectedIndex) {
+                guard let selected = store.selectedApp else { return }
                 withAnimation(.easeInOut(duration: 0.1)) {
-                    proxy.scrollTo(newValue, anchor: .center)
+                    proxy.scrollTo(selected.id, anchor: .center)
                 }
             }
         }

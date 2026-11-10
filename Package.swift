@@ -1,4 +1,4 @@
-// swift-tools-version:5.10
+// swift-tools-version:6.0
 import Foundation
 import PackageDescription
 
@@ -52,6 +52,7 @@ let package = Package(
             name: "DockishOSCoreTests",
             dependencies: ["DockishOSCore"],
             path: "Tests/DockishOSCoreTests"
-        )
-    ]
+        ),
+    ],
+    swiftLanguageModes: [.v6]
 )
