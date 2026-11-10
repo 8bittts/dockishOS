@@ -30,4 +30,4 @@ Phase ordering is intentional.
 Not active work.
 Promote only one item at a time into `#### Phase N` in `### Work TODOs` when implementation starts.
 
-- With the first release that requires macOS 27: remove the v0.028 note from `README.md` and `docs/index.md`, and bump `Casks/dockishos.rb` with `depends_on macos: ">= :golden_gate"` ([05-infrastructure.md](05-infrastructure.md)).
+(No items.)

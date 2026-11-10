@@ -1,11 +1,11 @@
 cask "dockishos" do
-  version "0.028"
-  sha256 "7677988b10ac4b43352b103b2d545f14461ed1bf906aebe208b79c76fc238ca0"
+  version "0.029"
+  sha256 "b43aac6d20360a6e1ccffa75d90ca390a2e658d1c4b3e0443f93693a06bcbc32"
 
   url "https://github.com/8bittts/dockishOS/releases/download/v#{version}/DockishOS-#{version}.dmg",
       verified: "github.com/8bittts/dockishOS/"
   name "DockishOS"
-  desc "Per-Space app bar for macOS"
+  desc "Per-Space app bar"
   homepage "https://github.com/8bittts/dockishOS"
 
   livecheck do
@@ -13,8 +13,8 @@ cask "dockishos" do
     strategy :github_latest
   end
 
-  depends_on macos: ">= :sonoma"
   depends_on arch: :arm64
+  depends_on macos: ">= :golden_gate"
 
   app "DockishOS.app"
 
