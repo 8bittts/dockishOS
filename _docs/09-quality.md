@@ -22,6 +22,7 @@ Use `./scripts/build_and_run.sh` for anything involving Accessibility, login ite
 
 After `./scripts/build-dmg.sh --build-only`, `build/DockishOS.app` exists without its DMG, so the default `smoke-test.sh` run treats it as a release build and demands the missing artifacts; remove the bundle or rebuild the DMG before running the smoke test.
 `./scripts/build_and_run.sh` quits any running DockishOS before it launches the new build, and the build reads the same preferences as an installed copy.
+A state the test Mac cannot reach, such as the dark appearance, a missing Accessibility permission or a second display, is checked by forcing it with a temporary uncommitted edit, capturing the result, and reverting the edit before any commit.
 A bundle launched from a script starts in the background, where AppKit can report the app as active while another app is frontmost; test focus behavior from that state as well as after a normal launch.
 A `scripts/release-dockishOS.sh` failure at the appcast poll step alone does not mean the release failed; check `git log` and the GitHub release page before re-running anything ([05-infrastructure.md](05-infrastructure.md)).
 
@@ -30,6 +31,7 @@ A `scripts/release-dockishOS.sh` failure at the appcast poll step alone does not
 - Confirm the bar on every enabled display, the collapse into the edge tab, and scroll-to-switch or the status-menu Space commands.
 - Open the switcher with `Option-Tab`: confirm Tab, Shift-Tab and the arrow keys move the selection, Return raises the selected window, and Escape or a click elsewhere closes it with the previous app still active.
 - Change the shortcut in Settings and confirm the new binding.
+- Open each Settings pane and confirm the window fits the pane and takes its name, then open About DockishOS from the status menu.
 - Look at the bar, the edge tab and the switcher over light and dark content, in light and dark appearance.
 - Open the status menu on the first and on the last Space and confirm Previous Space and Next Space are each disabled at their end.
 - Trigger a window raise or close to confirm the Accessibility prompt appears only then.
