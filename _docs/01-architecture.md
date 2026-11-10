@@ -30,8 +30,8 @@ Sparkle is vendored for updates; distribution is a notarized DMG and a Homebrew 
 - Shortcut: `Hotkey` is the stored chord, `HotkeyManager` registers it through Carbon, and `HotkeyRecorder` is the Settings field that records a new one.
 - Windows and Spaces: `WindowEnumerator`, `WindowStore` and `RunningAppsStore` list windows and apps; `WindowControl` and `AXHelper` raise or close a specific window through Accessibility; `SpacesAPI` reads and switches Spaces through private CGS SPIs, on demand and with no polling; `ScreenHelpers` maps displays.
 - Badges: `BadgeStore` reads optional notification badge text from the Dock accessibility tree; off by default.
-- Persistence: `PinnedAppsStore` and `Settings` keep pinned apps and preferences; `SettingsController` presents the `Cmd-,` window as a standard toolbar of panes, and `SettingsView.swift` holds the panes (`SettingsPane`): size, placement, titles, badges, the switcher shortcut, opening at login and per-display visibility.
-- Shell: `main.swift`, `AppDelegate`, `MenuBarController` (status menu with Previous Space and Next Space), `AppActivation`, `Permissions`, `LoginItem`, `Updater` (Sparkle), `Diagnostics`, `AppVersion` and `DockishBrandAssets`.
+- Persistence: `PinnedAppsStore` and `Settings` keep pinned apps and preferences; `SettingsController` presents the `Cmd-,` window as a standard toolbar of panes, and `SettingsView.swift` holds the three panes (`SettingsPane`): General (opening at login, the switcher shortcut, per-display visibility, the Accessibility permission), Bar (size, placement, titles, grouping, pinned apps, badges, the edge tab) and Pinned.
+- Shell: `main.swift`, `AppDelegate`, `MenuBarController` (status menu with Previous Space and Next Space), `AppActivation`, `Permissions`, `LoginItem`, `Updater` (Sparkle), `Diagnostics`, `AppLinks` and `DockishBrandAssets`.
 - Plumbing: `MainActorCallbacks` gives notification observers and repeating timers main-actor handlers, and `PrivateSymbol` resolves private system functions at run time.
 
 ## Bundle

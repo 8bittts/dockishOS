@@ -5,6 +5,12 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+### Changed
+- Settings has three panes: General, Bar, and Pinned. The window fits each pane and is named after it.
+- The Accessibility permission is one row that shows its state or a Grant Access button, and it updates when you come back from System Settings.
+- The display list appears only with more than one display, and the shortcut's Reset button only after you change the shortcut.
+- About DockishOS is the standard About panel, in the status menu.
+
 ## [0.029]
 
 ### Removed
