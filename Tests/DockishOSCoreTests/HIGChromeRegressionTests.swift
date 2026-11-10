@@ -54,6 +54,18 @@ final class HIGChromeRegressionTests: XCTestCase {
         )
     }
 
+    /// Settings is a standard toolbar of panes: each pane is a grouped form
+    /// as tall as its content, with no margins or sizes of its own.
+    func testSettingsPanesAreNativeAndSizeToContent() throws {
+        let controller = try RepositorySource.read("Sources/DockishOS/SettingsController.swift")
+        XCTAssertTrue(controller.contains("tabStyle = .toolbar"))
+        XCTAssertTrue(controller.contains("sizingOptions = .preferredContentSize"), "The window must follow each pane's height.")
+        let panes = try RepositorySource.read("Sources/DockishOS/SettingsView.swift")
+        XCTAssertTrue(panes.contains(".fixedSize(horizontal: false, vertical: true)"))
+        XCTAssertFalse(panes.contains(".padding(.horizontal"), "A pane uses the form's own margins.")
+        XCTAssertFalse(panes.contains("\"About\""), "About is the standard About panel, not a Settings pane.")
+    }
+
     func testNotificationBadgeUsesSystemRed() throws {
         let source = try RepositorySource.read("Sources/DockishOS/BarSupport.swift")
         XCTAssertTrue(

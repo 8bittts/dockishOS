@@ -30,8 +30,7 @@ final class MenuBarController: NSObject, NSMenuDelegate, NSMenuItemValidation {
     }
 
     private func buildMenu() {
-        let title = menu.addItem(withTitle: "DockishOS \(AppVersion.short)", action: nil, keyEquivalent: "")
-        title.isEnabled = false
+        addItem("About DockishOS", symbol: "info.circle", action: #selector(showAbout))
         menu.addItem(.separator())
 
         // `menuNeedsUpdate` gives the warning and collapse items their titles.
@@ -144,6 +143,13 @@ final class MenuBarController: NSObject, NSMenuDelegate, NSMenuItemValidation {
     // MARK: - Actions
 
     @objc private func openSettings() { SettingsController.shared.show() }
+
+    /// The standard About panel: icon, name, version and copyright from the bundle.
+    @objc private func showAbout() {
+        AppActivation.activateSelf()
+        NSApp.orderFrontStandardAboutPanel(nil)
+    }
+
     @objc private func toggleCollapse() { SettingsStore.shared.barCollapsed.toggle() }
     @objc private func previousSpace() { switchSpace(direction: -1) }
     @objc private func nextSpace() { switchSpace(direction: 1) }

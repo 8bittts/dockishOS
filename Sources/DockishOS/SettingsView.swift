@@ -4,179 +4,64 @@ import DockishOSCore
 
 /// The panes of the Settings window, in toolbar order.
 enum SettingsPane: CaseIterable {
-    case appearance, behavior, pinned, about
+    case general, bar, pinned
 
-    static let size = NSSize(width: 480, height: 460)
+    /// Every pane has this width; each is as tall as its content.
+    static let width: CGFloat = 480
 
     var title: String {
         switch self {
-        case .appearance: return "Appearance"
-        case .behavior:   return "Behavior"
-        case .pinned:     return "Pinned"
-        case .about:      return "About"
+        case .general: return "General"
+        case .bar:     return "Bar"
+        case .pinned:  return "Pinned"
         }
     }
 
     var symbolName: String {
         switch self {
-        case .appearance: return "slider.horizontal.3"
-        case .behavior:   return "gearshape.2"
-        case .pinned:     return "pin"
-        case .about:      return "info.circle"
+        case .general: return "gearshape"
+        case .bar:     return "dock.rectangle"
+        case .pinned:  return "pin"
         }
     }
 }
 
-/// One Settings pane at the window's fixed size.
+/// One Settings pane, sized to its content so the window fits each pane.
 struct SettingsPaneView: View {
     let pane: SettingsPane
 
     var body: some View {
         Group {
             switch pane {
-            case .appearance: AppearanceTab(settings: .shared)
-            case .behavior:   BehaviorTab(settings: .shared)
-            case .pinned:     PinnedTab(pinned: .shared)
-            case .about:      AboutTab()
+            case .general: GeneralPane(settings: .shared)
+            case .bar:     BarPane(settings: .shared)
+            case .pinned:  PinnedPane(pinned: .shared)
             }
         }
-        .frame(width: SettingsPane.size.width, height: SettingsPane.size.height)
+        .formStyle(.grouped)
+        .frame(width: SettingsPane.width)
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 
-private struct AppearanceTab: View {
+// MARK: - General
+
+private struct GeneralPane: View {
     @ObservedObject var settings: SettingsStore
 
     var body: some View {
         Form {
-            Section {
-                Picker("Bar size", selection: $settings.barSize) {
-                    ForEach(BarSize.allCases) { size in
-                        Text(size.displayName).tag(size)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                Picker("Bar position", selection: $settings.barPosition) {
-                    ForEach(BarPosition.allCases) { pos in
-                        Text(pos.displayName).tag(pos)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                Toggle("Show window titles on chips", isOn: $settings.showChipTitles)
-                Toggle("Show pinned apps", isOn: $settings.showPinnedRow)
-                Toggle("Group windows by app", isOn: $settings.groupWindowsByApp)
-            } header: {
-                Text("Bar")
-            } footer: {
-                Text("Size and position apply to the bar on every display.")
-            }
-
-            Section {
-                Toggle("Show notification badges", isOn: $settings.showNotificationBadges)
-            } header: {
-                Text("Notifications")
-            } footer: {
-                Text("Shows each app's Dock badge on its chip. DockishOS reads badges from the Dock with Accessibility, and a future macOS release can stop that from working.")
-            }
-        }
-        .formStyle(.grouped)
-        .padding(.horizontal, 12)
-    }
-}
-
-private struct BehaviorTab: View {
-    @ObservedObject var settings: SettingsStore
-
-    var body: some View {
-        Form {
-            ShortcutSettingsSection(settings: settings)
-            AccessibilitySettingsSection()
-            CollapseSettingsSection(settings: settings)
-            LoginSettingsSection()
-            DisplaySettingsSection(settings: settings)
-        }
-        .formStyle(.grouped)
-        .padding(.horizontal, 12)
-    }
-}
-
-private struct AccessibilitySettingsSection: View {
-    @State private var granted = Permissions.isAccessibilityGranted
-
-    var body: some View {
-        Section {
-            HStack {
-                Text("Accessibility")
-                Spacer()
-                Label(granted ? "Granted" : "Not Granted", systemImage: granted ? "checkmark.circle.fill" : "exclamationmark.circle")
-                    .foregroundStyle(granted ? .green : .secondary)
-            }
-            Button("Open Accessibility Settings") {
-                Permissions.requestAccessibilityFromSettings()
-                refresh()
-            }
-            Button("Check Again") {
-                refresh()
-            }
-        } header: {
-            Text("Permissions")
-        } footer: {
-            Text("Accessibility lets DockishOS raise or close one window, and read Dock badges.")
-        }
-        .onAppear(perform: refresh)
-    }
-
-    private func refresh() {
-        granted = Permissions.isAccessibilityGranted
-    }
-}
-
-private struct ShortcutSettingsSection: View {
-    @ObservedObject var settings: SettingsStore
-
-    var body: some View {
-        Section {
-            HStack {
-                Text("App switcher")
-                Spacer()
-                HotkeyRecorder(title: "App switcher shortcut", hotkey: $settings.switcherHotkey)
-                Button("Reset") { settings.switcherHotkey = .switcherDefault }
-                    .controlSize(.small)
-                    .accessibilityLabel("Reset app switcher shortcut")
-            }
-        } header: {
-            Text("Keyboard Shortcut")
-        } footer: {
-            Text("Click the shortcut, then press a new one. Press Esc to cancel. A shortcut needs Control, Option, or Command.")
+            LoginSection()
+            ShortcutSection(hotkey: $settings.switcherHotkey)
+            DisplaysSection(settings: settings)
+            AccessibilitySection()
         }
     }
 }
 
-private struct CollapseSettingsSection: View {
-    @ObservedObject var settings: SettingsStore
-
-    var body: some View {
-        Section {
-            Toggle("Collapse bar into edge tab", isOn: $settings.barCollapsed)
-
-            Picker("Edge tab position", selection: $settings.collapsedTabPosition) {
-                ForEach(CollapsedTabPosition.allCases) { position in
-                    Text(position.displayName).tag(position)
-                }
-            }
-        } header: {
-            Text("Edge Tab")
-        } footer: {
-            Text("Collapsing slides the bar off the screen and leaves a small tab in the corner you choose.")
-        }
-    }
-}
-
-private struct LoginSettingsSection: View {
+private struct LoginSection: View {
     @State private var isEnabled = LoginItem.isEnabled
-    @State private var status = LoginItem.statusDescription
+    @State private var note = LoginItem.statusNote
 
     var body: some View {
         Section {
@@ -187,10 +72,10 @@ private struct LoginSettingsSection: View {
                     refresh()
                 }
             ))
-        } header: {
-            Text("Login")
         } footer: {
-            Text(status)
+            if let note {
+                Text(note)
+            }
         }
         .onAppear(perform: refresh)
     }
@@ -199,11 +84,31 @@ private struct LoginSettingsSection: View {
     /// for the user's approval.
     private func refresh() {
         isEnabled = LoginItem.isEnabled
-        status = LoginItem.statusDescription
+        note = LoginItem.statusNote
     }
 }
 
-private struct DisplaySettingsSection: View {
+private struct ShortcutSection: View {
+    @Binding var hotkey: Hotkey
+
+    var body: some View {
+        Section {
+            LabeledContent("App switcher") {
+                if hotkey != .switcherDefault {
+                    Button("Reset") { hotkey = .switcherDefault }
+                        .accessibilityLabel("Reset app switcher shortcut")
+                }
+                HotkeyRecorder(title: "App switcher shortcut", hotkey: $hotkey)
+            }
+        } footer: {
+            Text("Click the shortcut, then press a new one with Control, Option, or Command. Esc cancels.")
+        }
+    }
+}
+
+/// One toggle per display. Hidden with a single display, where the only
+/// toggle could not be turned off.
+private struct DisplaysSection: View {
     private struct Display: Identifiable {
         let id: String
         let name: String
@@ -221,17 +126,17 @@ private struct DisplaySettingsSection: View {
     @State private var displays = Display.connected()
 
     var body: some View {
-        Section {
-            ForEach(displays) { display in
-                Toggle(display.name, isOn: Binding(
-                    get: { !settings.disabledScreenUUIDs.contains(display.id) },
-                    set: { settings.setScreen(display.id, enabled: $0) }
-                ))
+        Group {
+            if displays.count > 1 {
+                Section("Show the Bar On") {
+                    ForEach(displays) { display in
+                        Toggle(display.name, isOn: Binding(
+                            get: { !settings.disabledScreenUUIDs.contains(display.id) },
+                            set: { settings.setScreen(display.id, enabled: $0) }
+                        ))
+                    }
+                }
             }
-        } header: {
-            Text("Displays")
-        } footer: {
-            Text("Turn off a display to hide its bar.")
         }
         .onReceive(NotificationCenter.default.publisher(
             for: NSApplication.didChangeScreenParametersNotification
@@ -241,7 +146,79 @@ private struct DisplaySettingsSection: View {
     }
 }
 
-private struct PinnedTab: View {
+/// The Accessibility permission: its state, or the button that asks for it.
+/// Rechecks when the app becomes active, which is when the user comes back
+/// from System Settings.
+private struct AccessibilitySection: View {
+    @State private var isGranted = Permissions.isAccessibilityGranted
+
+    var body: some View {
+        Section {
+            LabeledContent("Accessibility") {
+                if isGranted {
+                    Text("Granted")
+                } else {
+                    Button("Grant Access…") { Permissions.requestAccessibilityFromSettings() }
+                }
+            }
+        } footer: {
+            Text("Lets DockishOS raise or close one window, and read Dock badges.")
+        }
+        .onAppear(perform: refresh)
+        .onReceive(NotificationCenter.default.publisher(
+            for: NSApplication.didBecomeActiveNotification
+        )) { _ in
+            refresh()
+        }
+    }
+
+    private func refresh() {
+        isGranted = Permissions.isAccessibilityGranted
+    }
+}
+
+// MARK: - Bar
+
+private struct BarPane: View {
+    @ObservedObject var settings: SettingsStore
+
+    var body: some View {
+        Form {
+            Section {
+                Picker("Size", selection: $settings.barSize) {
+                    ForEach(BarSize.allCases) { Text($0.displayName).tag($0) }
+                }
+                .pickerStyle(.segmented)
+
+                Picker("Position", selection: $settings.barPosition) {
+                    ForEach(BarPosition.allCases) { Text($0.displayName).tag($0) }
+                }
+                .pickerStyle(.segmented)
+            }
+
+            Section {
+                Toggle("Show window titles", isOn: $settings.showChipTitles)
+                Toggle("Group windows by app", isOn: $settings.groupWindowsByApp)
+                Toggle("Show pinned apps", isOn: $settings.showPinnedRow)
+                Toggle("Show notification badges", isOn: $settings.showNotificationBadges)
+            } footer: {
+                Text("Badges come from the Dock and need Accessibility. A future macOS release can stop them from working.")
+            }
+
+            Section("Edge Tab") {
+                Toggle("Collapse bar into edge tab", isOn: $settings.barCollapsed)
+
+                Picker("Corner", selection: $settings.collapsedTabPosition) {
+                    ForEach(CollapsedTabPosition.allCases) { Text($0.displayName).tag($0) }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Pinned
+
+private struct PinnedPane: View {
     @ObservedObject var pinned: PinnedAppsStore
 
     var body: some View {
@@ -251,6 +228,7 @@ private struct PinnedTab: View {
             } description: {
                 Text("Right-click a chip on the bar and choose Pin to Bar, or drag an app from Finder onto the bar.")
             }
+            .padding(.vertical, 40)
         } else {
             Form {
                 ForEach(pinned.pins) { app in
@@ -258,14 +236,11 @@ private struct PinnedTab: View {
                         app: app,
                         isFirst: app == pinned.pins.first,
                         isLast: app == pinned.pins.last,
-                        onUp: { pinned.move(app, by: -1) },
-                        onDown: { pinned.move(app, by: 1) },
-                        onRemove: { pinned.unpin(bundleID: app.bundleID) }
+                        onMove: { pinned.move(app, by: $0) },
+                        onUnpin: { pinned.unpin(bundleID: app.bundleID) }
                     )
                 }
             }
-            .formStyle(.grouped)
-            .padding(.horizontal, 12)
         }
     }
 }
@@ -274,72 +249,37 @@ private struct PinnedAppRow: View {
     let app: PinnedApp
     let isFirst: Bool
     let isLast: Bool
-    let onUp: () -> Void
-    let onDown: () -> Void
-    let onRemove: () -> Void
+    /// Moves the app by the given offset: -1 is up, +1 is down.
+    let onMove: (Int) -> Void
+    let onUnpin: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
-                .resizable()
-                .frame(width: 28, height: 28)
-                .accessibilityHidden(true)
-            Text(app.name)
-            Spacer()
-            PinnedListIconButton(systemName: "chevron.up", label: "Move Up", disabled: isFirst, action: onUp)
-            PinnedListIconButton(systemName: "chevron.down", label: "Move Down", disabled: isLast, action: onDown)
-            PinnedListIconButton(systemName: "minus.circle", label: "Unpin from Bar", disabled: false, action: onRemove)
+        LabeledContent {
+            iconButton("chevron.up", label: "Move Up") { onMove(-1) }
+                .disabled(isFirst)
+            iconButton("chevron.down", label: "Move Down") { onMove(1) }
+                .disabled(isLast)
+            iconButton("minus.circle", label: "Unpin from Bar", action: onUnpin)
+        } label: {
+            Label {
+                Text(app.name)
+            } icon: {
+                Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
+                    .resizable()
+                    .frame(width: 20, height: 20)
+            }
         }
     }
-}
 
-private struct PinnedListIconButton: View {
-    let systemName: String
-    let label: String
-    let disabled: Bool
-    let action: () -> Void
-
-    var body: some View {
+    /// Borderless symbol button with the 20-point minimum hit target.
+    private func iconButton(_ systemName: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .frame(width: 20, height: 20)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.borderless)
-        .disabled(disabled)
         .help(label)
         .accessibilityLabel(label)
-    }
-}
-
-private struct AboutTab: View {
-    var body: some View {
-        VStack(spacing: 14) {
-            Image(nsImage: DockishBrandAssets.applicationIcon(size: NSSize(width: 112, height: 112)))
-                .interpolation(.high)
-                .accessibilityHidden(true)
-            Text("DockishOS")
-                .font(.title.weight(.semibold))
-            Text("Version \(AppVersion.short) (\(AppVersion.build))")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-            if !AppVersion.copyright.isEmpty {
-                Text(AppVersion.copyright)
-                    .font(.footnote)
-                    .foregroundStyle(.tertiary)
-            }
-            Text("A Dock alternative for power users of macOS Spaces.")
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 40)
-            HStack(spacing: 16) {
-                Link("GitHub", destination: AppLinks.repository)
-                Link("Releases", destination: AppLinks.releases)
-                Link("MIT License", destination: AppLinks.license)
-            }
-            .font(.callout)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(20)
     }
 }
