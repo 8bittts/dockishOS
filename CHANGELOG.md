@@ -5,6 +5,8 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+## [0.029]
+
 ### Removed
 - The app launcher and its Option-Space shortcut. Spotlight opens apps, so DockishOS no longer duplicates it.
 
