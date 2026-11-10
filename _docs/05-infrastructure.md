@@ -2,7 +2,8 @@
 
 Build, sign, notarize, release and distribute DockishOS, and keep the vendored Sparkle framework pinned.
 
-All commands below are wrappers around scripts in [`scripts/`](../scripts/). Run them from the repo root.
+All commands below are wrappers around scripts in [`scripts/`](../scripts/).
+Run them from the repo root.
 
 ---
 
@@ -103,7 +104,8 @@ The release flow runs it automatically as its production gate.
 
 ## Notarization setup (one-time)
 
-The default mode requires a keychain profile named `YEN-Notarization`. If notarization is being skipped because the profile doesn't exist:
+The default mode requires a keychain profile named `YEN-Notarization`.
+If notarization is being skipped because the profile doesn't exist:
 
 ```bash
 xcrun notarytool store-credentials YEN-Notarization \
@@ -122,15 +124,19 @@ Override the profile name per-build with `DOCKISHOS_NOTARY_PROFILE=…` in the e
 ./tools/sparkle/bin/generate_keys
 ```
 
-Writes a private key to the login keychain and prints the public key. Copy the public key into `Resources/Info.plist` under `SUPublicEDKey`. The same key signs every Sparkle-enabled app — only one developer key is needed.
+Writes a private key to the login keychain and prints the public key.
+Copy the public key into `Resources/Info.plist` under `SUPublicEDKey`.
+The same key signs every Sparkle-enabled app — only one developer key is needed.
 
 ---
 
 ## Upgrading the Sparkle framework
 
-The vendored Sparkle framework lives at `tools/sparkle/Sparkle.framework`. It is pinned to a specific upstream release in `tools/sparkle/VERSION`, and `scripts/build-dmg.sh` refuses to proceed if any required helper is missing or the framework binary's SHA-256 doesn't match the pin.
+The vendored Sparkle framework lives at `tools/sparkle/Sparkle.framework`.
+It is pinned to a specific upstream release in `tools/sparkle/VERSION`, and `scripts/build-dmg.sh` refuses to proceed if any required helper is missing or the framework binary's SHA-256 doesn't match the pin.
 
-This guards against the 0.014/0.015 regression where `Updater.app` silently disappeared from the framework and shipped a broken in-app updater. Follow this exact procedure when bumping Sparkle:
+This guards against the 0.014/0.015 regression where `Updater.app` silently disappeared from the framework and shipped a broken in-app updater.
+Follow this exact procedure when bumping Sparkle:
 
 1. Resolve the target release with `gh api repos/sparkle-project/Sparkle/releases/latest --jq .tag_name`, then download that tag's `Sparkle-<version>.tar.xz` archive. Don't use Swift Package Manager artifacts — they're missing the helper apps.
 
@@ -150,9 +156,12 @@ This guards against the 0.014/0.015 regression where `Updater.app` silently disa
 
 ## Release notes
 
-Keep user-facing changes under `CHANGELOG.md` → `## [Unreleased]`. The release flow uses that section for Sparkle release notes and GitHub release notes. For one-off appcast generation, override with `SPARKLE_NOTES` when needed.
+Keep user-facing changes under `CHANGELOG.md` → `## [Unreleased]`.
+The release flow uses that section for Sparkle release notes and GitHub release notes.
+For one-off appcast generation, override with `SPARKLE_NOTES` when needed.
 
-Before running `scripts/release-dockishOS.sh`, move the previous release's entries out of `## [Unreleased]` into a new `## [<prev-version>]` heading, then stage the new release's notes under `## [Unreleased]`. The release script reads the `## [Unreleased]` block verbatim (via `changelog_unreleased_markdown`) and never archives prior entries for you, so anything left under that heading ships as the new version's notes.
+Before running `scripts/release-dockishOS.sh`, move the previous release's entries out of `## [Unreleased]` into a new `## [<prev-version>]` heading, then stage the new release's notes under `## [Unreleased]`.
+The release script reads the `## [Unreleased]` block verbatim (via `changelog_unreleased_markdown`) and never archives prior entries for you, so anything left under that heading ships as the new version's notes.
 
 ---
 
@@ -182,7 +191,7 @@ Before running `scripts/release-dockishOS.sh`, move the previous release's entri
 ## Distribution
 
 - Direct download: the signed and notarized DMG attached to each GitHub release; older builds stay available on the Releases page.
-- Homebrew: the repository doubles as a tap, so `brew install --cask` works from the raw `Casks/dockishos.rb` URL or after `brew tap 8bittts/dockishos`; the Cask is pinned to the current release.
+- Homebrew: the repository doubles as a tap, so `brew install --cask` works from the raw `Casks/dockishos.rb` URL or after `brew tap 8bittts/dockishos`; the Cask is pinned to a released version and bumped by hand after a release, so it can trail the newest version until Sparkle updates the install.
 - In-app: Sparkle checks the feed at `appcast.xml` in this repository, served through raw.githubusercontent.com.
 - `docs/index.md` is the GitHub Pages landing and mirrors the README's product copy.
 

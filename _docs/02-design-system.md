@@ -23,4 +23,6 @@ Collapse and expand slide, and skip the slide when Reduce Motion is on.
 
 The bar can become the key window so VoiceOver and Full Keyboard Access reach the chips, without activating the app on mouse clicks.
 Settings pinned-list reorder and unpin controls meet the 20-point minimum hit target and carry VoiceOver labels.
-`Tests/DockishOSCoreTests/HIGAccessibilityRegressionTests.swift` guards these contracts ([09-quality.md](09-quality.md)).
+The bar, launcher and switcher panels carry spoken titles, the launcher search field keeps its name after text is typed, and each Settings Reset button names the row it clears.
+A badge of one reads as "notification" and a single grouped window as "window".
+`Tests/DockishOSCoreTests/HIGAccessibilityRegressionTests.swift` guards the key-window, Space-command, Reduce Motion, Reduce Transparency and usage-description contracts ([09-quality.md](09-quality.md)); the spoken names have no regression test.

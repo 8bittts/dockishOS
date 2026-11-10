@@ -50,7 +50,8 @@ brew install --cask 8bittts/dockishos/dockishos
 
 ## Auto-update
 
-Built-in via [Sparkle](https://sparkle-project.org/) with an EdDSA-signed appcast. New releases reach existing installs automatically.
+Built-in via [Sparkle](https://sparkle-project.org/) with an EdDSA-signed appcast.
+New releases reach existing installs automatically.
 
 ## Source
 

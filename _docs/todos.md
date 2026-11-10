@@ -20,12 +20,14 @@
 
 ### Work TODOs
 
-Promote exactly one Phase into active work at a time. Phase ordering is intentional.
+Promote exactly one Phase into active work at a time.
+Phase ordering is intentional.
 
 (No active phase.)
 
 ### Follow-On Candidates
 
-Not active work. Promote only one item at a time into `#### Phase N` in `### Work TODOs` when implementation starts.
+Not active work.
+Promote only one item at a time into `#### Phase N` in `### Work TODOs` when implementation starts.
 
 (No items.)

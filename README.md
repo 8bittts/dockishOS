@@ -6,9 +6,11 @@
 
 <!-- version-badge -->v0.028<!-- /version-badge -->
 
-The macOS Dock shows every app on every Space. DockishOS shows what is open on this Space.
+The macOS Dock shows every app on every Space.
+DockishOS shows what is open on this Space.
 
-DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar for people who use Spaces heavily. The app is built with SwiftUI and AppKit, targets macOS 14+ on Apple Silicon, and ships as an accessory app with no Dock icon.
+DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar for people who use Spaces heavily.
+The app is built with SwiftUI and AppKit, targets macOS 14+ on Apple Silicon, and ships as an accessory app with no Dock icon.
 
 ## Why DockishOS
 
@@ -27,9 +29,11 @@ DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar 
 [**Download DockishOS v0.028**](https://github.com/8bittts/dockishOS/releases/download/v0.028/DockishOS-0.028.dmg)
 <!-- /download-link -->
 
-Download the DMG, drag DockishOS to `/Applications`, and launch it from there. Older builds remain available from [GitHub Releases](https://github.com/8bittts/dockishOS/releases).
+Download the DMG, drag DockishOS to `/Applications`, and launch it from there.
+Older builds remain available from [GitHub Releases](https://github.com/8bittts/dockishOS/releases).
 
-Installed app bundles can use Sparkle for update checks. Plain `swift run` builds do not use the bundled app metadata or Sparkle path.
+Installed app bundles can use Sparkle for update checks.
+Plain `swift run` builds do not use the bundled app metadata or Sparkle path.
 
 ### Homebrew
 
@@ -44,13 +48,16 @@ brew tap 8bittts/dockishos https://github.com/8bittts/dockishOS
 brew install --cask 8bittts/dockishos/dockishos
 ```
 
-The Cask formula in [`Casks/dockishos.rb`](Casks/dockishos.rb) is pinned to the current release. Sparkle auto-update keeps installed apps current between Cask bumps.
+The Cask formula in [`Casks/dockishos.rb`](Casks/dockishos.rb) is pinned to a released version.
+Sparkle auto-update keeps installed apps current between Cask bumps.
 
 ### First launch
 
-Release DMGs are built through the signing and notarization pipeline. Local `--local` and `--unsigned` builds are not notarized, so macOS may show an "unidentified developer" first-launch warning.
+Release DMGs are built through the signing and notarization pipeline.
+Local `--local` and `--unsigned` builds are not notarized, so macOS may show an "unidentified developer" first-launch warning.
 
-If macOS blocks launch, right-click `DockishOS.app` in `/Applications`, choose **Open**, then choose **Open** again in the confirmation dialog. For a local build you created and trust, you can also remove the quarantine flag:
+If macOS blocks launch, right-click `DockishOS.app` in `/Applications`, choose **Open**, then choose **Open** again in the confirmation dialog.
+For a local build you created and trust, you can also remove the quarantine flag:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/DockishOS.app
@@ -70,21 +77,28 @@ xattr -dr com.apple.quarantine /Applications/DockishOS.app
 - Window switcher hotkey, default `Option-Tab`, for cycling windows in the current Space with Tab, Shift-Tab, arrow keys, Return, and Escape.
 - Settings for size, top/bottom placement, titles, badges, hotkeys, login launch, and per-display visibility.
 
-DockishOS does not replace or configure the system Dock. Use System Settings for Dock behavior.
+DockishOS does not replace or configure the system Dock.
+Use System Settings for Dock behavior.
 
 ## Permissions
 
-DockishOS asks for Accessibility only when a feature needs it. Accessibility is used to raise or close specific windows and to read optional notification badge text from the Dock accessibility tree.
+DockishOS asks for Accessibility only when a feature needs it.
+Accessibility is used to raise or close specific windows and to read optional notification badge text from the Dock accessibility tree.
 
 Window listing and Spaces switching do not require a Screen Recording permission.
 
-Notification badges are off by default. They rely on an undocumented Dock accessibility attribute, so they may stop working on future macOS releases.
+Notification badges are off by default.
+They rely on an undocumented Dock accessibility attribute, so they may stop working on future macOS releases.
 
 ## Launcher And Switcher
 
-Press `Option-Space` to open the app launcher. Search matches app names case-insensitively, with exact and prefix matches ranked ahead of word-prefix, contains, and ordered-character matches. Press Return to open the selected result, or right-click a result to pin it to the bar.
+Press `Option-Space` to open the app launcher.
+Search matches app names case-insensitively, with exact and prefix matches ranked ahead of word-prefix, contains, and ordered-character matches.
+Press Return to open the selected result, or right-click a result to pin it to the bar.
 
-Press `Option-Tab` to open the current-Space window switcher. Tab, Shift-Tab, and the arrow keys move selection, Return activates the selected window, and Escape closes the switcher. Change either hotkey from `Cmd-,` Settings.
+Press `Option-Tab` to open the current-Space window switcher.
+Tab, Shift-Tab, and the arrow keys move selection, Return activates the selected window, and Escape closes the switcher.
+Change either hotkey from `Cmd-,` Settings.
 
 ## Build
 
@@ -95,7 +109,8 @@ swift test
 ./scripts/build_and_run.sh
 ```
 
-`build_and_run.sh` builds a real app bundle at `build/DockishOS.app` and launches it. Use that path for local app testing because Launch Services, Accessibility, login items, icons, and Sparkle behave differently in a plain `swift run` process.
+`build_and_run.sh` builds a real app bundle at `build/DockishOS.app` and launches it.
+Use that path for local app testing because Launch Services, Accessibility, login items, icons, and Sparkle behave differently in a plain `swift run` process.
 
 Useful commands:
 
@@ -106,7 +121,8 @@ swift build
 ./scripts/smoke-test.sh
 ```
 
-`smoke-test.sh` runs the tests and checks the bundle shape. When a release build is present, it also verifies the signature, notarization ticket, checksum, and signed appcast; `--production` makes those checks fail rather than warn.
+`smoke-test.sh` runs the tests and checks the bundle shape.
+When a release build is present, it also verifies the signature, notarization ticket, checksum, and signed appcast; `--production` makes those checks fail rather than warn.
 
 See [`_docs/05-infrastructure.md`](_docs/05-infrastructure.md) for the full signing, notarization, release, and Sparkle re-vendor workflow.
 
@@ -116,7 +132,8 @@ The targets, modules and data flow are in [`_docs/01-architecture.md`](_docs/01-
 
 ## Contributing
 
-Keep changes native to macOS APIs where possible. Run `./scripts/smoke-test.sh` before publishing changes, and use the real bundle script for changes involving Accessibility, login items, app metadata, icons, or updates.
+Keep changes native to macOS APIs where possible.
+Run `./scripts/smoke-test.sh` before publishing changes, and use the real bundle script for changes involving Accessibility, login items, app metadata, icons, or updates.
 
 ## License
 
