@@ -28,6 +28,7 @@ struct BarView: View {
 
     /// Room kept clear on the trailing edge for the collapse button.
     private static let collapseButtonReservation: CGFloat = 88
+    private static let cornerRadius: CGFloat = 16
 
     var body: some View {
         if presentation.isCollapsed {
@@ -40,10 +41,9 @@ struct BarView: View {
 
     private var expandedBar: some View {
         ZStack {
-            VisualEffectView(material: .hudWindow, blending: .behindWindow)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+            Color.clear
+                .floatingSurface(cornerRadius: Self.cornerRadius)
                 .padding(.vertical, 6)
-                .shadow(color: .black.opacity(0.35), radius: 18, y: 6)
 
             HStack(spacing: 8) {
                 if settings.showPinnedRow && !pinnedStore.pins.isEmpty {
@@ -76,7 +76,7 @@ struct BarView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .overlay {
             if isDropTargeted {
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: Self.cornerRadius)
                     .strokeBorder(ChipStyle.accent.opacity(0.85), lineWidth: 2)
                     .padding(.vertical, 6)
                     .allowsHitTesting(false)

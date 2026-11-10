@@ -65,7 +65,7 @@ extension Notification.Name {
     static let dockishBarLayoutDidChange = Notification.Name("DockishOS.BarLayoutDidChange")
     /// Posted when the bar collapses or expands, so each bar animates.
     static let dockishBarCollapseDidChange = Notification.Name("DockishOS.BarCollapseDidChange")
-    /// Posted when either global hotkey changes and must be registered again.
+    /// Posted when the switcher hotkey changes and must be registered again.
     static let dockishHotkeyDidChange = Notification.Name("DockishOS.HotkeyDidChange")
 }
 
@@ -82,7 +82,6 @@ final class SettingsStore: ObservableObject {
         static let barCollapsed = "DockishOS.barCollapsed"
         static let collapsedTabPosition = "DockishOS.collapsedTabPosition"
         static let disabledScreens = "DockishOS.disabledScreens"
-        static let launcherHotkey = "DockishOS.launcherHotkey"
         static let switcherHotkey = "DockishOS.switcherHotkey"
         static let groupWindowsByApp = "DockishOS.groupByApp"
         static let showNotificationBadges = "DockishOS.showNotificationBadges"
@@ -146,17 +145,13 @@ final class SettingsStore: ObservableObject {
         }
     }
 
-    @Published var launcherHotkey: Hotkey {
-        didSet {
-            guard launcherHotkey != oldValue else { return }
-            save(launcherHotkey, forKey: Key.launcherHotkey)
-        }
-    }
-
     @Published var switcherHotkey: Hotkey {
         didSet {
             guard switcherHotkey != oldValue else { return }
-            save(switcherHotkey, forKey: Key.switcherHotkey)
+            if let data = try? JSONEncoder().encode(switcherHotkey) {
+                defaults.set(data, forKey: Key.switcherHotkey)
+            }
+            post(.dockishHotkeyDidChange)
         }
     }
 
@@ -205,24 +200,13 @@ final class SettingsStore: ObservableObject {
         collapsedTabPosition = defaults.string(forKey: Key.collapsedTabPosition)
             .flatMap(CollapsedTabPosition.init) ?? .bottomRight
         disabledScreenUUIDs = Set(defaults.stringArray(forKey: Key.disabledScreens) ?? [])
-        launcherHotkey = Self.loadHotkey(from: defaults, forKey: Key.launcherHotkey) ?? .launcherDefault
-        switcherHotkey = Self.loadHotkey(from: defaults, forKey: Key.switcherHotkey) ?? .switcherDefault
+        switcherHotkey = defaults.data(forKey: Key.switcherHotkey)
+            .flatMap { try? JSONDecoder().decode(Hotkey.self, from: $0) } ?? .switcherDefault
         groupWindowsByApp = defaults.bool(forKey: Key.groupWindowsByApp)
         showNotificationBadges = defaults.bool(forKey: Key.showNotificationBadges)
     }
 
     private func post(_ name: Notification.Name) {
         NotificationCenter.default.post(name: name, object: nil)
-    }
-
-    private func save(_ hotkey: Hotkey, forKey key: String) {
-        if let data = try? JSONEncoder().encode(hotkey) {
-            defaults.set(data, forKey: key)
-        }
-        post(.dockishHotkeyDidChange)
-    }
-
-    private static func loadHotkey(from defaults: UserDefaults, forKey key: String) -> Hotkey? {
-        defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(Hotkey.self, from: $0) }
     }
 }

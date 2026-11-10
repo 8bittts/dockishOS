@@ -22,13 +22,13 @@ struct HotkeyRecorder: NSViewRepresentable {
 /// Records the next key chord pressed after a click, or after Space or
 /// Return while the view has keyboard focus. Esc cancels.
 final class HotkeyRecorderView: NSView {
-    var hotkey: Hotkey = .launcherDefault {
+    var hotkey: Hotkey = .switcherDefault {
         didSet {
             needsDisplay = true
             NSAccessibility.post(element: self, notification: .valueChanged)
         }
     }
-    var recorderLabel = "Hotkey" {
+    var recorderLabel = "Shortcut" {
         didSet { NSAccessibility.post(element: self, notification: .titleChanged) }
     }
     var onChange: ((Hotkey) -> Void)?
@@ -98,7 +98,7 @@ final class HotkeyRecorderView: NSView {
         let label = NSAttributedString(
             string: recording ? "Press shortcut…" : hotkey.displayString,
             attributes: [
-                .font: NSFont.systemFont(ofSize: 13, weight: .medium),
+                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .medium),
                 .foregroundColor: recording ? NSColor.controlAccentColor : NSColor.labelColor,
             ]
         )

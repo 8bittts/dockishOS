@@ -43,27 +43,20 @@ struct SwitcherView: View {
 
             if let selectedWindow {
                 Text(selectedWindow.displayTitle)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.primary)
+                    .font(.body.weight(.medium))
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .padding(.horizontal, 24)
                     .padding(.bottom, 12)
             } else if store.windows.isEmpty {
-                Text("No windows on this Space")
+                Text("No windows in this Space")
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .padding(.bottom, 12)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            VisualEffectView(material: .hudWindow, blending: .behindWindow)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(Color(nsColor: .separatorColor).opacity(0.55), lineWidth: 0.5)
-        )
+        .floatingSurface(cornerRadius: 18)
     }
 }
 
@@ -96,7 +89,7 @@ private struct SwitcherTile: View {
                     )
             )
             Text(window.ownerName)
-                .font(.system(size: 11, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(width: 84)

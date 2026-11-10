@@ -98,7 +98,7 @@ private struct PinnedChip: View {
         .help(app.name)
         .accessibilityLabel(ChipAccessibility.label(app.name, state: accessibilityState, badge: badge))
         .contextMenu {
-            Button("Activate \(app.name)") { onLaunch() }
+            Button("Open") { onLaunch() }
             if !isFirst || !isLast {
                 Divider()
                 if !isFirst { Button("Move Left") { onMove(-1) } }

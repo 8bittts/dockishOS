@@ -4,8 +4,9 @@ import AppKit
 enum DockishBrandAssets {
     static let menuBarIconSize = NSSize(width: 18, height: 18)
 
-    /// The app icon drawn at `size`, so SwiftUI lays it out at the size it
-    /// was rendered for. Unbundled runs get the system's generic app icon.
+    /// The app icon as macOS renders it, with the system icon mask, drawn at
+    /// `size` so SwiftUI lays it out at the size it was rendered for.
+    /// Unbundled runs get the system's generic app icon.
     static func applicationIcon(size: NSSize) -> NSImage {
         let icon: NSImage = NSApp.applicationIconImage
         return NSImage(size: size, flipped: false) { rect in

@@ -88,8 +88,8 @@ final class Updater: NSObject {
     private static let sparkleBundle = Bundle(identifier: "org.sparkle-project.Sparkle")
 
     /// Only elevate windows that belong to the Sparkle framework, so opening
-    /// the launcher/Settings mid-update doesn't transiently mis-level our own
-    /// panels. Falls back to floating any window if the Sparkle bundle can't
+    /// the switcher or Settings mid-update doesn't transiently mis-level our
+    /// own windows. Falls back to floating any window if the Sparkle bundle can't
     /// be resolved.
     private static func isSparkleWindow(_ window: NSWindow) -> Bool {
         guard let sparkleBundle else { return true }

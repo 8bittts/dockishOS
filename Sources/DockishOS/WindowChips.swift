@@ -38,8 +38,8 @@ struct WindowsRow: View {
                 ForEach(groups) { groupChip(for: $0) }
                 ForEach(windows) { chip(for: $0) }
                 if visibleWindows.isEmpty {
-                    Text("No open apps in this space…")
-                        .font(.system(size: 12, weight: .medium))
+                    Text("No windows in this Space")
+                        .font(.callout)
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 8)
                 }
@@ -158,7 +158,7 @@ private struct Chip<MenuItems: View>: View {
                     }
                 if showTitle {
                     Text(title)
-                        .font(.system(size: size.chipHeight * 0.40, weight: isFrontmost ? .semibold : .medium))
+                        .font(size.chipTitleFont.weight(isFrontmost ? .semibold : .medium))
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .foregroundStyle(.primary)

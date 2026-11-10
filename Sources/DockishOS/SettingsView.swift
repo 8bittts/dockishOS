@@ -2,23 +2,45 @@ import SwiftUI
 import AppKit
 import DockishOSCore
 
-struct SettingsView: View {
-    @ObservedObject var settings: SettingsStore
-    @ObservedObject var pinned: PinnedAppsStore
+/// The panes of the Settings window, in toolbar order.
+enum SettingsPane: CaseIterable {
+    case appearance, behavior, pinned, about
+
+    static let size = NSSize(width: 480, height: 460)
+
+    var title: String {
+        switch self {
+        case .appearance: return "Appearance"
+        case .behavior:   return "Behavior"
+        case .pinned:     return "Pinned"
+        case .about:      return "About"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .appearance: return "slider.horizontal.3"
+        case .behavior:   return "gearshape.2"
+        case .pinned:     return "pin"
+        case .about:      return "info.circle"
+        }
+    }
+}
+
+/// One Settings pane at the window's fixed size.
+struct SettingsPaneView: View {
+    let pane: SettingsPane
 
     var body: some View {
-        TabView {
-            AppearanceTab(settings: settings)
-                .tabItem { Label("Appearance", systemImage: "slider.horizontal.3") }
-            BehaviorTab(settings: settings)
-                .tabItem { Label("Behavior", systemImage: "gearshape.2") }
-            PinnedTab(pinned: pinned)
-                .tabItem { Label("Pinned", systemImage: "pin") }
-            AboutTab()
-                .tabItem { Label("About", systemImage: "info.circle") }
+        Group {
+            switch pane {
+            case .appearance: AppearanceTab(settings: .shared)
+            case .behavior:   BehaviorTab(settings: .shared)
+            case .pinned:     PinnedTab(pinned: .shared)
+            case .about:      AboutTab()
+            }
         }
-        .frame(minWidth: 480, minHeight: 460)
-        .padding(.top, 4)
+        .frame(width: SettingsPane.size.width, height: SettingsPane.size.height)
     }
 }
 
@@ -43,12 +65,12 @@ private struct AppearanceTab: View {
                 .pickerStyle(.segmented)
 
                 Toggle("Show window titles on chips", isOn: $settings.showChipTitles)
-                Toggle("Show pinned apps row", isOn: $settings.showPinnedRow)
+                Toggle("Show pinned apps", isOn: $settings.showPinnedRow)
                 Toggle("Group windows by app", isOn: $settings.groupWindowsByApp)
             } header: {
                 Text("Bar")
             } footer: {
-                FooterText("Size and position changes apply immediately to every connected display.")
+                Text("Size and position apply to the bar on every display.")
             }
 
             Section {
@@ -56,7 +78,7 @@ private struct AppearanceTab: View {
             } header: {
                 Text("Notifications")
             } footer: {
-                FooterText("Reads badge counts from the macOS Dock's accessibility tree (every 2.5 s). Uses an undocumented Dock attribute that may break in future macOS releases — disable here if it misbehaves.")
+                Text("Shows each app's Dock badge on its chip. DockishOS reads badges from the Dock with Accessibility, and a future macOS release can stop that from working.")
             }
         }
         .formStyle(.grouped)
@@ -69,7 +91,7 @@ private struct BehaviorTab: View {
 
     var body: some View {
         Form {
-            HotkeySettingsSection(settings: settings)
+            ShortcutSettingsSection(settings: settings)
             AccessibilitySettingsSection()
             CollapseSettingsSection(settings: settings)
             LoginSettingsSection()
@@ -101,7 +123,7 @@ private struct AccessibilitySettingsSection: View {
         } header: {
             Text("Permissions")
         } footer: {
-            FooterText("Accessibility lets DockishOS raise and close specific windows from the bar.")
+            Text("Accessibility lets DockishOS raise or close one window, and read Dock badges.")
         }
         .onAppear(perform: refresh)
     }
@@ -111,25 +133,24 @@ private struct AccessibilitySettingsSection: View {
     }
 }
 
-private struct HotkeySettingsSection: View {
+private struct ShortcutSettingsSection: View {
     @ObservedObject var settings: SettingsStore
 
     var body: some View {
         Section {
-            HotkeyRecorderRow(
-                title: "Launcher hotkey",
-                hotkey: $settings.launcherHotkey,
-                resetValue: .launcherDefault
-            )
-            HotkeyRecorderRow(
-                title: "App switcher hotkey",
-                hotkey: $settings.switcherHotkey,
-                resetValue: .switcherDefault
-            )
+            HStack {
+                Text("App switcher")
+                Spacer()
+                HotkeyRecorder(title: "App switcher shortcut", hotkey: $settings.switcherHotkey)
+                    .frame(width: 160, height: 26)
+                Button("Reset") { settings.switcherHotkey = .switcherDefault }
+                    .controlSize(.small)
+                    .accessibilityLabel("Reset app switcher shortcut")
+            }
         } header: {
-            Text("Hotkeys")
+            Text("Keyboard Shortcut")
         } footer: {
-            FooterText("Click a field, press the new chord. Esc cancels. Each chord must include at least one non-shift modifier.")
+            Text("Click the field, then press the new shortcut. Press Esc to cancel. A shortcut needs Control, Option, or Command.")
         }
     }
 }
@@ -141,33 +162,15 @@ private struct CollapseSettingsSection: View {
         Section {
             Toggle("Collapse bar into edge tab", isOn: $settings.barCollapsed)
 
-            Picker("Collapsed tab position", selection: $settings.collapsedTabPosition) {
+            Picker("Edge tab position", selection: $settings.collapsedTabPosition) {
                 ForEach(CollapsedTabPosition.allCases) { position in
                     Text(position.displayName).tag(position)
                 }
             }
         } header: {
-            Text("Bar Controls")
+            Text("Edge Tab")
         } footer: {
-            FooterText("Slides the full bar offscreen and leaves a small edge tab. You can anchor that tab to the bottom-left or bottom-right corner.")
-        }
-    }
-}
-
-private struct HotkeyRecorderRow: View {
-    let title: String
-    @Binding var hotkey: Hotkey
-    let resetValue: Hotkey
-
-    var body: some View {
-        HStack {
-            Text(title)
-            Spacer()
-            HotkeyRecorder(title: title, hotkey: $hotkey)
-                .frame(width: 160, height: 26)
-            Button("Reset") { hotkey = resetValue }
-                .controlSize(.small)
-                .accessibilityLabel("Reset \(title)")
+            Text("Collapsing slides the bar off the screen and leaves a small tab in the corner you choose.")
         }
     }
 }
@@ -178,7 +181,7 @@ private struct LoginSettingsSection: View {
 
     var body: some View {
         Section {
-            Toggle("Launch DockishOS at login", isOn: Binding(
+            Toggle("Open at login", isOn: Binding(
                 get: { isEnabled },
                 set: { newValue in
                     LoginItem.setEnabled(newValue)
@@ -188,7 +191,7 @@ private struct LoginSettingsSection: View {
         } header: {
             Text("Login")
         } footer: {
-            FooterText(status)
+            Text(status)
         }
         .onAppear(perform: refresh)
     }
@@ -229,7 +232,7 @@ private struct DisplaySettingsSection: View {
         } header: {
             Text("Displays")
         } footer: {
-            FooterText("Turn off displays where you don't want a bar. Bars rebuild instantly.")
+            Text("Turn off a display to hide its bar.")
         }
         .onReceive(NotificationCenter.default.publisher(
             for: NSApplication.didChangeScreenParametersNotification
@@ -239,75 +242,32 @@ private struct DisplaySettingsSection: View {
     }
 }
 
-private struct FooterText: View {
-    let text: String
-
-    init(_ text: String) {
-        self.text = text
-    }
-
-    var body: some View {
-        Text(text)
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-    }
-}
-
 private struct PinnedTab: View {
     @ObservedObject var pinned: PinnedAppsStore
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if pinned.pins.isEmpty {
-                EmptyPinnedState()
-            } else {
-                PinnedList(pinned: pinned)
+        if pinned.pins.isEmpty {
+            ContentUnavailableView {
+                Label("No Pinned Apps", systemImage: "pin.slash")
+            } description: {
+                Text("Right-click a chip on the bar and choose Pin to Bar, or drag an app from Finder onto the bar.")
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(12)
-    }
-}
-
-private struct EmptyPinnedState: View {
-    var body: some View {
-        ContentUnavailableView {
-            Label("No pinned apps yet", systemImage: "pin.slash")
-        } description: {
-            Text("Right-click any window chip on the bar and choose **Pin to Bar**, or right-click a result in the launcher to pin it.")
-        }
-    }
-}
-
-private struct PinnedList: View {
-    @ObservedObject var pinned: PinnedAppsStore
-
-    var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(pinned.pins.enumerated()), id: \.element.id) { index, app in
+        } else {
+            Form {
+                ForEach(pinned.pins) { app in
                     PinnedAppRow(
                         app: app,
-                        isFirst: index == 0,
-                        isLast: index == pinned.pins.count - 1,
+                        isFirst: app == pinned.pins.first,
+                        isLast: app == pinned.pins.last,
                         onUp: { pinned.move(app, by: -1) },
                         onDown: { pinned.move(app, by: 1) },
                         onRemove: { pinned.unpin(bundleID: app.bundleID) }
                     )
-                    if index < pinned.pins.count - 1 {
-                        Divider().opacity(0.3)
-                    }
                 }
             }
+            .formStyle(.grouped)
+            .padding(.horizontal, 12)
         }
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .underPageBackgroundColor))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
-        )
     }
 }
 
@@ -325,37 +285,12 @@ private struct PinnedAppRow: View {
                 .resizable()
                 .frame(width: 28, height: 28)
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(app.name).font(.body.weight(.medium))
-                Text(app.bundleID)
-                    .font(.system(.caption2, design: .monospaced))
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
+            Text(app.name)
             Spacer()
-            PinnedListIconButton(
-                systemName: "chevron.up",
-                label: "Move Up",
-                disabled: isFirst,
-                action: onUp
-            )
-            PinnedListIconButton(
-                systemName: "chevron.down",
-                label: "Move Down",
-                disabled: isLast,
-                action: onDown
-            )
-            PinnedListIconButton(
-                systemName: "xmark.circle.fill",
-                label: "Unpin from Bar",
-                disabled: false,
-                action: onRemove
-            )
-            .foregroundStyle(.secondary)
+            PinnedListIconButton(systemName: "chevron.up", label: "Move Up", disabled: isFirst, action: onUp)
+            PinnedListIconButton(systemName: "chevron.down", label: "Move Down", disabled: isLast, action: onDown)
+            PinnedListIconButton(systemName: "minus.circle", label: "Unpin from Bar", disabled: false, action: onRemove)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
     }
 }
 
@@ -386,8 +321,8 @@ private struct AboutTab: View {
                 .accessibilityHidden(true)
             Text("DockishOS")
                 .font(.title.weight(.semibold))
-            Text("v\(AppVersion.short) (build \(AppVersion.build))")
-                .font(.system(.callout, design: .monospaced))
+            Text("Version \(AppVersion.short) (\(AppVersion.build))")
+                .font(.callout)
                 .foregroundStyle(.secondary)
             if !AppVersion.copyright.isEmpty {
                 Text(AppVersion.copyright)

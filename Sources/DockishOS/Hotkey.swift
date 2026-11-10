@@ -1,33 +1,13 @@
 import AppKit
 import Carbon.HIToolbox
 
-/// The global hotkeys DockishOS registers. The raw value is the hotkey's
-/// Carbon identifier.
-enum HotkeyAction: UInt32 {
-    case launcher = 1
-    case switcher = 2
-
-    var displayName: String {
-        switch self {
-        case .launcher: return "Launcher"
-        case .switcher: return "Switcher"
-        }
-    }
-}
-
-/// A user-configurable global hotkey. Stored as Carbon key code + modifier
+/// The user-configurable global hotkey that opens the app switcher. Stored as Carbon key code + modifier
 /// mask (matches `RegisterEventHotKey`'s ABI) plus a pre-rendered display
 /// string captured at record time.
 struct Hotkey: Codable, Equatable {
     var keyCode: UInt32
     var carbonModifiers: UInt32
     var displayString: String
-
-    static let launcherDefault = Hotkey(
-        keyCode: UInt32(kVK_Space),
-        carbonModifiers: UInt32(optionKey),
-        displayString: "⌥ Space"
-    )
 
     static let switcherDefault = Hotkey(
         keyCode: UInt32(kVK_Tab),

@@ -2,13 +2,12 @@ import AppKit
 import Carbon.HIToolbox
 import DockishOSCore
 
-/// Status-bar item and its menu: the way to open the launcher and Settings,
-/// collapse the bar, switch Spaces, check for updates and quit.
+/// Status-bar item and its menu: the way to open Settings, collapse the bar,
+/// switch Spaces, check for updates and quit.
 @MainActor
 final class MenuBarController: NSObject, NSMenuDelegate, NSMenuItemValidation {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let menu = NSMenu()
-    private var launcherItem = NSMenuItem()
     private var hotkeyWarningItem = NSMenuItem()
     private var collapseItem = NSMenuItem()
     private var previousSpaceItem = NSMenuItem()
@@ -31,17 +30,16 @@ final class MenuBarController: NSObject, NSMenuDelegate, NSMenuItemValidation {
     }
 
     private func buildMenu() {
-        let title = menu.addItem(withTitle: "DockishOS - v\(AppVersion.short)", action: nil, keyEquivalent: "")
+        let title = menu.addItem(withTitle: "DockishOS \(AppVersion.short)", action: nil, keyEquivalent: "")
         title.isEnabled = false
         menu.addItem(.separator())
 
-        // `menuNeedsUpdate` gives the launcher, warning and collapse items their titles.
-        launcherItem = addItem("", symbol: "magnifyingglass", action: #selector(openLauncher))
+        // `menuNeedsUpdate` gives the warning and collapse items their titles.
         hotkeyWarningItem = addItem("", symbol: "exclamationmark.triangle", action: #selector(openSettings))
         addItem("Settings…", symbol: "gearshape", action: #selector(openSettings), keyEquivalent: ",")
         collapseItem = addItem("", symbol: "chevron.down", action: #selector(toggleCollapse))
 
-        let tabPositionItem = addItem("Collapsed Tab Position", symbol: "arrow.left.and.right", action: nil)
+        let tabPositionItem = addItem("Edge Tab Position", symbol: "arrow.left.and.right", action: nil)
         let tabPositionMenu = NSMenu()
         for position in CollapsedTabPosition.allCases {
             let item = makeItem(
@@ -59,7 +57,7 @@ final class MenuBarController: NSObject, NSMenuDelegate, NSMenuItemValidation {
         nextSpaceItem = addItem("Next Space", symbol: "chevron.down", action: #selector(nextSpace))
         menu.addItem(.separator())
 
-        addItem("Open GitHub Repo", symbol: "globe", action: #selector(openRepo))
+        addItem("DockishOS on GitHub", symbol: "globe", action: #selector(openRepo))
         menu.addItem(.separator())
 
         if Updater.isAvailable {
@@ -103,7 +101,6 @@ final class MenuBarController: NSObject, NSMenuDelegate, NSMenuItemValidation {
     /// Brings every state-dependent item up to date each time the menu opens.
     func menuNeedsUpdate(_ menu: NSMenu) {
         let settings = SettingsStore.shared
-        launcherItem.title = "Open Launcher  \(settings.launcherHotkey.displayString)"
         collapseItem.title = settings.barCollapsed ? "Expand Bar" : "Collapse Bar"
         collapseItem.image = Self.menuIcon(settings.barCollapsed ? "chevron.up" : "chevron.down")
         for (position, item) in tabPositionItems {
@@ -112,16 +109,13 @@ final class MenuBarController: NSObject, NSMenuDelegate, NSMenuItemValidation {
         updateHotkeyWarning()
     }
 
-    /// Shows the first hotkey that failed to register, if any.
+    /// Shows a warning while the app switcher's shortcut cannot be registered.
     private func updateHotkeyWarning() {
-        let failed = [HotkeyAction.launcher, .switcher].lazy.compactMap { action in
-            HotkeyManager.shared.registrationFailure(for: action).map { (action: action, status: $0) }
-        }.first
-        hotkeyWarningItem.isHidden = failed == nil
-        if let failed {
-            let conflict = failed.status == eventHotKeyExistsErr ? " - conflict detected" : ""
-            hotkeyWarningItem.title = "\(failed.action.displayName) hotkey unavailable\(conflict)"
-        }
+        let failure = HotkeyManager.shared.registrationFailure
+        hotkeyWarningItem.isHidden = failure == nil
+        hotkeyWarningItem.title = failure == OSStatus(eventHotKeyExistsErr)
+            ? "App Switcher Shortcut Is in Use"
+            : "App Switcher Shortcut Unavailable"
     }
 
     /// The Space next to the active one on the screen under the pointer.
@@ -149,7 +143,6 @@ final class MenuBarController: NSObject, NSMenuDelegate, NSMenuItemValidation {
 
     // MARK: - Actions
 
-    @objc private func openLauncher() { LauncherController.shared.toggle() }
     @objc private func openSettings() { SettingsController.shared.show() }
     @objc private func toggleCollapse() { SettingsStore.shared.barCollapsed.toggle() }
     @objc private func previousSpace() { switchSpace(direction: -1) }

@@ -8,7 +8,7 @@ struct NotificationBadge: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 9, weight: .bold, design: .rounded))
+            .font(.system(.caption2, design: .rounded, weight: .bold))
             .foregroundStyle(.white)
             .padding(.horizontal, 4)
             .padding(.vertical, 1)
@@ -25,7 +25,7 @@ struct WindowCountMark: View {
 
     var body: some View {
         Text("\(count)")
-            .font(.system(size: 9, weight: .bold, design: .monospaced))
+            .font(.system(.caption2, design: .monospaced, weight: .bold))
             .foregroundStyle(.white)
             .padding(.horizontal, 4)
             .padding(.vertical, 1)
@@ -50,12 +50,28 @@ struct AppIconView: NSViewRepresentable {
     }
 }
 
-/// `NSVisualEffectView` bridge used as the translucent background of the bar,
-/// launcher and switcher. Switches to an opaque window material while Reduce
-/// Transparency (`accessibilityReduceTransparency`) is on.
-struct VisualEffectView: NSViewRepresentable {
-    var material: NSVisualEffectView.Material
-    var blending: NSVisualEffectView.BlendingMode
+extension View {
+    /// The floating surface behind the bar, the edge tab and the switcher:
+    /// Liquid Glass on macOS 26 and later, and the HUD material before that.
+    /// Pass `interactive` for a surface that is itself a control.
+    @ViewBuilder
+    func floatingSurface(cornerRadius: CGFloat, interactive: Bool = false) -> some View {
+        if #available(macOS 26, *) {
+            glassEffect(.regular.interactive(interactive), in: .rect(cornerRadius: cornerRadius))
+        } else {
+            background(
+                HUDMaterial()
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                    .shadow(color: .black.opacity(0.35), radius: 18, y: 6)
+            )
+        }
+    }
+}
+
+/// The HUD material for macOS releases before Liquid Glass. Switches to an
+/// opaque window material while Reduce Transparency
+/// (`accessibilityReduceTransparency`) is on; Liquid Glass adapts by itself.
+private struct HUDMaterial: NSViewRepresentable {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     func makeNSView(context: Context) -> NSVisualEffectView {
@@ -65,8 +81,19 @@ struct VisualEffectView: NSViewRepresentable {
     }
 
     func updateNSView(_ view: NSVisualEffectView, context: Context) {
-        view.material = reduceTransparency ? .windowBackground : material
-        view.blendingMode = reduceTransparency ? .withinWindow : blending
+        view.material = reduceTransparency ? .windowBackground : .hudWindow
+        view.blendingMode = reduceTransparency ? .withinWindow : .behindWindow
+    }
+}
+
+extension BarSize {
+    /// Text style of a chip's title, one step per bar size.
+    var chipTitleFont: Font {
+        switch self {
+        case .small:  return .subheadline
+        case .medium: return .body
+        case .large:  return .title2
+        }
     }
 }
 

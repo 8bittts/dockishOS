@@ -57,11 +57,6 @@ final class PinnedAppsStore: ObservableObject {
         pin(bundleID: bundleID, name: app.localizedName ?? window.ownerName, url: url)
     }
 
-    func pin(_ app: AppEntry) {
-        guard let bundleID = app.bundleID else { return }
-        pin(bundleID: bundleID, name: app.name, url: app.path)
-    }
-
     /// Pin a `.app` URL directly (used when dragging from Finder).
     func pinAppBundle(at url: URL) {
         guard
@@ -69,7 +64,11 @@ final class PinnedAppsStore: ObservableObject {
             let bundle = Bundle(url: url),
             let bundleID = bundle.bundleIdentifier
         else { return }
-        pin(bundleID: bundleID, name: bundle.appName, url: url)
+        let info = bundle.infoDictionary
+        let name = info?["CFBundleDisplayName"] as? String
+            ?? info?["CFBundleName"] as? String
+            ?? url.deletingPathExtension().lastPathComponent
+        pin(bundleID: bundleID, name: name, url: url)
     }
 
     func unpin(bundleID: String) {

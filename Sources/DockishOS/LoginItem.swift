@@ -28,11 +28,11 @@ enum LoginItem {
 
     static var statusDescription: String {
         switch SMAppService.mainApp.status {
-        case .notRegistered:    return "Not enabled"
-        case .enabled:          return "Enabled — DockishOS will launch at login"
-        case .requiresApproval: return "Pending approval in System Settings → General → Login Items"
-        case .notFound:         return "Not enabled — macOS does not list this copy of DockishOS as a login item"
-        @unknown default:       return "Unknown"
+        case .enabled:          return "DockishOS opens when you log in."
+        case .requiresApproval: return "Approve DockishOS in System Settings > General > Login Items."
+        case .notFound:         return "macOS does not list this copy of DockishOS as a login item."
+        case .notRegistered:    return "DockishOS does not open when you log in."
+        @unknown default:       return ""
         }
     }
 }

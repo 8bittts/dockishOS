@@ -6,10 +6,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var menuBar: MenuBarController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        installApplicationIcon()
         menuBar = MenuBarController()
         rebuildBars()
-        registerHotkeys()
+        registerHotkey()
         Updater.startIfAvailable()
 
         let screenCount = NSScreen.screens.count
@@ -23,7 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.rebuildBars()
         }
         center.observeOnMain(.dockishBarLayoutDidChange) { [weak self] _ in self?.rebuildBars() }
-        center.observeOnMain(.dockishHotkeyDidChange) { [weak self] _ in self?.registerHotkeys() }
+        center.observeOnMain(.dockishHotkeyDidChange) { [weak self] _ in self?.registerHotkey() }
     }
 
     private func rebuildBars() {
@@ -34,23 +33,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bars.forEach { $0.show() }
     }
 
-    /// Loads the bundle's icon file as drawn. Left to AppKit, the app icon
-    /// comes back through the system icon mask, which rounds the corners of
-    /// the mark in the collapse button, the edge tab and the About tab.
-    private func installApplicationIcon() {
-        guard
-            let url = Bundle.main.url(forResource: "DockishOS", withExtension: "icns"),
-            let icon = NSImage(contentsOf: url)
-        else { return }
-        NSApp.applicationIconImage = icon
-    }
-
-    private func registerHotkeys() {
-        let settings = SettingsStore.shared
-        HotkeyManager.shared.register(.launcher, hotkey: settings.launcherHotkey) {
-            LauncherController.shared.toggle()
-        }
-        HotkeyManager.shared.register(.switcher, hotkey: settings.switcherHotkey) {
+    private func registerHotkey() {
+        HotkeyManager.shared.register(SettingsStore.shared.switcherHotkey) {
             SwitcherController.shared.toggle()
         }
     }
