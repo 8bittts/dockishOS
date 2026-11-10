@@ -173,6 +173,7 @@ The release script reads the `## [Unreleased]` block verbatim (via `changelog_un
 | `No Developer ID Application identity found` | The default mode found no Developer ID Application certificate in the login keychain. Add one, or pass `--unsigned` for an ad-hoc build. |
 | `Notary profile '<name>' is unavailable` | Run the `notarytool store-credentials` snippet above, or pass `--local` to skip notarization. |
 | `Sparkle.framework missing at tools/sparkle/Sparkle.framework` | The vendored framework is absent; re-vendor it with the procedure below. The build never continues without it. |
+| `! [rejected] HEAD -> main (non-fast-forward)` right after `Tagged v<version>` | Another push reached `main` while the release ran. Nothing is published yet: the release commit and its tag exist only locally. Run `git rebase origin/main`, delete the local tag and create it again at the new `HEAD`, then re-run `scripts/release-dockishOS.sh`; it resumes from the notarized artifacts in `build/`, repeats the production smoke gate, and pushes. |
 | `Notarization rejected` | Inspect `build/DockishOS-<version>.notary-submission.json`; the script also fetches the notary log when a submission ID is available. |
 | Signing retry loops | Apple's timestamp server is slow. The script auto-retries 5×. |
 | `xcrun stapler staple` fails | Notarization succeeded but propagation is slow. The script auto-retries 10×. |

@@ -14,6 +14,7 @@ Dates are the evidence in this doc; the owner docs carry none.
 - 0.027: the HIG and accessibility pass makes the bar reachable by VoiceOver and Full Keyboard Access, adds Previous Space and Next Space to the status menu, honors Reduce Motion and Reduce Transparency, and templates the menu-bar mark ([02-design-system.md](02-design-system.md)).
 - 0.028: the bar, launcher and switcher gain spoken VoiceOver titles, the launcher search field and each Settings Reset button gain names, and singular badge and grouped-window counts read as singular.
 - 0.029: the launcher is removed, the bar, edge tab and switcher move to Liquid Glass, the switcher becomes a non-activating panel, Settings becomes a toolbar of panes, the package moves to the Swift 6 language mode, and macOS 27 becomes the minimum ([02-design-system.md](02-design-system.md)).
+- 0.030: Settings becomes three panes (General, Bar, Pinned) that size to their content, and About moves to the standard About panel in the status menu ([02-design-system.md](02-design-system.md)).
 
 ## Decisions
 
