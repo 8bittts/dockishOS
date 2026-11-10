@@ -13,7 +13,7 @@ There is no CI, so these local gates are the only gates; run them before every p
 ## Test strategy
 
 Logic that can be tested without AppKit or Carbon lives in `DockishOSCore` (geometry, selection wrap, reordering, grouping) so `swift test` covers it directly.
-`HIGAccessibilityRegressionTests` pins the accessibility contracts in [02-design-system.md](02-design-system.md), `PanelRegressionTests` the switcher panel contracts, `HIGChromeRegressionTests` the icon mask, Settings window buttons, badge color, the glass-only surface and the macOS 26 minimum, `HIGWritingRegressionTests` the pin and unpin wording, shortcut warning, empty-state and untitled-window copy and the text-style rule, and `MenuBarIconRegressionTests` the template status mark.
+`HIGAccessibilityRegressionTests` pins the accessibility contracts in [02-design-system.md](02-design-system.md), `PanelRegressionTests` the switcher panel contracts, `HIGChromeRegressionTests` the icon mask, Settings window buttons, badge color, the glass-only surface and the macOS 27 minimum, `HIGWritingRegressionTests` the pin and unpin wording, shortcut warning, empty-state and untitled-window copy and the text-style rule, and `MenuBarIconRegressionTests` the template status mark.
 These five suites read source text, so they live in the core test target without importing AppKit.
 They hold a fix in place but cannot find a new defect: the switcher, focus, the status menu and the glass surfaces are only proven by driving a built bundle and looking at it.
 Use `./scripts/build_and_run.sh` for anything involving Accessibility, login items, app metadata, icons or updates, because a plain `swift run` process behaves differently.

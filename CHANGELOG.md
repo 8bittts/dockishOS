@@ -9,7 +9,7 @@ All notable changes to DockishOS live here. Release tooling reads the
 - The app launcher and its Option-Space shortcut. Spotlight opens apps, so DockishOS no longer duplicates it.
 
 ### Changed
-- DockishOS now requires macOS 26 or later. A Mac on macOS 14 or 15 stays on 0.028.
+- DockishOS now requires macOS 27 or later. A Mac on an older macOS stays on 0.028.
 - The bar, the edge tab, and the app switcher use Liquid Glass.
 - The app switcher highlights only the selected window; other icons no longer sit in a box.
 - Settings is a standard window with a toolbar of panes.

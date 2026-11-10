@@ -14,7 +14,7 @@ Marks, materials, typography, copy, motion and accessibility contracts for the D
 
 The bar, the edge tab and the switcher share one surface, `floatingSurface` in `BarSupport`.
 It is Liquid Glass (`glassEffect`), which brings its own shadow and edge highlights and adapts to Reduce Transparency by itself; the edge tab uses the interactive variant because the whole surface is a button.
-There is no other material: the app requires macOS 26, and no view falls back to a visual effect view or branches on a macOS version.
+There is no other material: the app requires macOS 27, and no view falls back to a visual effect view or branches on a macOS version.
 Nothing draws a second glass layer on top of the surface: chips, tiles and the collapse button sit on it as content.
 The switcher panel has no window shadow, because a window shadow under glass outlines the panel's rectangle.
 Chips and switcher tiles share one rule: an idle one draws no fill or border, and only hover, frontmost or selected draws the system selection fill; the selected tile adds an accent ring.
@@ -66,4 +66,4 @@ The shortcut recorder in Settings is a button, so a click, Space with keyboard f
 Settings pinned-list reorder and unpin controls meet the 20-point minimum hit target and carry VoiceOver labels.
 The bar and switcher panels carry spoken titles, and the Settings Reset button names the shortcut it resets.
 A badge of one reads as "notification" and a single grouped window as "window".
-`Tests/DockishOSCoreTests/HIGAccessibilityRegressionTests.swift` guards the key-window, chip-button, Space-command and Reduce Motion contracts, `HIGChromeRegressionTests.swift` the glass-only surface and the macOS 26 minimum, and `PanelRegressionTests.swift` the switcher panel contracts ([09-quality.md](09-quality.md)); the spoken names have no regression test.
+`Tests/DockishOSCoreTests/HIGAccessibilityRegressionTests.swift` guards the key-window, chip-button, Space-command and Reduce Motion contracts, `HIGChromeRegressionTests.swift` the glass-only surface and the macOS 27 minimum, and `PanelRegressionTests.swift` the switcher panel contracts ([09-quality.md](09-quality.md)); the spoken names have no regression test.

@@ -30,5 +30,4 @@ Phase ordering is intentional.
 Not active work.
 Promote only one item at a time into `#### Phase N` in `### Work TODOs` when implementation starts.
 
-- Run the bar, the edge tab, the switcher and Settings on macOS 26; the glass design was only run on macOS 27.
-- With the first release that requires macOS 26: remove the v0.028 note from `README.md` and `docs/index.md`, and bump `Casks/dockishos.rb` with `depends_on macos: ">= :tahoe"` ([05-infrastructure.md](05-infrastructure.md)).
+- With the first release that requires macOS 27: remove the v0.028 note from `README.md` and `docs/index.md`, and bump `Casks/dockishos.rb` with `depends_on macos: ">= :golden_gate"` ([05-infrastructure.md](05-infrastructure.md)).

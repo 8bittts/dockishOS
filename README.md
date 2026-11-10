@@ -10,7 +10,7 @@ The macOS Dock shows every app on every Space.
 DockishOS shows what is open on this Space.
 
 DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar for people who use Spaces heavily.
-The app is built with SwiftUI and AppKit, requires macOS 26 or later on Apple Silicon, and ships as an accessory app with no Dock icon.
+The app is built with SwiftUI and AppKit, requires macOS 27 or later on Apple Silicon, and ships as an accessory app with no Dock icon.
 
 ## Why DockishOS
 
@@ -32,8 +32,8 @@ The app is built with SwiftUI and AppKit, requires macOS 26 or later on Apple Si
 Download the DMG, drag DockishOS to `/Applications`, and launch it from there.
 Older builds remain available from [GitHub Releases](https://github.com/8bittts/dockishOS/releases).
 
-v0.028 is the last release for macOS 14 and 15.
-This page describes the next release, which requires macOS 26: v0.028 does not have Liquid Glass and still includes the app launcher that was removed since.
+v0.028 is the last release for macOS 14, 15, and 26.
+This page describes the next release, which requires macOS 27: v0.028 does not have Liquid Glass and still includes the app launcher that was removed since.
 
 Installed app bundles can use Sparkle for update checks.
 Plain `swift run` builds do not use the bundled app metadata or Sparkle path.
@@ -108,7 +108,7 @@ swift test
 ./scripts/build_and_run.sh
 ```
 
-Building needs Xcode 26 or later (Swift 6.2).
+Building needs Xcode 27 or later (Swift 6.4).
 `build_and_run.sh` builds a real app bundle at `build/DockishOS.app` and launches it.
 Use that path for local app testing because Launch Services, Accessibility, login items, icons, and Sparkle behave differently in a plain `swift run` process.
 
