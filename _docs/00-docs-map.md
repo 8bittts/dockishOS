@@ -31,6 +31,8 @@ Agent routing lives in `AGENTS.md`; this index follows the fleet documentation s
 | `appcast.xml`              | Generated, EdDSA-signed Sparkle feed; never hand-edited                                                                                                 |
 | `Casks/dockishos.rb`       | Homebrew Cask pinned to a released version; bumped by hand, so it can trail a release                                                                   |
 | `tools/sparkle/VERSION`    | Sparkle vendoring pin read by the build preflight                                                                                                       |
+| `.periphery.yml`           | Periphery configuration for the unused-code scan                                                                                                        |
+| `.githooks/commit-msg`     | Tracked commit hook that refuses AI attribution; `scripts/setup-hooks.sh` wires it                                                                      |
 | `../../movingpaper/_docs/` | Sibling macOS app; it shares the Sparkle pipeline and cites this repository's re-vendor procedure ([its index](../../movingpaper/_docs/00-docs-map.md)) |
 
 ## Authority order
