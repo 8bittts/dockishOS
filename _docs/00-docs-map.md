@@ -29,7 +29,7 @@ Agent routing lives in `AGENTS.md`; this index follows the fleet documentation s
 | `CHANGELOG.md`             | User-facing version history; release tooling reads its `Unreleased` section                                                                             |
 | `docs/index.md`            | GitHub Pages landing; a short product mirror of the README                                                                                              |
 | `appcast.xml`              | Generated, EdDSA-signed Sparkle feed; never hand-edited                                                                                                 |
-| `Casks/dockishos.rb`       | Homebrew Cask pinned to a released version; bumped by hand, so it can trail a release                                                                   |
+| `Casks/dockishos.rb`       | Homebrew Cask; the release script pins it to each release's version and checksum                                                                        |
 | `tools/sparkle/VERSION`    | Sparkle vendoring pin read by the build preflight                                                                                                       |
 | `.periphery.yml`           | Periphery configuration for the unused-code scan                                                                                                        |
 | `.githooks/commit-msg`     | Tracked commit hook that refuses AI attribution; `scripts/setup-hooks.sh` wires it                                                                      |

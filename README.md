@@ -51,8 +51,8 @@ brew tap 8bittts/dockishos https://github.com/8bittts/dockishOS
 brew install --cask 8bittts/dockishos/dockishos
 ```
 
-The Cask formula in [`Casks/dockishos.rb`](Casks/dockishos.rb) is pinned to a released version.
-Sparkle auto-update keeps installed apps current between Cask bumps.
+The Cask formula in [`Casks/dockishos.rb`](Casks/dockishos.rb) is pinned to the current release by the release script.
+Sparkle auto-update keeps installed apps current between releases.
 
 ### First launch
 

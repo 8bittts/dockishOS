@@ -9,6 +9,7 @@ Gates, test strategy and verification rules for DockishOS.
 It fails closed: an absent artifact, an empty test run, a missing stapled notarization ticket, a checksum mismatch, or an appcast whose EdDSA signature does not verify is an error, never a silent pass.
 There is no CI, so these local gates are the only gates; run them before every push.
 `swift build --build-tests && periphery scan` reads `.periphery.yml` and must report no unused code; the build comes first because the config pins the index store and skips Periphery's own build.
+`CaskBumpTests` runs `bump_cask` on a copy of the real Cask and proves the release script calls it before the release commit.
 `CommitMsgHookTests` runs `.githooks/commit-msg` against sample messages, so the hook that refuses AI attribution stays executable and fails closed; `./scripts/setup-hooks.sh` wires it once per clone.
 `./scripts/build-dmg.sh --build-only` is the fastest way to catch a bad Sparkle vendor, because its preflight verifies the pinned framework.
 

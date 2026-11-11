@@ -40,6 +40,7 @@ PLIST_FILE="Resources/Info.plist"
 README_FILE="README.md"
 ROOT_APPCAST_FILE="appcast.xml"
 CHANGELOG_FILE="CHANGELOG.md"
+CASK_FILE="Casks/dockishos.rb"
 RELEASE_NOTES=""
 APPCAST_TMP=""
 
@@ -47,6 +48,9 @@ info()  { printf "\033[1;34m==>\033[0m %s\n" "$1"; }
 warn()  { printf "\033[1;33mWARN:\033[0m %s\n" "$1"; }
 fail()  { printf "\033[1;31mERROR:\033[0m %s\n" "$1" >&2; exit 1; }
 step()  { printf "\033[1;36m  ->\033[0m %s\n" "$1"; }
+
+# shellcheck source=lib/cask.sh
+source "${REPO_ROOT}/scripts/lib/cask.sh"
 
 cleanup_on_exit() {
     [ -z "$RELEASE_NOTES" ] || rm -f "$RELEASE_NOTES"
@@ -232,7 +236,9 @@ if [ "$RESUME_RELEASE" != true ]; then
     roll_changelog "$RELEASE_VERSION"
     step "Rolled ${CHANGELOG_FILE} Unreleased into ${RELEASE_VERSION}"
 
-    git add "$PLIST_FILE" "$README_FILE" "$ROOT_APPCAST_FILE"
+    bump_cask "$CASK_FILE" "$RELEASE_VERSION" "$SHA_FILE"
+
+    git add "$PLIST_FILE" "$README_FILE" "$ROOT_APPCAST_FILE" "$CASK_FILE"
     if [ -f "$CHANGELOG_FILE" ]; then
         git add "$CHANGELOG_FILE"
     fi
