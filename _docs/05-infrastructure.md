@@ -19,7 +19,7 @@ Run them from the repo root.
 | `./scripts/build-dmg.sh --local` | Signed DMG, **skip** notarization (fastest path that still produces a draggable DMG) |
 | `./scripts/build-dmg.sh --unsigned` | Ad-hoc sign only — no Developer ID required (good for first-time bootstrapping) |
 | `./scripts/build-dmg.sh --build-only` | Assemble `DockishOS.app` only, no DMG |
-| `./scripts/release-dockishOS.sh` | End-to-end release: bump version, build, tag, push, draft GitHub release |
+| `./scripts/release-dockishOS.sh` | End-to-end release: bump the version, build and notarize, run the production smoke gate, roll the changelog, pin the Cask, tag, push, publish the GitHub release, and wait until Sparkle clients receive the new appcast |
 
 ---
 
@@ -160,8 +160,8 @@ Keep user-facing changes under `CHANGELOG.md` → `## [Unreleased]`.
 The release flow uses that section for Sparkle release notes and GitHub release notes.
 For one-off appcast generation, override with `SPARKLE_NOTES` when needed.
 
-Before running `scripts/release-dockishOS.sh`, move the previous release's entries out of `## [Unreleased]` into a new `## [<prev-version>]` heading, then stage the new release's notes under `## [Unreleased]`.
-The release script reads the `## [Unreleased]` block verbatim (via `changelog_unreleased_markdown`) and never archives prior entries for you, so anything left under that heading ships as the new version's notes.
+Write only the new release's notes under `## [Unreleased]`; the release script ships that block as the notes and then moves it under a new `## [<version>]` heading in the release commit (`roll_changelog`), so there is nothing to archive by hand.
+The Sparkle and GitHub notes are the bullets alone: `changelog_unreleased_items` drops the `### Changed`, `### Fixed` and `### Removed` headings, so write every bullet as a full sentence that still makes sense without its heading (say "The status menu no longer lists …", not a bare list of removed items).
 
 ---
 
