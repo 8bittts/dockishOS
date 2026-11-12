@@ -5,6 +5,8 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+## [0.031]
+
 ### Changed
 - The bar is a square strip that spans the whole screen edge, with no gap at the sides or bottom. On a screen with an auto-hidden Dock at the bottom, it covers the strip the Dock reserves.
 - App icons follow the bar size, in window chips and pinned chips alike, and every icon on the bar sits on one line. The collapse button and the edge tab scale with the bar too.
