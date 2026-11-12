@@ -30,5 +30,5 @@ Phase ordering is intentional.
 Not active work.
 Promote only one item at a time into `#### Phase N` in `### Work TODOs` when implementation starts.
 
-- **Observation.** Move the seven `ObservableObject` models and their 19 `@Published` properties to `@Observable`, and the views from `@ObservedObject` to plain or `@Bindable` properties; `BadgeStore` holds the one Combine `sink` and needs an observation replacement. Verify in a running bundle that the bar, the pinned row, badges and Settings still update.
+- **Observation.** Move the seven `ObservableObject` models and their 20 `@Published` properties to `@Observable`, and the views from `@ObservedObject` to plain or `@Bindable` properties; `BadgeStore` holds the one Combine `sink` and needs an observation replacement. Verify in a running bundle that the bar, the pinned row, badges and Settings still update.
 - **Swift Testing.** Move the XCTest suites in `Tests/DockishOSCoreTests` to Swift Testing, the framework movingpaper uses, keeping every floor assertion in the source-reading suites.

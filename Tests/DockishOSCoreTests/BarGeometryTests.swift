@@ -10,11 +10,12 @@ final class BarGeometryTests: XCTestCase {
         collapsed: Bool,
         barOnTop: Bool = false,
         tabOnRight: Bool = false,
-        barHeight: CGFloat = 56
+        barHeight: CGFloat = 56,
+        visibleFrame: CGRect? = nil
     ) -> BarGeometryInput {
         BarGeometryInput(
             screenFrame: screen,
-            visibleFrame: visible,
+            visibleFrame: visibleFrame ?? visible,
             collapsed: collapsed,
             barOnTop: barOnTop,
             tabOnRight: tabOnRight,
@@ -46,7 +47,8 @@ final class BarGeometryTests: XCTestCase {
 
     func testCollapsedTabExposesPartOfItsHeight() {
         XCTAssertEqual(BarGeometry.collapsedTabExposedHeight(barHeight: 44), 40)
-        XCTAssertEqual(BarGeometry.collapsedTabExposedHeight(barHeight: 72), 72 * 0.78, accuracy: 0.001)
+        XCTAssertEqual(BarGeometry.collapsedTabExposedHeight(barHeight: 56), 44)
+        XCTAssertEqual(BarGeometry.collapsedTabExposedHeight(barHeight: 72), 56)
         for barHeight: CGFloat in [44, 56, 72] {
             XCTAssertLessThan(
                 BarGeometry.collapsedTabExposedHeight(barHeight: barHeight),
@@ -92,9 +94,46 @@ final class BarGeometryTests: XCTestCase {
         XCTAssertEqual(hidden.width, screen.width)
     }
 
-    func testHiddenExpandedTopSitsFullyAboveScreen() {
-        let hidden = BarGeometry.hiddenFrame(input(collapsed: false, barOnTop: true, barHeight: 56))
-        XCTAssertEqual(hidden.minY, screen.maxY)
-        XCTAssertEqual(hidden.height, 56)
+    func testTopBarFadesAndBottomSurfacesSlide() {
+        XCTAssertEqual(BarGeometry.transition(input(collapsed: false, barOnTop: true), reduceMotion: false), .fade)
+        XCTAssertEqual(BarGeometry.transition(input(collapsed: false, barOnTop: false), reduceMotion: false), .slide)
+        // The edge tab is always on the bottom edge, even for a top bar.
+        XCTAssertEqual(BarGeometry.transition(input(collapsed: true, barOnTop: true), reduceMotion: false), .slide)
+        XCTAssertEqual(BarGeometry.transition(input(collapsed: true, barOnTop: false), reduceMotion: false), .slide)
+    }
+
+    func testReduceMotionFadesEverySurface() {
+        for collapsed in [false, true] {
+            for barOnTop in [false, true] {
+                XCTAssertEqual(
+                    BarGeometry.transition(input(collapsed: collapsed, barOnTop: barOnTop), reduceMotion: true),
+                    .fade
+                )
+            }
+        }
+    }
+
+    /// An auto-hidden bottom Dock reserves a thin strip under the visible
+    /// frame; the bar covers it so no desktop shows below the bar.
+    func testExpandedBottomCoversAHiddenDockStrip() {
+        let hiddenDock = CGRect(x: 0, y: 4, width: 1440, height: 858)
+        let frame = BarGeometry.visibleFrame(input(collapsed: false, visibleFrame: hiddenDock))
+        XCTAssertEqual(frame.minY, screen.minY)
+        XCTAssertEqual(frame.minX, screen.minX)
+        XCTAssertEqual(frame.maxX, screen.maxX)
+        XCTAssertEqual(frame.height, 56)
+    }
+
+    func testExpandedBottomMeetsTheScreenEdgeWithNoBottomDock() {
+        let leftDock = CGRect(x: 70, y: 0, width: 1370, height: 862)
+        let frame = BarGeometry.visibleFrame(input(collapsed: false, visibleFrame: leftDock))
+        XCTAssertEqual(frame.minY, screen.minY)
+        XCTAssertEqual(frame.width, screen.width)
+    }
+
+    func testCollapsedTabRestsOnTheScreenEdgeOverAHiddenDockStrip() {
+        let hiddenDock = CGRect(x: 0, y: 4, width: 1440, height: 858)
+        let frame = BarGeometry.visibleFrame(input(collapsed: true, visibleFrame: hiddenDock))
+        XCTAssertEqual(frame.maxY, screen.minY + BarGeometry.collapsedTabExposedHeight(barHeight: 56), accuracy: 0.001)
     }
 }

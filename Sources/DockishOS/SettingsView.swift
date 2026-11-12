@@ -4,7 +4,7 @@ import DockishOSCore
 
 /// The panes of the Settings window, in toolbar order.
 enum SettingsPane: CaseIterable {
-    case general, bar, pinned
+    case general, bar
 
     /// Every pane has this width; each is as tall as its content.
     static let width: CGFloat = 480
@@ -13,7 +13,6 @@ enum SettingsPane: CaseIterable {
         switch self {
         case .general: return "General"
         case .bar:     return "Bar"
-        case .pinned:  return "Pinned"
         }
     }
 
@@ -21,7 +20,6 @@ enum SettingsPane: CaseIterable {
         switch self {
         case .general: return "gearshape"
         case .bar:     return "dock.rectangle"
-        case .pinned:  return "pin"
         }
     }
 }
@@ -33,9 +31,8 @@ struct SettingsPaneView: View {
     var body: some View {
         Group {
             switch pane {
-            case .general: GeneralPane(settings: .shared)
+            case .general: GeneralPane(settings: .shared, pinned: .shared)
             case .bar:     BarPane(settings: .shared)
-            case .pinned:  PinnedPane(pinned: .shared)
             }
         }
         .formStyle(.grouped)
@@ -48,11 +45,13 @@ struct SettingsPaneView: View {
 
 private struct GeneralPane: View {
     @ObservedObject var settings: SettingsStore
+    let pinned: PinnedAppsStore
 
     var body: some View {
         Form {
             LoginSection()
             ShortcutSection(hotkey: $settings.switcherHotkey)
+            PinnedSection(pinned: pinned)
             DisplaysSection(settings: settings)
             AccessibilitySection()
         }
@@ -184,7 +183,7 @@ private struct BarPane: View {
 
     var body: some View {
         Form {
-            Section {
+            Section("Layout") {
                 Picker("Size", selection: $settings.barSize) {
                     ForEach(BarSize.allCases) { Text($0.displayName).tag($0) }
                 }
@@ -201,6 +200,8 @@ private struct BarPane: View {
                 Toggle("Group windows by app", isOn: $settings.groupWindowsByApp)
                 Toggle("Show pinned apps", isOn: $settings.showPinnedRow)
                 Toggle("Show notification badges", isOn: $settings.showNotificationBadges)
+            } header: {
+                Text("Contents")
             } footer: {
                 Text("Badges come from the Dock and need Accessibility. A future macOS release can stop them from working.")
             }
@@ -211,26 +212,25 @@ private struct BarPane: View {
                 Picker("Corner", selection: $settings.collapsedTabPosition) {
                     ForEach(CollapsedTabPosition.allCases) { Text($0.displayName).tag($0) }
                 }
+                .pickerStyle(.segmented)
             }
         }
     }
 }
 
-// MARK: - Pinned
+// MARK: - Pinned apps
 
-private struct PinnedPane: View {
+/// The pinned apps, in bar order. Stays one section when the list is empty,
+/// so the pane sizes the same way either way.
+private struct PinnedSection: View {
     @ObservedObject var pinned: PinnedAppsStore
 
     var body: some View {
-        if pinned.pins.isEmpty {
-            ContentUnavailableView {
-                Label("No Pinned Apps", systemImage: "pin.slash")
-            } description: {
-                Text("Right-click a chip on the bar and choose Pin to Bar, or drag an app from Finder onto the bar.")
-            }
-            .padding(.vertical, 40)
-        } else {
-            Form {
+        Section {
+            if pinned.pins.isEmpty {
+                Text("No pinned apps")
+                    .foregroundStyle(.secondary)
+            } else {
                 ForEach(pinned.pins) { app in
                     PinnedAppRow(
                         app: app,
@@ -241,6 +241,10 @@ private struct PinnedPane: View {
                     )
                 }
             }
+        } header: {
+            Text("Pinned Apps")
+        } footer: {
+            Text("Right-click a chip on the bar and choose Pin to Bar, or drag an app from Finder onto the bar.")
         }
     }
 }

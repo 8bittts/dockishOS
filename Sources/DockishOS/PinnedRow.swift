@@ -11,7 +11,7 @@ struct PinnedRow: View {
 
     var body: some View {
         let pins = pinnedStore.pins
-        HStack(spacing: 4) {
+        HStack(spacing: Spacing.xs) {
             ForEach(pins) { app in
                 PinnedChip(
                     app: app,
@@ -75,21 +75,26 @@ private struct PinnedChip: View {
 
     var body: some View {
         Button(action: onLaunch) {
-            VStack(spacing: 2) {
-                Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
-                    .resizable()
-                    .frame(width: size.chipHeight - 6, height: size.chipHeight - 6)
-                    .overlay(alignment: .topTrailing) {
-                        if let badge { NotificationBadge(text: badge).offset(x: 4, y: -4) }
+            // Same box as a window chip, so every icon on the bar shares one
+            // center line; the running dot hangs just below it, like the Dock's.
+            Image(nsImage: NSWorkspace.shared.icon(forFile: app.path))
+                .resizable()
+                .frame(width: size.chipIconSize, height: size.chipIconSize)
+                .overlay(alignment: .topTrailing) {
+                    if let badge { NotificationBadge(text: badge).offset(x: Spacing.xs, y: -Spacing.xs) }
+                }
+                .padding(.horizontal, Spacing.s)
+                .padding(.vertical, Spacing.xs)
+                .overlay(alignment: .bottom) {
+                    if isRunning {
+                        Circle()
+                            .fill(ChipStyle.accent)
+                            .frame(width: Spacing.xs, height: Spacing.xs)
+                            .offset(y: Spacing.xxs)
                     }
-                Circle()
-                    .fill(isRunning ? ChipStyle.accent : Color.clear)
-                    .frame(width: 4, height: 4)
-            }
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
+                }
             .background(
-                RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
+                RoundedRectangle(cornerRadius: Radius.control)
                     .fill(hover ? ChipStyle.hoverFill : Color.clear)
             )
         }

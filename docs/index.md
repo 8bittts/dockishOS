@@ -7,8 +7,8 @@
 **The macOS Dock shows every app on every Space. DockishOS shows what is open on this Space.**
 
 A SwiftUI + AppKit menu-bar utility for people who use macOS Spaces heavily.
-Floating, per-display app bar.
-Scroll over the bar or use Previous Space / Next Space in the status menu to switch Spaces.
+Edge-to-edge, per-display app bar.
+Scroll over the bar to switch Spaces.
 Drag `.app` bundles to pin them.
 Requires macOS 27 or later; [v0.028](https://github.com/8bittts/dockishOS/releases/tag/v0.028) is the last release for macOS 14, 15, and 26.
 Apple Silicon, signed and notarized.
@@ -26,7 +26,7 @@ Apple Silicon, signed and notarized.
 ## Why DockishOS
 
 - **Current-Space only.** See and switch the windows that matter right now, not every app on every desktop.
-- **Scroll-to-switch.** Scroll over the bar, or choose Previous Space / Next Space in the status menu, to move between Spaces without opening Mission Control.
+- **Scroll-to-switch.** Scroll over the bar to move between Spaces without opening Mission Control.
 - **Drag to pin.** Drop `.app` bundles on the bar or right-click a window chip to keep important apps close.
 - **Stays out of the way.** Menu-bar accessory app with no Dock icon, and it collapses into a small edge tab.
 

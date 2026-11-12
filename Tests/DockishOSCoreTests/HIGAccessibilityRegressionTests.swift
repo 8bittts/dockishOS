@@ -26,19 +26,18 @@ final class HIGAccessibilityRegressionTests: XCTestCase {
         }
     }
 
-    /// The status menu enables its items automatically, so a Space command
-    /// is only disabled at an end through menu validation.
-    func testSpaceCommandsAreValidated() throws {
+    /// The status menu is About, YEN Terminal, Settings, the project page,
+    /// updates and Quit, in that order. Bar and Space commands are not in it.
+    func testStatusMenuHoldsOnlyTheAppCommands() throws {
         let source = try RepositorySource.read("Sources/DockishOS/MenuBarController.swift")
-        XCTAssertTrue(source.contains("NSMenuItemValidation"))
-        XCTAssertTrue(source.contains("func validateMenuItem"))
-    }
-
-    func testStatusMenuExposesSpaceSwitching() throws {
-        let source = try RepositorySource.read("Sources/DockishOS/MenuBarController.swift")
-        XCTAssertTrue(source.contains("Previous Space"), "Status menu must offer Previous Space.")
-        XCTAssertTrue(source.contains("Next Space"), "Status menu must offer Next Space.")
-        XCTAssertTrue(source.contains("adjacentSpace"), "Space menu items must use SpacesAPI.adjacentSpace.")
+        let titles = ["\"About DockishOS\"", "\"YEN Terminal\"", "\"Settings…\"", "\"GitHub Project\"",
+                      "\"Check for Updates…\"", "\"Quit DockishOS\""]
+        let positions = try titles.map { try XCTUnwrap(source.range(of: $0)?.lowerBound, "\($0) is missing") }
+        XCTAssertEqual(positions, positions.sorted(), "The menu items are out of order.")
+        for removed in ["Previous Space", "Next Space", "Collapse Bar", "Edge Tab", "on GitHub"] {
+            XCTAssertFalse(source.contains(removed), "\(removed) no longer belongs in the status menu.")
+        }
+        XCTAssertTrue(try RepositorySource.read("Sources/DockishOS/AppLinks.swift").contains("https://yen.chat"))
     }
 
     func testCollapseHonorsReduceMotion() throws {

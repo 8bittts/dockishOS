@@ -10,8 +10,8 @@ struct NotificationBadge: View {
         Text(text)
             .font(.system(.caption2, design: .rounded, weight: .bold))
             .foregroundStyle(.white)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 1)
+            .padding(.horizontal, Spacing.xs)
+            .padding(.vertical, Spacing.hairline)
             .background(Capsule().fill(Color(nsColor: .systemRed)))
             .overlay(Capsule().stroke(Color(nsColor: .separatorColor).opacity(0.65), lineWidth: 0.5))
             .accessibilityHidden(true)
@@ -27,9 +27,9 @@ struct WindowCountMark: View {
         Text("\(count)")
             .font(.system(.caption2, design: .monospaced, weight: .bold))
             .foregroundStyle(.white)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 1)
-            .background(RoundedRectangle(cornerRadius: 3, style: .continuous).fill(ChipStyle.accent))
+            .padding(.horizontal, Spacing.xs)
+            .padding(.vertical, Spacing.hairline)
+            .background(RoundedRectangle(cornerRadius: Radius.mark, style: .continuous).fill(ChipStyle.accent))
             .accessibilityHidden(true)
     }
 }
@@ -48,15 +48,21 @@ struct AppIconView: NSViewRepresentable {
     func updateNSView(_ view: NSImageView, context: Context) {
         view.image = NSRunningApplication(processIdentifier: pid)?.icon
     }
+
+    /// Take the size SwiftUI proposes. Otherwise the image view keeps its
+    /// icon's intrinsic size and draws past the chip's frame and padding.
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSImageView, context: Context) -> CGSize? {
+        proposal.replacingUnspecifiedDimensions()
+    }
 }
 
 extension View {
     /// The floating surface behind the bar, the edge tab and the switcher:
     /// Liquid Glass, which brings its own shadow and edge highlights and
-    /// adapts to Reduce Transparency. Pass `interactive` for a surface that
-    /// is itself a control.
-    func floatingSurface(cornerRadius: CGFloat, interactive: Bool = false) -> some View {
-        glassEffect(.regular.interactive(interactive), in: .rect(cornerRadius: cornerRadius))
+    /// adapts to Reduce Transparency. It is never interactive glass, which
+    /// stretches the surface under the pointer and changes its shape on a click.
+    func floatingSurface(cornerRadius: CGFloat) -> some View {
+        glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
     }
 }
 
@@ -71,13 +77,42 @@ extension BarSize {
     }
 }
 
+/// The one spacing scale for the bar, the edge tab and the switcher: steps
+/// of a 4-point grid. Every gap, inset and offset in those views is one of these.
+enum Spacing {
+    /// Text-tight vertical padding inside a badge only.
+    static let hairline: CGFloat = 1
+    static let xxs: CGFloat = 2
+    static let xs: CGFloat = 4
+    static let s: CGFloat = 8
+    static let m: CGFloat = 12
+    static let xl: CGFloat = 20
+}
+
+/// The one motion scale. Every animation in the app is one of these.
+enum Motion {
+    /// One phase of a bar transition: the slide or fade out, then the one in.
+    static let phase: TimeInterval = 0.16
+    /// Small feedback: chip hover, switcher scroll.
+    static let quick = Animation.easeOut(duration: 0.12)
+    /// Chips moving to new places in the row.
+    static let reorder = Animation.spring(response: 0.30, dampingFraction: 0.82)
+}
+
+/// The one corner scale. The bar itself is square (0).
+enum Radius {
+    /// Window-count mark.
+    static let mark: CGFloat = 4
+    /// Chips, chip labels and the edge tab.
+    static let control: CGFloat = 8
+    /// Switcher tile.
+    static let tile: CGFloat = 12
+    /// Switcher panel.
+    static let panel: CGFloat = 16
+}
+
 /// Constants reused across chip components so the look stays consistent.
 enum ChipStyle {
-    static let cornerRadius: CGFloat = 8
-    /// Inset of the highlighted label pill inside a chip.
-    static let labelHorizontalPadding: CGFloat = 7
-    static let labelVerticalPadding: CGFloat = 3
-    static let hoverAnimation = Animation.easeOut(duration: 0.10)
     static let hoverFill = Color(nsColor: .selectedContentBackgroundColor).opacity(0.22)
     static let frontmostFill = Color(nsColor: .selectedContentBackgroundColor).opacity(0.34)
     static let accent = Color(nsColor: .controlAccentColor)

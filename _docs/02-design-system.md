@@ -13,19 +13,37 @@ Marks, materials, typography, copy, motion and accessibility contracts for the D
 ## Materials and color
 
 The bar, the edge tab and the switcher share one surface, `floatingSurface` in `BarSupport`.
-It is Liquid Glass (`glassEffect`), which brings its own shadow and edge highlights and adapts to Reduce Transparency by itself; the edge tab uses the interactive variant because the whole surface is a button.
+The expanded bar is a square strip with no inset: it spans the display's full width and meets its edge, so no desktop shows beside or below it.
+At the bottom it covers the thin strip an auto-hidden Dock reserves (`BarGeometry.bottomEdge`), and it sits above a Dock that stays on screen.
+It is Liquid Glass (`glassEffect`), which brings its own shadow and edge highlights and adapts to Reduce Transparency by itself.
+It is never the interactive variant, which stretches the edge tab's surface under the pointer and changes its shape on a click.
 There is no other material: the app requires macOS 27, and no view falls back to a visual effect view or branches on a macOS version.
 Nothing draws a second glass layer on top of the surface: chips, tiles and the collapse button sit on it as content.
 The switcher panel has no window shadow, because a window shadow under glass outlines the panel's rectangle.
 Chips and switcher tiles share one rule: an idle one draws no fill or border, and only hover, frontmost or selected draws the system selection fill; the selected tile adds an accent ring.
 Notification badges use system red.
 
+## Spacing and corners
+
+The bar, the edge tab and the switcher take every gap, inset, offset and corner from two scales in `BarSupport`.
+`Spacing` is a 4-point grid (2, 4, 8, 12, 20), plus a 1-point step reserved for text-tight badge padding.
+`Radius` is 4 for the window-count mark, 8 for chips, chip labels and the edge tab, 12 for a switcher tile and 16 for the switcher panel; the bar itself is square.
+Every app icon on the bar, in a window chip or a pinned chip, is `BarSize.chipIconSize` (24, 28 or 36), and both chips are that icon plus `Spacing.s` beside and `Spacing.xs` above and below, so all icons share one center line; a pinned app's running dot hangs below its chip instead of stacking under the icon.
+The brand mark in the collapse button and the edge tab is `BarSize.controlIconSize` (16, 20 or 24), and the collapse chevron uses the chip title style, so both controls scale with the bar.
+The edge tab shows a whole-point height on the 4-point grid (40, 44 or 56).
+The bar's trailing padding is one step tighter than its leading padding, because the collapse button's system style adds its own inset; the visible content then sits the same distance from both screen edges.
+Settings is a native form and takes its spacing from the form, not from these scales.
+`HIGChromeRegressionTests` fails on a numeric literal in a padding, spacing, offset or corner radius in those views.
+
 ## Native first
 
 DockishOS adds only what macOS does not have.
 It has no app launcher, because Spotlight opens apps.
-Settings is a standard window with a toolbar of three panes (General, Bar, Pinned), named after the selected pane.
+Settings is a standard window with a toolbar of two panes (General, Bar), named after the selected pane.
+Every choice between a few named values (Size, Position, Corner) is a segmented control, and every Bar pane section has a header (Layout, Contents, Edge Tab).
 Each pane is a grouped form as tall as its content, so the window resizes between panes; a pane adds no margins or sizes of its own and uses the form's headers, footers and rows.
+The Pinned Apps section of General stays a section when the list is empty: one secondary "No pinned apps" row, and a footer that says how to pin.
+The window opens on the pane last viewed, across relaunches, as the HIG asks of a settings window.
 A section has a footer only when it tells the user something the control does not, and a control that cannot act is hidden: the display toggles with one display, the shortcut's Reset button at the default.
 About is the standard About panel, opened from the status menu, not a pane.
 The collapse button uses a system button style for its hover state, and the shortcut recorder in Settings is a system button.
@@ -54,10 +72,16 @@ Text uses system text styles only; no view sets a literal point size.
 - The collapsed bar is the "edge tab" everywhere.
 - Pin commands are "Pin to Bar" and "Unpin from Bar", and a window with no title is "Untitled".
 - A command that opens a window or more input ends in an ellipsis character.
+- The status menu holds only app commands, in groups split by separators: About DockishOS and YEN Terminal (https://yen.chat); Settings…; GitHub Project and Check for Updates…; Quit DockishOS, the only way to quit an app with no Dock icon. Bar and Space commands live on the bar and in Settings, not in the menu, and no two items share an icon.
 
 ## Motion
 
-Collapse and expand slide, and skip the slide when Reduce Motion is on.
+Every timing comes from one scale, `Motion` in `BarSupport`: `phase` (0.16 s) for each half of a bar transition, `quick` for chip hover and switcher scroll, and `reorder` (a spring) for chips moving in the row.
+Collapse, expand and every size, position or corner change run one transition: the old surface leaves, the panel swaps while out of sight, and the new surface enters, with ease-in going out and ease-out coming in.
+A surface on the bottom edge (the bottom bar, the edge tab) slides through that edge; the top bar fades in place instead of sliding across the menu bar (`BarGeometry.transition`).
+Reduce Motion turns every slide into a fade.
+A change that moves nothing on screen, such as the corner while the bar is expanded, applies with no motion, and no setting closes and reopens a bar window; only a change in which displays show a bar builds the bars again.
+The switcher appears and disappears at once, as Command-Tab does.
 
 ## Accessibility
 
@@ -68,4 +92,4 @@ The shortcut recorder in Settings is a button, so a click, Space with keyboard f
 Settings pinned-list reorder and unpin controls meet the 20-point minimum hit target and carry VoiceOver labels.
 The bar and switcher panels carry spoken titles, and the Settings Reset button names the shortcut it resets.
 A badge of one reads as "notification" and a single grouped window as "window".
-`Tests/DockishOSCoreTests/HIGAccessibilityRegressionTests.swift` guards the key-window, chip-button, Space-command and Reduce Motion contracts, `HIGChromeRegressionTests.swift` the glass-only surface and the macOS 27 minimum, and `PanelRegressionTests.swift` the switcher panel contracts ([09-quality.md](09-quality.md)); the spoken names have no regression test.
+`Tests/DockishOSCoreTests/HIGAccessibilityRegressionTests.swift` guards the key-window, chip-button, Space-command and Reduce Motion contracts, `HIGChromeRegressionTests.swift` the glass-only surface, the square edge-to-edge bar, the shared spacing and motion scales, the in-place layout changes and the macOS 27 minimum, and `PanelRegressionTests.swift` the switcher panel contracts ([09-quality.md](09-quality.md)); the spoken names have no regression test.

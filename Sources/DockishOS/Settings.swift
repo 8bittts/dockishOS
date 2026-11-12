@@ -32,21 +32,27 @@ enum BarSize: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Height of a window chip, and the side of a pinned-app chip.
-    var chipHeight: CGFloat {
+    /// Side of every app icon on the bar, in window chips and pinned chips alike.
+    var chipIconSize: CGFloat {
         switch self {
-        case .small:  return 26
-        case .medium: return 34
-        case .large:  return 44
+        case .small:  return 24
+        case .medium: return 28
+        case .large:  return 36
         }
     }
 
-    var chipIconSize: CGFloat {
+    /// Side of the brand mark in the collapse button and the edge tab.
+    var controlIconSize: CGFloat {
         switch self {
-        case .small:  return 18
-        case .medium: return 22
-        case .large:  return 28
+        case .small:  return 16
+        case .medium: return 20
+        case .large:  return 24
         }
+    }
+
+    /// Height of a window chip: its icon plus `Spacing.xs` above and below.
+    var chipHeight: CGFloat {
+        chipIconSize + Spacing.xs * 2
     }
 }
 

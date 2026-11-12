@@ -7,21 +7,48 @@ import SwiftUI
 final class BarController {
     private static let scrollCooldown: TimeInterval = 0.25
 
+    /// The settings that decide what the panel shows and where it sits.
+    private struct Layout: Equatable {
+        var collapsed: Bool
+        var barOnTop: Bool
+        var tabOnRight: Bool
+        var size: BarSize
+
+        @MainActor
+        static var current: Layout {
+            let settings = SettingsStore.shared
+            return Layout(
+                collapsed: settings.barCollapsed,
+                barOnTop: settings.barPosition == .top,
+                tabOnRight: settings.collapsedTabPosition.isRightEdge,
+                size: settings.barSize
+            )
+        }
+    }
+
+    /// The two halves of a transition.
+    private enum Phase {
+        case out, `in`
+    }
+
+    let displayUUID: String
     private let screen: NSScreen
     private let panel: BarPanel
     private let host: NSHostingView<BarView>
     private let presentation: BarPresentationState
+    /// The layout on screen. It trails `Layout.current` while a transition runs.
+    private var presented: Layout
     private var scrollMonitor: Any?
     private var collapseObserver: NSObjectProtocol?
     private var lastSpaceSwitchAt: TimeInterval = 0
-    private var isAnimatingCollapse = false
+    private var isTransitioning = false
 
     init(screen: NSScreen) {
         self.screen = screen
-        presentation = BarPresentationState(isCollapsed: SettingsStore.shared.barCollapsed)
-        let frame = BarGeometry.visibleFrame(
-            Self.geometryInput(screen: screen, collapsed: presentation.isCollapsed)
-        )
+        displayUUID = screen.displayUUID
+        presented = .current
+        presentation = BarPresentationState(isCollapsed: presented.collapsed, barSize: presented.size)
+        let frame = BarGeometry.visibleFrame(Self.geometryInput(screen: screen, layout: presented))
         panel = BarPanel(contentRect: frame)
         host = NSHostingView(rootView: BarView(
             windowStore: WindowStore.shared,
@@ -38,7 +65,7 @@ final class BarController {
         collapseObserver = NotificationCenter.default.observeOnMain(
             .dockishBarCollapseDidChange
         ) { [weak self] _ in
-            self?.handleCollapsePreferenceChange()
+            self?.followSettings()
         }
     }
 
@@ -59,6 +86,82 @@ final class BarController {
         panel.close()
     }
 
+    /// Brings the panel to the current settings. A change that moves nothing
+    /// on screen applies at once; any other runs one transition: the old
+    /// surface leaves, the panel swaps while out of sight, the new one enters.
+    /// A change during a transition waits, and `finishTransition` reads again.
+    func followSettings() {
+        let target = Layout.current
+        guard !isTransitioning, target != presented else { return }
+
+        if !changesWhatIsOnScreen(from: presented, to: target) {
+            presented = target
+            return
+        }
+        transition(from: presented, to: target)
+    }
+
+    /// True unless the surface keeps its kind, size and frame, as when the
+    /// corner changes while the bar is expanded.
+    private func changesWhatIsOnScreen(from old: Layout, to new: Layout) -> Bool {
+        old.collapsed != new.collapsed
+            || old.size != new.size
+            || visibleFrame(old) != visibleFrame(new)
+    }
+
+    private func transition(from old: Layout, to new: Layout) {
+        isTransitioning = true
+        panel.ignoresMouseEvents = true
+        run(.out, layout: old) { [weak self] in
+            guard let self else { return }
+            self.presented = new
+            self.presentation.isCollapsed = new.collapsed
+            self.presentation.barSize = new.size
+            self.host.layoutSubtreeIfNeeded()
+            self.run(.in, layout: new) { [weak self] in
+                self?.finishTransition()
+            }
+        }
+    }
+
+    /// One phase. A slide moves the panel through the bottom edge; a fade
+    /// changes only its opacity, in place.
+    private func run(_ phase: Phase, layout: Layout, completion: @escaping @MainActor () -> Void) {
+        let input = Self.geometryInput(screen: screen, layout: layout)
+        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        let style = BarGeometry.transition(input, reduceMotion: reduceMotion)
+        let visible = BarGeometry.visibleFrame(input)
+
+        if phase == .in {
+            panel.setFrame(style == .slide ? BarGeometry.hiddenFrame(input) : visible, display: true)
+            panel.alphaValue = style == .fade ? 0 : 1
+            panel.orderFrontRegardless()
+        }
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = Motion.phase
+            context.timingFunction = CAMediaTimingFunction(name: phase == .out ? .easeIn : .easeOut)
+            switch (style, phase) {
+            case (.slide, .out): panel.animator().setFrame(BarGeometry.hiddenFrame(input), display: true)
+            case (.slide, .in):  panel.animator().setFrame(visible, display: true)
+            case (.fade, .out):  panel.animator().alphaValue = 0
+            case (.fade, .in):   panel.animator().alphaValue = 1
+            }
+        } completionHandler: {
+            // AppKit runs animation completion handlers on the main thread.
+            MainActor.assumeIsolated(completion)
+        }
+    }
+
+    private func finishTransition() {
+        isTransitioning = false
+        if Layout.current != presented {
+            followSettings()
+        } else {
+            panel.ignoresMouseEvents = false
+        }
+    }
+
     /// Vertical scroll over the bar switches Spaces. Horizontal scroll is
     /// passed through so the windows row's `ScrollView` still scrolls.
     private func installScrollMonitor() {
@@ -66,7 +169,7 @@ final class BarController {
         scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
             guard let self, event.window === self.panel else { return event }
             guard abs(event.scrollingDeltaY) > abs(event.scrollingDeltaX) else { return event }
-            if !self.presentation.isCollapsed, !self.isAnimatingCollapse {
+            if !self.presentation.isCollapsed, !self.isTransitioning {
                 self.handleVerticalScroll(deltaY: event.scrollingDeltaY)
             }
             return nil
@@ -81,92 +184,18 @@ final class BarController {
         lastSpaceSwitchAt = now
     }
 
-    /// Starts the slide toward the collapsed preference. A change that arrives
-    /// mid-animation waits: `finishCollapseAnimation` reads the preference again.
-    private func handleCollapsePreferenceChange() {
-        let targetCollapsed = SettingsStore.shared.barCollapsed
-        guard !isAnimatingCollapse, targetCollapsed != presentation.isCollapsed else { return }
-        animate(toCollapsed: targetCollapsed)
+    private func visibleFrame(_ layout: Layout) -> NSRect {
+        BarGeometry.visibleFrame(Self.geometryInput(screen: screen, layout: layout))
     }
 
-    /// Two-phase slide: hide the panel in its current (starting) presentation,
-    /// swap to the target presentation off-screen, then slide it back into view.
-    /// Collapse and expand are structural mirrors — the only differences are the
-    /// start/target `isCollapsed` states and the per-phase animation durations.
-    private func animate(toCollapsed: Bool) {
-        isAnimatingCollapse = true
-        panel.ignoresMouseEvents = true
-        let startCollapsed = !toCollapsed
-        let initialVisible = visibleFrame(collapsed: startCollapsed)
-        let initialHidden = hiddenFrame(collapsed: startCollapsed)
-        let finalHidden = hiddenFrame(collapsed: toCollapsed)
-        let finalVisible = visibleFrame(collapsed: toCollapsed)
-        // Collapse uses 0.16/0.16; expand uses 0.14/0.18.
-        let hideDuration: TimeInterval = toCollapsed ? 0.16 : 0.14
-        let revealDuration: TimeInterval = toCollapsed ? 0.16 : 0.18
-
-        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
-            presentation.isCollapsed = toCollapsed
-            panel.setFrame(finalVisible, display: true)
-            finishCollapseAnimation()
-            return
-        }
-
-        presentation.isCollapsed = startCollapsed
-        panel.setFrame(initialVisible, display: true)
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = hideDuration
-            context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-            panel.animator().setFrame(initialHidden, display: true)
-        } completionHandler: { [weak self] in
-            // AppKit runs animation completion handlers on the main thread.
-            MainActor.assumeIsolated {
-                guard let self else { return }
-                self.presentation.isCollapsed = toCollapsed
-                self.panel.setFrame(finalHidden, display: true)
-                self.host.layoutSubtreeIfNeeded()
-                self.panel.layoutIfNeeded()
-                self.panel.orderFrontRegardless()
-                NSAnimationContext.runAnimationGroup { context in
-                    context.duration = revealDuration
-                    context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                    self.panel.animator().setFrame(finalVisible, display: true)
-                } completionHandler: { [weak self] in
-                    MainActor.assumeIsolated {
-                        self?.finishCollapseAnimation()
-                    }
-                }
-            }
-        }
-    }
-
-    private func finishCollapseAnimation() {
-        isAnimatingCollapse = false
-        let targetCollapsed = SettingsStore.shared.barCollapsed
-        if targetCollapsed != presentation.isCollapsed {
-            animate(toCollapsed: targetCollapsed)
-        } else {
-            panel.ignoresMouseEvents = false
-        }
-    }
-
-    private func visibleFrame(collapsed: Bool) -> NSRect {
-        BarGeometry.visibleFrame(Self.geometryInput(screen: screen, collapsed: collapsed))
-    }
-
-    private func hiddenFrame(collapsed: Bool) -> NSRect {
-        BarGeometry.hiddenFrame(Self.geometryInput(screen: screen, collapsed: collapsed))
-    }
-
-    private static func geometryInput(screen: NSScreen, collapsed: Bool) -> BarGeometryInput {
-        let settings = SettingsStore.shared
-        return BarGeometryInput(
+    private static func geometryInput(screen: NSScreen, layout: Layout) -> BarGeometryInput {
+        BarGeometryInput(
             screenFrame: screen.frame,
             visibleFrame: screen.visibleFrame,
-            collapsed: collapsed,
-            barOnTop: settings.barPosition == .top,
-            tabOnRight: settings.collapsedTabPosition.isRightEdge,
-            barHeight: settings.barSize.height
+            collapsed: layout.collapsed,
+            barOnTop: layout.barOnTop,
+            tabOnRight: layout.tabOnRight,
+            barHeight: layout.size.height
         )
     }
 }

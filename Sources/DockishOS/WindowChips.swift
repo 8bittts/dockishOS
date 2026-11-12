@@ -10,7 +10,8 @@ struct WindowsRow: View {
     @ObservedObject var pinnedStore: PinnedAppsStore
     @ObservedObject var badgeStore: BadgeStore
     @ObservedObject var settings: SettingsStore
-    private let reorderAnimation = Animation.spring(response: 0.30, dampingFraction: 0.82)
+    /// The size on screen, which can trail `settings.barSize` during a transition.
+    let size: BarSize
 
     /// An app with a chip in the pinned row gets no second chip here.
     private var hidesPinnedApps: Bool {
@@ -34,20 +35,21 @@ struct WindowsRow: View {
         let groups = settings.groupWindowsByApp ? WindowGrouping.group(visibleWindows) : []
 
         return ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
+            HStack(spacing: Spacing.xs) {
                 ForEach(groups) { groupChip(for: $0) }
                 ForEach(windows) { chip(for: $0) }
                 if visibleWindows.isEmpty {
                     Text("No windows in this Space")
                         .font(.callout)
                         .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, Spacing.s)
                 }
             }
-            .padding(.vertical, 10)
+            // Room for a badge's offset above the chip.
+            .padding(.vertical, Spacing.xs)
             // A reorder, a retitle and a focus change all move chips.
-            .animation(reorderAnimation, value: visibleWindows)
-            .animation(reorderAnimation, value: windowStore.frontmostPID)
+            .animation(Motion.reorder, value: visibleWindows)
+            .animation(Motion.reorder, value: windowStore.frontmostPID)
         }
     }
 
@@ -57,7 +59,7 @@ struct WindowsRow: View {
         return Chip(
             pid: window.pid,
             title: window.displayTitle,
-            size: settings.barSize,
+            size: size,
             showTitle: settings.showChipTitles,
             isFrontmost: isFrontmost,
             badge: badge,
@@ -84,7 +86,7 @@ struct WindowsRow: View {
         return Chip(
             pid: group.pid,
             title: group.ownerName,
-            size: settings.barSize,
+            size: size,
             showTitle: settings.showChipTitles,
             isFrontmost: isFrontmost,
             badge: badge,
@@ -143,17 +145,17 @@ private struct Chip<MenuItems: View>: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 6) {
+            HStack(spacing: Spacing.xs) {
                 AppIconView(pid: pid)
                     .frame(width: size.chipIconSize, height: size.chipIconSize)
                     .overlay(alignment: .topTrailing) {
                         if let badge {
-                            NotificationBadge(text: badge).offset(x: 6, y: -4)
+                            NotificationBadge(text: badge).offset(x: Spacing.xs, y: -Spacing.xs)
                         }
                     }
                     .overlay(alignment: .bottomTrailing) {
                         if windowCount > 1 {
-                            WindowCountMark(count: windowCount).offset(x: 6, y: 4)
+                            WindowCountMark(count: windowCount).offset(x: Spacing.xs, y: Spacing.xs)
                         }
                     }
                 if showTitle {
@@ -162,13 +164,13 @@ private struct Chip<MenuItems: View>: View {
                         .lineLimit(1)
                         .truncationMode(.tail)
                         .foregroundStyle(.primary)
-                        .padding(.horizontal, ChipStyle.labelHorizontalPadding)
-                        .padding(.vertical, ChipStyle.labelVerticalPadding)
+                        .padding(.horizontal, Spacing.s)
+                        .padding(.vertical, Spacing.xxs)
                         .background(ChipHighlight(isFrontmost: isFrontmost, hover: hover))
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, Spacing.s)
+            .padding(.vertical, Spacing.xs)
             .frame(height: size.chipHeight)
             .frame(maxWidth: showTitle ? 220 : nil)
             .background {
@@ -182,7 +184,7 @@ private struct Chip<MenuItems: View>: View {
         }
         .buttonStyle(.plain)
         .onHover { hover = $0 }
-        .animation(ChipStyle.hoverAnimation, value: hover)
+        .animation(Motion.quick, value: hover)
         .help(help)
         .accessibilityLabel(accessibilityLabel)
         .contextMenu(menuItems: menuItems)
@@ -197,7 +199,7 @@ private struct ChipHighlight: View {
     let hover: Bool
 
     var body: some View {
-        RoundedRectangle(cornerRadius: ChipStyle.cornerRadius)
+        RoundedRectangle(cornerRadius: Radius.control)
             .fill(isFrontmost ? ChipStyle.frontmostFill : hover ? ChipStyle.hoverFill : .clear)
     }
 }

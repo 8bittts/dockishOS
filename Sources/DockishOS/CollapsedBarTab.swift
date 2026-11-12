@@ -7,24 +7,19 @@ struct CollapsedTab: View {
     let barSize: BarSize
     let action: () -> Void
 
-    private static let iconSize: CGFloat = 18
     /// Room on each side so the surface's edge is not cut by the panel.
-    private static let horizontalInset: CGFloat = 6
-    private let icon = DockishBrandAssets.applicationIcon(size: NSSize(width: iconSize, height: iconSize))
+    private static let horizontalInset = Spacing.xs
 
     var body: some View {
         Button(action: action) {
-            Image(nsImage: icon)
-                .resizable()
-                .interpolation(.high)
-                .frame(width: Self.iconSize, height: Self.iconSize)
+            BrandMark(size: barSize.controlIconSize)
                 // Center the icon in the part of the tab that shows.
                 .frame(
                     width: BarGeometry.collapsedTabWidth - Self.horizontalInset * 2,
                     height: BarGeometry.collapsedTabExposedHeight(barHeight: barSize.height)
                 )
                 .frame(height: BarGeometry.collapsedTabHeight(barHeight: barSize.height), alignment: .top)
-                .floatingSurface(cornerRadius: 14, interactive: true)
+                .floatingSurface(cornerRadius: Radius.control)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -33,29 +28,34 @@ struct CollapsedTab: View {
     }
 }
 
-/// Collapse control on the trailing edge of the expanded bar.
+/// Collapse control on the trailing edge of the expanded bar. It scales
+/// with the bar: the chevron with the chip titles, the mark with `controlIconSize`.
 struct CollapseBarButton: View {
+    let size: BarSize
     let action: () -> Void
-    /// Sized to sit just under the chip label rather than dominating it.
-    private static let iconSize: CGFloat = 13
-    private let logo = DockishBrandAssets.applicationIcon(
-        size: NSSize(width: iconSize, height: iconSize)
-    )
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 6) {
+            HStack(spacing: Spacing.xs) {
                 Image(systemName: "chevron.down")
-                    .font(.subheadline.weight(.semibold))
-
-                Image(nsImage: logo)
-                    .resizable()
-                    .interpolation(.high)
-                    .frame(width: Self.iconSize, height: Self.iconSize)
+                    .font(size.chipTitleFont.weight(.semibold))
+                BrandMark(size: size.controlIconSize)
             }
         }
         .buttonStyle(.accessoryBar)
         .help("Collapse bar into edge tab")
         .accessibilityLabel("Collapse bar")
+    }
+}
+
+/// The app's icon as macOS renders it, drawn at `size` points.
+private struct BrandMark: View {
+    let size: CGFloat
+
+    var body: some View {
+        Image(nsImage: DockishBrandAssets.applicationIcon(size: NSSize(width: size, height: size)))
+            .resizable()
+            .interpolation(.high)
+            .frame(width: size, height: size)
     }
 }

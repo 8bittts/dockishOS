@@ -5,6 +5,21 @@ All notable changes to DockishOS live here. Release tooling reads the
 
 ## [Unreleased]
 
+### Changed
+- The bar is a square strip that spans the whole screen edge, with no gap at the sides or bottom. On a screen with an auto-hidden Dock at the bottom, it covers the strip the Dock reserves.
+- App icons follow the bar size, in window chips and pinned chips alike, and every icon on the bar sits on one line. The collapse button and the edge tab scale with the bar too.
+- The edge tab has smaller corners and keeps its shape when you click it.
+- At the top of the screen, the bar fades in and out instead of sliding. At the bottom, the bar and the edge tab still slide.
+- Changing the size, position, or edge tab corner moves the bar without a flicker.
+- Settings has two panes, General and Bar. Pinned apps are a section of General, and Settings reopens on the pane you used last.
+- The status menu holds About DockishOS, YEN Terminal, Settings, GitHub Project, Check for Updates, and Quit.
+
+### Fixed
+- System processes such as WindowManager no longer appear as chips on the bar.
+
+### Removed
+- Collapse Bar, Edge Tab Position, Previous Space, and Next Space from the status menu. Collapse from the bar or Settings, and switch Spaces by scrolling over the bar or with Control-Left and Control-Right.
+
 ## [0.030]
 
 ### Changed

@@ -21,6 +21,7 @@ Sparkle is vendored for updates; distribution is a notarized DMG and a Homebrew 
 | `DisplayNameDisambiguator`  | Distinct names for same-named apps or windows                |
 | `StableIDReordering`        | Drag-to-reorder for the pinned row                           |
 | `WindowInfo`, `AppWindowGroup`, `WindowGrouping` | A window as the window server lists it, and optional grouping of windows by app |
+| `WindowEligibility`         | Which listed windows get a chip: visible, layer-0 windows of regular apps, so system agents such as WindowManager never appear |
 
 ## App target
 
@@ -30,8 +31,8 @@ Sparkle is vendored for updates; distribution is a notarized DMG and a Homebrew 
 - Shortcut: `Hotkey` is the stored chord, `HotkeyManager` registers it through Carbon, and `HotkeyRecorder` is the Settings field that records a new one.
 - Windows and Spaces: `WindowEnumerator`, `WindowStore` and `RunningAppsStore` list windows and apps; `WindowControl` and `AXHelper` raise or close a specific window through Accessibility; `SpacesAPI` reads and switches Spaces through private CGS SPIs, on demand and with no polling; `ScreenHelpers` maps displays.
 - Badges: `BadgeStore` reads optional notification badge text from the Dock accessibility tree; off by default.
-- Persistence: `PinnedAppsStore` and `Settings` keep pinned apps and preferences; `SettingsController` presents the `Cmd-,` window as a standard toolbar of panes, and `SettingsView.swift` holds the three panes (`SettingsPane`): General (opening at login, the switcher shortcut, per-display visibility, the Accessibility permission), Bar (size, placement, titles, grouping, pinned apps, badges, the edge tab) and Pinned.
-- Shell: `main.swift`, `AppDelegate`, `MenuBarController` (status menu with Previous Space and Next Space), `AppActivation`, `Permissions`, `LoginItem`, `Updater` (Sparkle), `Diagnostics`, `AppLinks` and `DockishBrandAssets`.
+- Persistence: `PinnedAppsStore` and `Settings` keep pinned apps and preferences; `SettingsController` presents the `Cmd-,` window as a standard toolbar of panes, and `SettingsView.swift` holds the two panes (`SettingsPane`): General (opening at login, the switcher shortcut, the pinned apps, per-display visibility, the Accessibility permission) and Bar (size, placement, titles, grouping, pinned row visibility, badges, the edge tab).
+- Shell: `main.swift`, `AppDelegate`, `MenuBarController` (status menu: About, YEN Terminal, Settings, GitHub Project, updates, Quit), `AppActivation`, `Permissions`, `LoginItem`, `Updater` (Sparkle), `Diagnostics`, `AppLinks` and `DockishBrandAssets`.
 - Plumbing: `MainActorCallbacks` gives notification observers and repeating timers main-actor handlers, and `PrivateSymbol` resolves private system functions at run time.
 
 ## Bundle

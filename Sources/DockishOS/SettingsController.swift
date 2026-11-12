@@ -19,6 +19,9 @@ final class SettingsController {
             item.image = NSImage(systemSymbolName: pane.symbolName, accessibilityDescription: nil)
             panes.addTabViewItem(item)
         }
+        // Restore after the panes exist; the controller loads its view, and
+        // runs `viewDidLoad`, before any pane is added.
+        panes.restoreLastPane()
 
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: SettingsPane.width, height: 0),
@@ -40,9 +43,19 @@ final class SettingsController {
     }
 }
 
-/// Toolbar of panes that names the window after the selected pane, as a
-/// macOS settings window does.
+/// Toolbar of panes that names the window after the selected pane and opens
+/// on the pane last viewed, even after a relaunch, as the HIG asks of a
+/// macOS settings window.
 private final class SettingsPanesController: NSTabViewController {
+    private static let selectedPaneKey = "DockishOS.settingsPane"
+
+    /// Selects the pane last viewed. A saved index from a build with more
+    /// panes than this one falls back to the first pane.
+    func restoreLastPane() {
+        let saved = UserDefaults.standard.integer(forKey: Self.selectedPaneKey)
+        selectedTabViewItemIndex = tabViewItems.indices.contains(saved) ? saved : 0
+    }
+
     override func viewWillAppear() {
         super.viewWillAppear()
         updateWindowTitle()
@@ -50,6 +63,7 @@ private final class SettingsPanesController: NSTabViewController {
 
     override func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
         super.tabView(tabView, didSelect: tabViewItem)
+        UserDefaults.standard.set(selectedTabViewItemIndex, forKey: Self.selectedPaneKey)
         updateWindowTitle()
     }
 

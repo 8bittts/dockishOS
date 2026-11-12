@@ -9,7 +9,7 @@
 The macOS Dock shows every app on every Space.
 DockishOS shows what is open on this Space.
 
-DockishOS is a macOS menu-bar utility that adds a floating, per-display app bar for people who use Spaces heavily.
+DockishOS is a macOS menu-bar utility that adds an edge-to-edge, per-display app bar for people who use Spaces heavily.
 The app is built with SwiftUI and AppKit, requires macOS 27 or later on Apple Silicon, and ships as an accessory app with no Dock icon.
 
 ## Why DockishOS
@@ -68,13 +68,13 @@ xattr -dr com.apple.quarantine /Applications/DockishOS.app
 
 ## Features
 
-- Floating bar on each enabled display.
+- Edge-to-edge bar on each enabled display.
 - Window chips for the current Space.
 - Optional pinned app row with drag-to-reorder and Finder `.app` drop support.
 - Optional grouping of windows by app.
 - Click a chip to activate that app and raise the selected window.
 - Right-click chips to close windows or pin/unpin apps.
-- Vertical scroll over the expanded bar to switch Spaces, or Previous Space / Next Space in the status menu.
+- Vertical scroll over the expanded bar to switch Spaces.
 - Collapse the bar into a bottom-left or bottom-right edge tab.
 - Window switcher shortcut, default `Option-Tab`, for cycling windows in the current Space with Tab, Shift-Tab, arrow keys, Return, and Escape.
 - Liquid Glass bar, edge tab, and switcher.

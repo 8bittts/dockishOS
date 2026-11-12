@@ -1,6 +1,6 @@
 # DockishOS Documentation Map
 
-macOS menu-bar utility that shows a floating, per-display app bar for the current Space, with a window switcher.
+macOS menu-bar utility that shows an edge-to-edge, per-display app bar for the current Space, with a window switcher.
 Agent routing lives in `AGENTS.md`; this index follows the fleet documentation standard that `/docs` audits against.
 
 ## Owner docs
@@ -9,7 +9,7 @@ Agent routing lives in `AGENTS.md`; this index follows the fleet documentation s
 | ---------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `00-foundation.md`     | History and the decision record                                                                               |
 | `01-architecture.md`   | Stack, the core and app targets, modules, bundle metadata, build pipeline                                     |
-| `02-design-system.md`  | Marks, materials and color, motion, accessibility contracts                                                   |
+| `02-design-system.md`  | Marks, materials and color, spacing and corners, motion, accessibility contracts                              |
 | `04-security.md`       | Permissions, private APIs, signing and notarization, update-feed trust, local data                            |
 | `05-infrastructure.md` | Build modes, release flow, notarization and Sparkle key setup, Sparkle vendoring, distribution, appcast rules |
 | `09-quality.md`        | Gates, test strategy, traps, manual verification                                                              |

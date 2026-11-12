@@ -13,10 +13,10 @@ struct SwitcherView: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Spacing.m) {
             ScrollView(.horizontal, showsIndicators: false) {
                 ScrollViewReader { proxy in
-                    HStack(spacing: 14) {
+                    HStack(spacing: Spacing.m) {
                         ForEach(Array(store.windows.enumerated()), id: \.element.id) { index, window in
                             Button {
                                 selection.index = index
@@ -31,10 +31,11 @@ struct SwitcherView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(20)
+                    .padding(.horizontal, Spacing.xl)
+                    .padding(.top, Spacing.xl)
                     .onChange(of: selection.index) {
                         guard let selectedWindow else { return }
-                        withAnimation(.easeInOut(duration: 0.12)) {
+                        withAnimation(Motion.quick) {
                             proxy.scrollTo(selectedWindow.id, anchor: .center)
                         }
                     }
@@ -46,17 +47,17 @@ struct SwitcherView: View {
                     .font(.body.weight(.medium))
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, Spacing.xl)
+                    .padding(.bottom, Spacing.xl)
             } else if store.windows.isEmpty {
                 Text("No windows in this Space")
                     .font(.callout)
                     .foregroundStyle(.secondary)
-                    .padding(.bottom, 12)
+                    .padding(.bottom, Spacing.xl)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .floatingSurface(cornerRadius: 18)
+        .floatingSurface(cornerRadius: Radius.panel)
     }
 }
 
@@ -64,20 +65,23 @@ private struct SwitcherTile: View {
     let window: WindowInfo
     let isSelected: Bool
     let isFirst: Bool
+    private static let iconSize: CGFloat = 64
+    /// The icon plus a `Spacing.s` ring of selection fill on each side.
+    private static let tileSize = iconSize + Spacing.s * 2
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: Spacing.s) {
             ZStack {
                 if let icon = NSRunningApplication(processIdentifier: window.pid)?.icon {
                     Image(nsImage: icon)
                         .resizable()
-                        .frame(width: 64, height: 64)
+                        .frame(width: Self.iconSize, height: Self.iconSize)
                 }
             }
-            .frame(width: 84, height: 84)
+            .frame(width: Self.tileSize, height: Self.tileSize)
             .background {
                 if isSelected {
-                    RoundedRectangle(cornerRadius: 14)
+                    RoundedRectangle(cornerRadius: Radius.tile)
                         .fill(ChipStyle.frontmostFill)
                         .strokeBorder(ChipStyle.accent, lineWidth: 2)
                 }
@@ -86,7 +90,7 @@ private struct SwitcherTile: View {
                 .font(.subheadline.weight(.medium))
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .frame(width: 84)
+                .frame(width: Self.tileSize)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(window.ownerName), \(window.displayTitle)")
