@@ -20,7 +20,7 @@ Upgrade only via `_docs/05-infrastructure.md` "Upgrading the Sparkle framework";
 
 ## Release caveats
 
-[CRITICAL] Never hand-edit root `appcast.xml` — its embedded Sparkle EdDSA signature covers the file's exact byte length, so any edit fails every user's Check-for-Updates with "The update feed is improperly signed and could not be validated".
+Never hand-edit root `appcast.xml` — its embedded Sparkle EdDSA signature covers the file's exact byte length, so any edit fails every user's Check-for-Updates with "The update feed is improperly signed and could not be validated".
 Regenerate and re-sign with `scripts/generate-appcast.sh` or the release flow; see `_docs/05-infrastructure.md` "Safety".
 
 A `scripts/release-dockishOS.sh` failure at either appcast step alone does not mean the release failed; check `git log` and the GitHub release page before re-running anything.
