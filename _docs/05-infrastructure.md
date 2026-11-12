@@ -201,5 +201,8 @@ The release script reads the `## [Unreleased]` block verbatim (via `changelog_un
 
 ## Appcast propagation
 
-The live appcast is served with `cache-control: max-age=300`, which Sparkle's `URLCache.shared` honors, so an interactive Check for Updates can report a stale "you're up to date" for up to five minutes after a release; the feed URL is deliberately not cache-busted.
-`scripts/release-dockishOS.sh` polls the live appcast for about 30 seconds (10 attempts, 3 seconds apart), and the raw.githubusercontent.com CDN can take longer to invalidate, so a failure at that step alone does not mean the release failed; check `git log` and the GitHub release page before re-running anything.
+The live appcast is served with `cache-control: max-age=300`, which Sparkle's `URLCache.shared` honors; the feed URL is deliberately not cache-busted.
+The raw.githubusercontent.com CDN caches each content encoding separately, and Sparkle asks for gzip, so after a release the gzip copy can serve the previous feed for several minutes while an uncompressed or cache-busted request already returns the new one; measured on v0.031, the gzip copy served the previous feed for about four minutes after the release push, while the release script had already reported success.
+A Mac that checked during that window keeps the old answer for up to five more minutes in its own cache.
+`scripts/release-dockishOS.sh` therefore checks twice: a cache-busted fetch proves GitHub serves the signed feed (10 attempts, 3 seconds apart), then the exact request Sparkle makes, the plain URL with gzip, is polled every 15 seconds for up to 12 minutes, and "Release complete" prints only once that request returns the new version.
+A failure at either appcast step alone does not mean the release failed; check `git log` and the GitHub release page before re-running anything.

@@ -307,7 +307,25 @@ for attempt in 1 2 3 4 5 6 7 8 9 10; do
     sleep 3
 done
 [ "$APPCAST_OK" = true ] || fail "Live appcast.xml at ${APPCAST_URL} did not propagate after 10 attempts"
-step "Verified live signed appcast"
+step "Verified signed appcast at origin"
+
+# The check above busts the cache, so it proves only that GitHub serves the new
+# file. Sparkle requests the plain URL with gzip, and the CDN caches each
+# encoding separately for up to max-age=300 at two layers, so clients can get
+# the old feed for several minutes. Wait until the exact request Sparkle makes
+# returns this release; "Release complete" then means clients can update.
+CLIENT_OK=false
+for attempt in $(seq 1 48); do
+    if curl -fsS --compressed -H "Accept-Encoding: gzip, deflate, br" "${APPCAST_URL}" -o "$APPCAST_TMP" \
+        && grep -q "<sparkle:shortVersionString>${RELEASE_VERSION}</sparkle:shortVersionString>" "$APPCAST_TMP"; then
+        CLIENT_OK=true
+        break
+    fi
+    step "Sparkle clients still get the previous appcast — retry ${attempt}/48 in 15s"
+    sleep 15
+done
+[ "$CLIENT_OK" = true ] || fail "The release is published, but Sparkle clients still get the previous appcast from ${APPCAST_URL} after 12 minutes; check again before re-running anything"
+step "Verified the appcast Sparkle clients receive"
 
 echo ""
 info "Release complete"
