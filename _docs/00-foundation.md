@@ -15,6 +15,7 @@ Dates are the evidence in this doc; the owner docs carry none.
 - 0.028: the bar, launcher and switcher gain spoken VoiceOver titles, the launcher search field and each Settings Reset button gain names, and singular badge and grouped-window counts read as singular.
 - 0.029: the launcher is removed, the bar, edge tab and switcher move to Liquid Glass, the switcher becomes a non-activating panel, Settings becomes a toolbar of panes, the package moves to the Swift 6 language mode, and macOS 27 becomes the minimum ([02-design-system.md](02-design-system.md)).
 - 0.030: Settings becomes three panes (General, Bar, Pinned) that size to their content, and About moves to the standard About panel in the status menu ([02-design-system.md](02-design-system.md)).
+- 0.031: the bar becomes a square edge-to-edge strip on one spacing, corner and motion scale, the top bar fades while bottom surfaces slide, layout changes move the bar in place, system agents leave the bar, Settings becomes two panes (General with Pinned Apps, and Bar), and the status menu keeps only app commands ([02-design-system.md](02-design-system.md)).
 
 ## Decisions
 
