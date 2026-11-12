@@ -314,9 +314,11 @@ step "Verified signed appcast at origin"
 # encoding separately for up to max-age=300 at two layers, so clients can get
 # the old feed for several minutes. Wait until the exact request Sparkle makes
 # returns this release; "Release complete" then means clients can update.
+# Ask for gzip, the encoding Sparkle receives here, but not br: curl on macOS
+# cannot decode Brotli, and a br response would fail every attempt.
 CLIENT_OK=false
 for attempt in $(seq 1 48); do
-    if curl -fsS --compressed -H "Accept-Encoding: gzip, deflate, br" "${APPCAST_URL}" -o "$APPCAST_TMP" \
+    if curl -fsS --compressed -H "Accept-Encoding: gzip, deflate" "${APPCAST_URL}" -o "$APPCAST_TMP" \
         && grep -q "<sparkle:shortVersionString>${RELEASE_VERSION}</sparkle:shortVersionString>" "$APPCAST_TMP"; then
         CLIENT_OK=true
         break
